@@ -93,6 +93,7 @@ if ( isset($_POST['delete']) ) {
     $data['accountHead'] = SessionTrait::validate($request, 'accountHead');
     $data['subaccount'] = SessionTrait::validate($request, 'subaccount');
     $data['account'] = SessionTrait::validate($request, 'account');
+    $data['accountno'] = SessionTrait::validate($request, 'accountno');
 
     if (isset ($_POST['addnew'])) {
         $this->validate($request, [
@@ -108,7 +109,7 @@ if ( isset($_POST['delete']) ) {
         'groupid' => $subhead->groupid,
         'headid' => $subhead->headid,
         'subheadid' => $request->input('subaccount'),
-        'accountno' => 0,// resolve later
+        'accountno' => $request->input('accountno')?$request->input('accountno'):0,
         'accountdescription' => $request->input('account'),
         'status' => 1,
         'rank' => 0,
@@ -120,6 +121,22 @@ if ( isset($_POST['delete']) ) {
         'subaccount',
     ]);
     return back()->with('message', 'New record successfully added.');
+}
+
+if (isset ($_POST['update'])) {
+    $this->validate($request, [
+        'accountdescription'          => 'required',
+        'accountno'    => 'required',
+      ]);
+
+      DB::table('account_charts')->where('id',$request->input('id'))->update([
+        'accountno' => $request->input('accountno'),
+    'accountdescription' => $request->input('accountdescription'),
+    'rank' =>$request->input('rank'),
+      ]);
+
+
+    return back()->with('message', 'record successfully updated.');
 }
 
 
@@ -140,6 +157,8 @@ if ( isset($_POST['delete']) ) {
 
     $data['accounts']= AccountChart::leftJoin('account_heads', 'account_charts.headid', '=', 'account_heads.id')
     ->leftJoin('account_subheads', 'account_charts.subheadid', '=', 'account_subheads.id')
+    ->where('account_charts.headid',($data['accountHead']  && $data['accountHead']!=='All')? '=':'<>',$data['accountHead'])
+    ->where('account_charts.subheadid',($data['subaccount'] && $data['subaccount']!=='All')? '=':'<>',$data['subaccount'])
     ->select('account_charts.*', 'account_subheads.subhead', 'account_heads.accounthead')->get();
     // dd( $data['accounts']);
 	return view('account.account', $data);
