@@ -287,7 +287,7 @@ trait AccountTrait
 
 
 
-    public function defaultAccount() {
+    public static function defaultAccount() {
 
         return DB::select(DB::raw(
             "SELECT
@@ -305,12 +305,12 @@ trait AccountTrait
     // }
 
 
-    Public function defaultProductAccountLookUp($id) {
+    public static function defaultProductAccountLookUp($id) {
 	    // $id2=DB::table('tblDefault_setup')->where('id', '=', $id)->value('headid');
 	    return DB::Select("SELECT * FROM `account_charts`");
 	}
 
-    public function defaultProductAccount() {
+    public static function defaultProductAccount() {
 
         return DB::select(DB::raw(
             "SELECT
@@ -322,7 +322,7 @@ trait AccountTrait
         ));
     }
 
-    public function refBatch() {
+    public static function refBatch() {
         $result = DB::table('account_transactions')
         ->select('ref', DB::raw('MAX(manual_ref) as manual_ref'))
         ->groupBy('ref')
@@ -342,7 +342,7 @@ trait AccountTrait
 
 	// }
 
-    public function trans_Summary($from, $to, $ref = null) {
+    public static function trans_Summary($from, $to, $ref = null) {
         $timedate = "(DATE_FORMAT(`transdate`, '%Y-%m-%d') BETWEEN '$from' AND '$to')";
 
         // if ($ref) {
