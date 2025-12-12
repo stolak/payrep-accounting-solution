@@ -1,198 +1,166 @@
+<!-- Page Wrapper -->
 @extends('layouts.layout')
 @section('pageTitle')
     Department Setup
 @endsection
-
-@section('pageHead')
-    <div id="page-head">
-
-        <!--Page Title-->
-        <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
-        <div id="page-title">
-            <h1 class="page-header text-overflow">Setup</h1>
-        </div>
-        <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
-        <!--End page title-->
-
-
-        <!--Breadcrumb-->
-        <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
-        <ol class="breadcrumb">
-            <li><a href="/"><i class="demo-pli-home"></i></a></li>
-            <li><a href="#">Department Setup</a></li>
-         
-        </ol>
-        <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
-        <!--End breadcrumb-->
-
-    </div>
-@endsection
 @section('content')
-
-    <!--- content comes here -->
-
-    <div class="boxed">
-
-        <!--CONTENT CONTAINER-->
-        <!--===================================================-->
-
-    <div id="page-content">
-
-        <div class="panel">
-            <div class="panel-body">
-
-                @if(session('message'))
-	        <div class="alert alert-success alert-dismissible" role="alert">
-	          <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span> </button>
-	          <strong>Successful!</strong> {{ session('message') }}</div>
-	        @endif
-	        @if(session('error_message'))
-	        <div class="alert alert-danger alert-dismissible" role="alert">
-	          <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span> </button>
-	          <strong>Error!</strong> {{ session('error_message') }}</div>
-	        @endif
-	        
-		@if (count($errors) > 0)
-	                    <div class="alert alert-danger alert-dismissible" role="alert">
-	                        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span>
-	                        </button>
-	                        <strong>Error!</strong> 
-	                        @foreach ($errors->all() as $error)
-	                            <p>{{ $error }}</p>
-	                        @endforeach
-	                    </div>
-	        @endif
-                <form method="post">
-                {{ csrf_field() }}
-                    <div class="panel-body">
-                        <div class="row">
-                            
-                            <div class="col-sm-4">
-                                <div class="form-group">
-                                    <label class="control-label">Department</label>
-                                    <?php if($department=='') $department= old('department'); ?>
-                                    <input type="text" class="form-control"  value="{{$department}}" required name="department">
-                                </div>
-                            </div>
-                            
-                            
-                        </div>
-                        
-                    </div>
-                    <div class="panel-footer text-right">
-                        <button class="btn btn-success" type="submit" name="addnew">Create</button>
-                    </div>
-                </form>
-                
-                <!--===================================================-->
-                <!-- End Inline Form  -->
-<div class="table-responsive" style="font-size: 11px; padding:10px;">
-                <table id="mytable" class="table table-bordered table-striped table-highlight">
-		        <thead>
-		          <tr bgcolor="#c7c7c7">
-		          
-		            <th>S/N</th>
-		            <th>Department</th>
-		            <th>Action</th>
-		           
-		            		            
-		          </tr>
-		        </thead>
-		               
-		        <tbody>
-		        
-		          @php
-		          $i=1;
-		          @endphp
-		           
-		            @foreach($Department as $list)
-		                           
-		               <tr>
-		               <td>{{ $i++ }} </td>
-		               <td>{{ $list->department}} </td>
-		               <td>
-		               <a onclick="editfunc('{{$list->id}}','{{$list->department}}')" class="btn btn-success  glyphicon glyphicon-edit btn-xs"></a>&nbsp;
-		               <a onclick="deletefunc('{{$list->id}}')" class="btn btn-danger glyphicon glyphicon-remove btn-xs"></a>
-		               </td>
-		              
-		               </tr>
-		            @endforeach
-		            </tbody>
-		                   
-		      </table>
-		     </div>
-            </div>
-        </div>
-    <div id="editModal" class="modal fade" >
-        <div class="modal-dialog box box-default" role="document" style="color:black;font-size:24px;">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h4 class="modal-title">Edit Department</h4>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <form class="form-horizontal"  method="post"  role="form">
-                    {{ csrf_field() }}
-            <div class="modal-body">  
-                <div class="form-group" style="margin: 0 10px;">
-                    
-                      <input type="hidden" class="form-control" id="id" name="id">
-                      
-                      <div class="col-sm-12">
-			             <div class="form-group">
-                      <label class="control-label"><h5>Department: </h5></label>
-                      <input type="text" class="form-control" id="department" name="department">
-                        </div>
-                      </div>
-                      </div>
-            </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-success" name="update">Update</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                </div>
-            
-                </form>
-            </div>
-            
-          </div>
-        </div>
-    <!--modal for deleting record-->
-    <div id="deleteModal" class="modal fade" >
-        <div class="modal-dialog box box-default" role="document" style="color:black;font-size:24px;">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h4 class="modal-title">Delete Department</h4>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <form class="form-horizontal"  method="post"  role="form">
-                    {{ csrf_field() }}
-            <div class="modal-body">  
-                <div class="form-group" style="margin: 0 10px;">
-                    
-                      <input type="hidden" class="form-control" id="deleteid" name="id" value="">
-                                          
-                      <div class="col-sm-12">
-                     <center><h1 style="color:black;">Are you sure?</h1></center>
-                      </div>
-                </div>
-            </div>
-                <div class="modal-footer">
-                    <button type="submit" name="del" class="btn btn-success">Yes</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
-                </div>
-            
-                </form>
-            </div>
-            
-          </div>
-    </div>
-    </div>
-        <!--/// content end here -->
-        </div>
-    </div>
+            <div class="page-wrapper">
+				<div class="content container-fluid">
+					<!-- Page Header -->
+					<div class="page-header">
+						<div class="row">
+							<div class="col">
+								<h3 class="page-title">Setup</h3>
+								<ul class="breadcrumb">
+									<li class="breadcrumb-item"><a href="/">Home</a></li>
+									<li class="breadcrumb-item active">Department Setup</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+					<!-- /Page Header -->
+					<!-- include notoifcation -->
+        			 @include('_partialView.nofication')
+        			 <!-- /include notoifcation -->
+					<div class="row">
+						<div class="col-md-12">
+							<div class="card">
+								<div class="card-header">
+									<h4 class="card-title">Create Department</h4>
+								</div>
+								<div class="card-body">
+									<form method="post">
+                                    {{ csrf_field() }}
+										<div class="row">
+										    <div class="col-md-6">
+											    <div class="form-group">
+													<label>Department</label>
+													<?php if($department=='') $department= old('department'); ?>
+													<input type="text" class="form-control"  value="{{$department}}" required name="department">
+												</div>
+											</div>
+										</div>
+										
+										<div class="text-right">
+											<button type="submit" class="btn btn-primary" name="addnew">Create</button>
+										</div>
+									</form>
+								</div>
+							</div>
+						</div>
+					</div>
+					
+				<div class="row">
+						<div class="col-md-12">
+						
+							<!-- List of departments -->
+							<div class="card card-table">
+								<div class="card-header">
+									<h4 class="card-title">Departments</h4>
+								</div>
+								<div class="card-body">
+									<div class="table-responsive">
+										<table class="table table-hover table-center mb-0">
+											<thead>
+												<tr>
+													<th rowspan="1">S/N</th>
+													<th rowspan="1">Department</th>
+													<th rowspan="1">Action</th>
+												</tr>
+											</thead>
+											<tbody>
+											    @php
+											    $i=1;
+											    @endphp
+											   
+											    @foreach($Department as $list)
+												<tr>
+													<td>
+														{{ $i++ }}
+													</td>
+													<td>
+														{{ $list->department}}
+													</td>
+													<td>
+														<a class="btn btn-sm bg-success-light" href="javascript: editfunc('{{$list->id}}','{{$list->department}}')">
+															<i class="fe fe-pencil"></i>
+														</a>
+														<a class="btn btn-sm bg-danger-light" href="javascript: deletefunc('{{$list->id}}')">
+															<i class="fe fe-trash"></i>
+														</a>
+													</td>
+												</tr>
+											    @endforeach
+											</tbody>
+										</table>
+									</div>
+								</div>
+							</div>
+							<!-- /List of departments -->
+							
+						</div>
+					</div>
+				</div>
+		
+			
+			<!-- Edit Details Modal -->
+			<div class="modal fade" id="edit_details" aria-hidden="true" role="dialog">
+				<div class="modal-dialog modal-dialog-centered" role="document" >
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title">Edit Department</h5>
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>
+						</div>
+						<div class="modal-body">
+							<form method="post" >
+                                    {{ csrf_field() }}
+								<div class="row ">
+									<div class="col-12 col-sm-12">
+										<div class="form-group">
+											<label>Department</label>
+											<input type="text" id="department" name="department"  class="form-control" style="text-align: left;"  autocomplete="off">
+										</div>
+									</div>
+							    </div>
+							   
+								<input type="hidden" id="id" name="id" >
+								<div class="form-content p-2">
+									<button type="submit" class="btn btn-primary " name="update">Save Changes</button>
+									<button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+								</div>
+								
+								
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /Edit Details Modal -->
+			
+			<!-- Delete Modal -->
+			<div class="modal fade" id="delete_modal" aria-hidden="true" role="dialog">
+				<div class="modal-dialog modal-dialog-centered" role="document" >
+					<div class="modal-content">
+						<form method="post" >
+                                    {{ csrf_field() }}
+						<div class="modal-body">
+							<div class="form-content p-2">
+								<h4 class="modal-title">Delete</h4>
+								<p class="mb-4">Are you sure want to delete?</p>
+								<button type="submit" class="btn btn-primary" name="del">Continue </button>
+								<input type="hidden" id="deleteid" name="id" >
+								<button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+							</div>
+						</div>
+					</form>
+					</div>
+				</div>
+			</div>
+			<!-- /Delete Modal -->
+		
+			</div>
 
 @endsection
 @section('styles')
@@ -204,7 +172,7 @@ label {
   text-shadow: 1px 1px 2px #fff;
 }
 </style>
-@stop
+@endsection
 @section('scripts')
 
 <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
@@ -218,19 +186,16 @@ label {
         document.getElementById('department').value = cat;
         
         
-        $("#editModal").modal('show')
+        $("#edit_details").modal('show')
     }
    function deletefunc(id)
     {
         document.getElementById('deleteid').value = id;
                      
-        $("#deleteModal").modal('show')
+        $("#delete_modal").modal('show')
     }
     
              
 </script>
-
-
-
-  
-@stop
+@endsection
+			<!-- /Page Wrapper -->

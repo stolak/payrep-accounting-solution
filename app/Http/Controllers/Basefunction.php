@@ -17,12 +17,14 @@ use Illuminate\Support\Facades\Validator;
 class Basefunction extends Controller
 {
 
-
+	Public function Payroll_Active_period() {
+	    return DB::Select("SELECT tblpayroll_active_period.*,tblmonth.month as monthtx FROM `tblpayroll_active_period` join tblmonth on tblmonth.id=tblpayroll_active_period.month")[0];
+	}
     Public function BatchModule() {
 	    return DB::Select("SELECT * FROM `tblbatch_module`");
 	}
 	Public function Months() {
-	    return DB::Select("SELECT * FROM `tblmonths`");
+	    return DB::Select("SELECT * FROM `tblmonth`");
 	}
 	 Public function AFS() {
 	    return DB::Select("SELECT * FROM `tblafs`");
@@ -895,7 +897,7 @@ Public function RefBatch() {
 	    ,(SELECT `status` FROM `tblstatus` WHERE `tblstatus`.`id`= tblpayroll_variable.status) as variablestatus
 	    ,(SELECT `yn` FROM `tblyesno` WHERE `tblyesno`.`id`= tblpayroll_variable.istaxable) as istaxables
 	    
-	    FROM `tblpayroll_variable` where $qt and `status`=1 order by variable_type,rank ");
+	    FROM `tblpayroll_variable` where $qt and `status`=1 order by variable_type, `rank` ");
 	}
 	Public function AllPayrollVariable($id) {
 	    $qt=1;

@@ -12,6 +12,7 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomedTransactionController;
 use App\Http\Controllers\HR;
+use App\Http\Controllers\Payroll;
 use App\Http\Controllers\PDFReport;
 use Illuminate\Support\Facades\Route;
 
@@ -106,4 +107,13 @@ Route::middleware('auth')->group(function () {
 
         Route::any('/gradelist-list',      	    [HR::class, 'NewGrade']);
         Route::any('/leave-application',      	    [HR::class, 'LeaveApplication']);
+   // Payroll route
+ Route::any('/control-variable',      	[Payroll::class, 'ControlVariable']);
+ Route::any('/grade-chart',      	    [Payroll::class, 'SalaryChart']);
+ Route::any('/salary-computation',      [Payroll::class, 'SalaryComputation']);
+ Route::any('/staff-variable',          [Payroll::class, 'StaffControlVariable']);
+ Route::any('/report-payroll',          [Payroll::class, 'ReportPayroll']);
+ Route::any('/active-period',           [Payroll::class, 'ActivePeriod']);
+ Route::any('/salary-mandate',          [Payroll::class, 'Payroll_Mandate']);
+ Route::any('/salary-particular',       [Payroll::class, 'PayrollParticularReport']);
     });

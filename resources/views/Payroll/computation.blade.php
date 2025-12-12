@@ -1,52 +1,63 @@
+<!-- Page Wrapper -->
 @extends('layouts.layout')
 @section('pageTitle')
     Salary Computation
 @endsection
-
-@section('pageHead')
-    <div id="page-head">
-        <div id="page-title">
-            <h1 class="page-header text-overflow">Payroll</h1>
-        </div>
-        <ol class="breadcrumb">
-            <li><a href="/"><i class="demo-pli-home"></i></a></li>
-            <li><a href="#">Salary Computation</a></li>
-        </ol>
-    </div>
-@endsection
 @section('content')
-    <div class="boxed">
-        <div id="page-content">
-        <div class="panel">
-            <div class="panel-body">
-              @include('_partialView.nofication')
-              
-                <form method="post" name="mainform" id="mainform">
-                    {{ csrf_field() }}
-                    <div class="panel-body">
-                        <div class="row">
-                            <div class="col-sm-5">
-                                <div class="form-group">
-                                    <label class="control-label">Active year</label>
-                                    <input type="text" class="form-control"  value="{{$year}}" readonly >
-                                </div>
-                            </div>
-                            <div class="col-sm-5">
-                                <div class="form-group">
-                                    <label class="control-label">Active Month</label>
-                                    <input type="text" class="form-control"  value="{{$month}}"  readonly >
-                                </div>
-                            </div>
-                        </div>
-                        <div class="panel-footer text-left">
-                            <button class="btn btn-success" type="submit" name="compute">Compute</button>
-                        </div>
-                      </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+            <div class="page-wrapper">
+				<div class="content container-fluid">
+					<!-- Page Header -->
+					<div class="page-header">
+						<div class="row">
+							<div class="col">
+								<h3 class="page-title">Payroll</h3>
+								<ul class="breadcrumb">
+									<li class="breadcrumb-item"><a href="/">Home</a></li>
+									<li class="breadcrumb-item active">Salary Computation</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+					<!-- /Page Header -->
+					<!-- include notoifcation -->
+        			 @include('_partialView.nofication')
+        			 <!-- /include notoifcation -->
+					<div class="row">
+						<div class="col-md-12">
+							<div class="card">
+								<div class="card-header">
+									<h4 class="card-title">Salary Computation</h4>
+								</div>
+								<div class="card-body">
+									<form method="post" name="mainform" id="mainform">
+                                    {{ csrf_field() }}
+										<div class="row">
+										    <div class="col-md-5">
+											    <div class="form-group">
+													<label>Active year</label>
+													<input type="text" class="form-control"  value="{{$year}}" readonly >
+												</div>
+											</div>
+											<div class="col-md-5">
+											    <div class="form-group">
+													<label>Active Month</label>
+													<input type="text" class="form-control"  value="{{$month}}"  readonly >
+												</div>
+											</div>
+										</div>
+										
+										<div class="text-right">
+											<button class="btn btn-primary" type="submit" name="compute">Compute</button>
+										</div>
+									</form>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+		
+			</div>
+
 @endsection
 @section('styles')
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
@@ -57,7 +68,7 @@ label {
   text-shadow: 1px 1px 2px #fff;
 }
 </style>
-@stop
+@endsection
 @section('scripts')
 
 <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
@@ -69,8 +80,5 @@ function Reload()
        document.forms["mainform"].submit();
     }
 </script>
-
-
-
-  
-@stop
+@endsection
+			<!-- /Page Wrapper -->
