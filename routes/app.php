@@ -11,6 +11,7 @@ use App\Http\Controllers\AccountSetup;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomedTransactionController;
+use App\Http\Controllers\HR;
 use App\Http\Controllers\PDFReport;
 use Illuminate\Support\Facades\Route;
 
@@ -97,6 +98,12 @@ Route::middleware('auth')->group(function () {
         Route::any('/trans-summary',      	[AccountReport::class, 'Transaction_Summary']);
         Route::any('/trans-ref',      		[AccountReport::class, 'RefTransactionPost']);
         Route::any('/trans-summary-pdf',    [PDFReport::class, 'Transaction_Summary']);
+ //
+        Route::any('/staff-registration',      	[HR::class, 'StaffRreg']);
+        Route::any('/staff-modification',      	[HR::class, 'StaffRecordUpdate']);
+        Route::any('/staff-list',      	        [HR::class, 'StaffList']);
+        Route::any('/department-list',      	[HR::class, 'NewDepartment']);
 
-
-});
+        Route::any('/gradelist-list',      	    [HR::class, 'NewGrade']);
+        Route::any('/leave-application',      	    [HR::class, 'LeaveApplication']);
+    });

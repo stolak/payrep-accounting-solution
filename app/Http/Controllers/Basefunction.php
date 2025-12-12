@@ -5,12 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 //use Auth;
 use App\Http\Requests;
-use DB;
-use Auth;
-use session;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\URL;
 use DateTime;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -55,21 +55,7 @@ class Basefunction extends Controller
 		->first();
 	}
 
-	public function loadCourtJudges(Request $request)
-	{
-	 $courtId = Input::get('court_id');
-	 $qcourt=1;
-	 if ($courtId!=null){$qcourt="`court_id`='$courtId'";}
-	 $data = $data= DB::Select("SELECT concat(`titles`,' ', `judgename`) as Judges, `tbljudges`.`id` FROM `tbljudges` join `tbltitle` on `tbltitle`.`ID`=`tbljudges`.`title`  WHERE $qcourt");
-	 //dd( response()->json($data));
-	 return response()->json($data);
-	}
-	public function loadCourtDivision(Request $request)
-	{
-	 $courtId = Input::get('court_id');
-	 $data= DB::Select("SELECT * FROM `tbldivision` WHERE `court_id`='$courtId'");
-	 return response()->json($data);
-	}
+	
 
 
 
@@ -866,5 +852,270 @@ Public function RefBatch() {
 	}
 	Public function OwnersTransaction($year,$month) {
 	    return DB::table('tblowner_transactions')->where('year',$year)->where('month',$month)->first();
+	}
+
+	Public function Grade() {
+	    return DB::Select("SELECT * FROM `tblstaff_grade_level`");
+	}
+	Public function Leaves($id) {
+	     $qstaffid=1;
+	     if($id!="")  $qstaffid="`staffid`='$id'";
+	    return DB::Select("SELECT tblleave.*
+	    ,CONCAT( tblstaff.first_name, ' ', tblstaff.middle_name, ' ', tblstaff.last_name) AS staffname
+	    , tblleave_type.leavetype
+	    FROM `tblleave`
+        left join tblstaff on tblstaff.id=tblleave.staffid
+        left join tblleave_type on tblleave_type.id=tblleave.leave_type
+      where $qstaffid");
+	}
+	Public function Department() {
+	    return DB::Select("SELECT * FROM `tbldepartment`");
+	}
+	Public function Leavetypes() {
+	    return DB::Select("SELECT * FROM `tblleave_type`");
+	}
+		Public function Staffs($department,$grade) {
+	    return DB::Select("SELECT tblstaff.*,tbldepartment.department as departments,
+	    tblstaff_grade_level.grade as grades
+	    FROM `tblstaff` left JOIN tbldepartment on tbldepartment.id=tblstaff.department 
+	    left JOIN tblstaff_grade_level on tblstaff_grade_level.id =tblstaff.grade 
+	    where tblstaff.id<>0");
+	}
+	Public function VariableType() {
+	    return DB::Select("SELECT * FROM `tblvariable_type`");
+	}
+	Public function Status() {
+	    return DB::Select("SELECT * FROM `tblvariable_type`");
+	}
+	Public function PayrollVariable($id) {
+	    $qt=1;
+	    if($id!='') $qt="`variable_type`='$id'";
+	    return DB::Select("SELECT *,
+	    (SELECT `particular` FROM `tblvariable_type` WHERE `tblvariable_type`.`id`= tblpayroll_variable.variable_type) as variabletype
+	    ,(SELECT `status` FROM `tblstatus` WHERE `tblstatus`.`id`= tblpayroll_variable.status) as variablestatus
+	    ,(SELECT `yn` FROM `tblyesno` WHERE `tblyesno`.`id`= tblpayroll_variable.istaxable) as istaxables
+	    
+	    FROM `tblpayroll_variable` where $qt and `status`=1 order by variable_type,rank ");
+	}
+	Public function AllPayrollVariable($id) {
+	    $qt=1;
+	    if($id!='') $qt="`variable_type`='$id'";
+	    return DB::Select("SELECT *,
+	    (SELECT `particular` FROM `tblvariable_type` WHERE `tblvariable_type`.`id`= tblpayroll_variable.variable_type) as variabletype
+	    ,(SELECT `status` FROM `tblstatus` WHERE `tblstatus`.`id`= tblpayroll_variable.status) as variablestatus
+	    ,(SELECT `yn` FROM `tblyesno` WHERE `tblyesno`.`id`= tblpayroll_variable.istaxable) as istaxables
+	    ,(SELECT `yn` FROM `tblyesno` WHERE `tblyesno`.`id`= tblpayroll_variable.statutory) as statutorys
+	    FROM `tblpayroll_variable` where $qt  order by variable_type, rank ");
+	}
+	Public function EarningVariable() {
+	    return DB::Select("SELECT * FROM `tblpayroll_variable` where `variable_type`='1' and status=1 ");
+	}
+	Public function DeductionVariable() {
+	    return DB::Select("SELECT * FROM `tblpayroll_variable` where `variable_type`='2' and status=1 ");
+	}
+
+	
+	Public function SalaryCharts() {
+	    return DB::Select("SELECT *
+	     ,(SELECT `grade` FROM `tblstaff_grade_level` WHERE `tblstaff_grade_level`.`id`= tblpayroll_salary_new_chart.grade) as grades
+	    FROM `tblpayroll_salary_new_chart` where 1 order by `grade` ");
+	   return DB::table ('tblpayroll_salary_new_chart')->orderBy('grade')->get();
+	}
+    Public function VariableValue($year, $month, $variable, $staffid,$grade,$step=1) {
+        $amount=0;
+        
+        $checkCV= DB::Select("SELECT * FROM `tblstaff_cv` WHERE `staffid`='$staffid' and `ref_code`='$variable' ");
+        if($checkCV)
+        {
+            $amount =$this->CVRembalance($staffid,$checkCV[0]->amount_monthly,$checkCV[0]->amount_target,$checkCV[0]->is_continous);
+            if($amount>0){
+	        DB::table('tblstaff_monthly_cv')->insert(array(
+			'staffid'    	=> $staffid,
+            'staffcvid'    	=> $checkCV[0]->id,
+			'month'	    	=> $month,
+			'year'    	    => $year,	
+			'cv'            => $checkCV[0]->cvid,
+			'ref_code'      => $checkCV[0]->ref_code,
+			
+		));
+		}
+		
+        } else{
+        
+        $dat=DB::Select("SELECT `$variable` as amount FROM `tblpayroll_salary_new_chart` WHERE `grade`='$grade' and `step`='$step' ");
+        if($dat) $amount=$dat[0]->amount;
+        }
+	    return $amount;
+        
+	}
+	Public function StaffVariable($staffid) {
+        return DB::Select("SELECT  *
+        ,(SELECT `variable` FROM `tblpayroll_variable` WHERE `tblpayroll_variable`.id= tblstaff_cv.cvid) as variables
+        ,(SELECT `particular` FROM `tblvariable_type` WHERE `tblvariable_type`.id= tblstaff_cv.cv_type) as particular
+        FROM `tblstaff_cv` WHERE `staffid`='$staffid' order by cv_type");
+	}
+	Public function VariableInfo($cv) {
+	   $dt= DB::Select("SELECT  * FROM `tblpayroll_variable` WHERE `id`='$cv' ");
+	    if($dt)return $dt[0];
+	    
+        return DB::Select("SELECT '' as variable_type ,  '' as variable,'' as status ,'' as  istaxable,'' as  rank,'' as ref_code ")[0]; ;
+	}
+	Public function CVRembalance($id,$amount,$tamount,$recycling){
+	if($recycling==1){return $amount;}
+	$List= DB::Select("SELECT IFNULL(sum(`amount`),0) as TSum FROM `tblstaff_monthly_cv` WHERE `staffcvid`='$id'");
+	$rem=$tamount-$List[0]->TSum;
+	if($rem >= $amount){return $amount;}
+	else{return $rem;}
+	}
+	Public function NewVariable( $variable) {
+	    
+	    DB::statement("ALTER TABLE tblpayroll_salary_new_chart ADD $variable  DOUBLE DEFAULT 0");
+	    DB::statement("ALTER TABLE tblpayroll_payment ADD $variable  DOUBLE DEFAULT 0");
+    
+}
+
+Public function DropVariable( $variable) {
+DB::statement("ALTER TABLE tblpayroll_salary_new_chart DROP $variable");
+DB::statement("ALTER TABLE tblpayroll_payment DROP $variable");
+return "success";
+}
+
+Public function BankList() {
+	    return DB::Select("SELECT * FROM `tblbanklist`");
+	}
+	
+	Public function Payrolls($year,$month) {
+	    return DB::Select("SELECT *
+	    ,(SELECT `grade` FROM `tblstaff_grade_level` WHERE `tblstaff_grade_level`.`id`= tblpayroll_payment.grade) as grades
+	    FROM `tblpayroll_payment` WHERE `year`='$year' and `month`='$month'");
+	}
+	Public function MonthlyActiveVariable($year,$month) {
+	    $allvariable=DB::Select("SELECT tblpayroll_variable.* 
+	    FROM `tblpayroll_variable_monthly`  
+	    join tblpayroll_variable 
+	    on tblpayroll_variable.id= tblpayroll_variable_monthly.variableid 
+	    WHERE `year`='$year' and `month`='$month'");
+	    $sumallvariable="'0' as `init`";
+	    foreach ($allvariable as $v){
+	       $sumallvariable .=", sum($v->ref_code) as $v->ref_code"; 
+	    }
+	    $rdata= DB::Select("SELECT $sumallvariable FROM `tblpayroll_payment` WHERE `year`='$year' and `month`='$month'");
+	     if($rdata) return $rdata[0];
+	     return DB::Select("SELECT '0' as `init`")[0];
+	}
+	Public function PDeductionVariable($year,$month) {
+	    $myArr = [];
+	    $allvariable=DB::Select("SELECT tblpayroll_variable.* 
+	    FROM `tblpayroll_variable_monthly`  
+	     join tblpayroll_variable 
+	    on tblpayroll_variable.id= tblpayroll_variable_monthly.variableid 
+	    WHERE `year`='$year' and `month`='$month' order by tblpayroll_variable.rank");
+	    $sumallvariable="'0' as `init`";
+	    foreach ($allvariable as $v){
+	       $sumallvariable .=", sum($v->ref_code) as $v->ref_code"; 
+	    }
+	    //$qdata= DB::Select("SELECT $sumallvariable FROM `tblpayroll_payment` WHERE `year`='$year' and `month`='$month'")[0];
+	    $qdata= DB::Select("SELECT $sumallvariable FROM `tblpayroll_payment` WHERE `year`='$year' and `month`='$month'");
+	    if($qdata)$qdata=$qdata[0];
+	    $vdata= DB::Select("SELECT tblpayroll_variable_monthly.* FROM `tblpayroll_variable_monthly`  join tblpayroll_variable 
+	    on tblpayroll_variable.id= tblpayroll_variable_monthly.variableid
+	    where tblpayroll_variable_monthly.`variable_type`='2' and month='$month' and year='$year' order by rank");
+	    //$vdata= DB::Select("SELECT * FROM `tblpayroll_variable` where `variable_type`='2' ");
+	    foreach ($vdata as $v2){
+	        $ref=$v2->ref_code;
+	       if(!$qdata->$ref==0) 
+	       $myArr[]=$v2;
+	    }
+	    return $myArr;
+	}
+	Public function TaxableEarningVariableTaxable($year,$month) {
+	    $myArr = [];
+	    $allvariable=DB::Select("SELECT tblpayroll_variable.* 
+	    FROM `tblpayroll_variable_monthly`  
+	     join tblpayroll_variable 
+	    on tblpayroll_variable.id= tblpayroll_variable_monthly.variableid 
+	    WHERE `year`='$year' and `month`='$month' order by tblpayroll_variable.rank");
+	    
+	    $sumallvariable="'0' as `init`";
+	    foreach ($allvariable as $v){
+	       $sumallvariable .=", sum($v->ref_code) as $v->ref_code"; 
+	    }
+	    
+	    $qdata= DB::Select("SELECT $sumallvariable FROM `tblpayroll_payment` WHERE `year`='$year' and `month`='$month'");
+	    if($qdata)$qdata=$qdata[0];
+	    $vdata= DB::Select("SELECT tblpayroll_variable_monthly.* FROM `tblpayroll_variable_monthly`  join tblpayroll_variable 
+	    on tblpayroll_variable.id= tblpayroll_variable_monthly.variableid
+	    where tblpayroll_variable_monthly.`variable_type`='1' and tblpayroll_variable_monthly.istaxable=1 and month='$month' and year='$year' order by rank");
+	    foreach ($vdata as $v2){
+	        $ref=$v2->ref_code;
+	       if(!$qdata->$ref==0) 
+	       $myArr[]=$v2;
+	    }
+	    return $myArr;
+	}
+	Public function NonTaxableEarningVariable($year,$month) {
+	    $myArr = [];
+	    $allvariable=DB::Select("SELECT tblpayroll_variable.* 
+	    FROM `tblpayroll_variable_monthly`  
+	    join tblpayroll_variable 
+	    on tblpayroll_variable.id= tblpayroll_variable_monthly.variableid 
+	    WHERE `year`='$year' and `month`='$month' order by tblpayroll_variable.rank");
+	    $sumallvariable="'0' as `init`";
+	    foreach ($allvariable as $v){
+	       $sumallvariable .=", sum($v->ref_code) as $v->ref_code"; 
+	    }
+	    $qdata= DB::Select("SELECT $sumallvariable FROM `tblpayroll_payment` WHERE `year`='$year' and `month`='$month'");
+	    if($qdata)$qdata=$qdata[0];
+	    $vdata= DB::Select("SELECT tblpayroll_variable_monthly.* FROM `tblpayroll_variable_monthly`  join tblpayroll_variable 
+	    on tblpayroll_variable.id= tblpayroll_variable_monthly.variableid
+	    where tblpayroll_variable_monthly.`variable_type`='1' and tblpayroll_variable_monthly.istaxable=0 and month='$month' and year='$year' order by rank");
+	    foreach ($vdata as $v2){
+	        $ref=$v2->ref_code;
+	       if(!$qdata->$ref==0) 
+	       $myArr[]=$v2;
+	    }
+	    return $myArr;
+	}
+	Public function PEarningVariable($year,$month) {
+	    $myArr = [];
+	    $allvariable=DB::Select("SELECT * FROM `tblpayroll_variable`");
+	    $sumallvariable="'0' as `init`";
+	    foreach ($allvariable as $v){
+	       $sumallvariable .=", sum($v->ref_code) as $v->ref_code"; 
+	    }
+	    $qdata= DB::Select("SELECT $sumallvariable FROM `tblpayroll_payment` WHERE `year`='$year' and `month`='$month'")[0];
+	    $vdata= DB::Select("SELECT * FROM `tblpayroll_variable` where `variable_type`='1' ");
+	    foreach ($vdata as $v2){
+	        $ref=$v2->ref_code;
+	       if(!$qdata->$ref==0) 
+	       $myArr[]=$v2;
+	    }
+	    return $myArr;
+	}
+	Public function NetpaySummary($year,$month) {
+	    $allvariable=DB::Select("SELECT tblpayroll_variable.* 
+	    FROM `tblpayroll_variable_monthly`  
+	    join tblpayroll_variable 
+	    on tblpayroll_variable.id= tblpayroll_variable_monthly.variableid 
+	    WHERE `year`='$year' and `month`='$month' order by tblpayroll_variable.rank");
+	    $sumallvariable="0 ";
+	    foreach ($allvariable as $v){
+	       $sumallvariable .="+`$v->ref_code`"; 
+	    }
+	    $sumallvariable .= " as Net";
+	    $qdata= DB::Select("SELECT tblpayroll_payment.*,$sumallvariable,tblbanklist.bank
+	    FROM `tblpayroll_payment` 
+	    left join tblbanklist on tblbanklist.bankID=tblpayroll_payment.bankid
+	    WHERE `year`='$year' and `month`='$month'");
+	    return $qdata;
+	}
+	Public function GradeChart($grade,$step=1,$emp=1) {
+	   return DB::table ('tblpayroll_salary_new_chart')->where('grade',$grade)
+		->first();
+	}
+	Public function StaffProfile($id) {
+	     $data= DB::Select("SELECT * FROM `tblstaff` WHERE `id`='$id'");
+	    if($data) return $data[0];
+	     return DB::Select("SELECT * FROM `tblstaff` WHERE `id`='0'")[0];
 	}
 }

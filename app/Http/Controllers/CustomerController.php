@@ -4,12 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Requests;
-use DB;
-use Auth;
+// use DB;
+// use Auth;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Support\Facades\Input;
-use Session;
+// use Session;
 use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
@@ -22,6 +22,9 @@ use App\Models\AccountChart;
 use App\Http\Traits\AccountTrait;
 use App\Models\CustomerNote;
 use App\Models\Title;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 
 class CustomerController extends Controller
 {
