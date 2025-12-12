@@ -907,7 +907,7 @@ Public function RefBatch() {
 	    ,(SELECT `status` FROM `tblstatus` WHERE `tblstatus`.`id`= tblpayroll_variable.status) as variablestatus
 	    ,(SELECT `yn` FROM `tblyesno` WHERE `tblyesno`.`id`= tblpayroll_variable.istaxable) as istaxables
 	    ,(SELECT `yn` FROM `tblyesno` WHERE `tblyesno`.`id`= tblpayroll_variable.statutory) as statutorys
-	    FROM `tblpayroll_variable` where $qt  order by variable_type, rank ");
+	    FROM `tblpayroll_variable` where $qt  order by variable_type, `rank` ");
 	}
 	Public function EarningVariable() {
 	    return DB::Select("SELECT * FROM `tblpayroll_variable` where `variable_type`='1' and status=1 ");
@@ -1021,7 +1021,7 @@ Public function BankList() {
 	    if($qdata)$qdata=$qdata[0];
 	    $vdata= DB::Select("SELECT tblpayroll_variable_monthly.* FROM `tblpayroll_variable_monthly`  join tblpayroll_variable 
 	    on tblpayroll_variable.id= tblpayroll_variable_monthly.variableid
-	    where tblpayroll_variable_monthly.`variable_type`='2' and month='$month' and year='$year' order by rank");
+	    where tblpayroll_variable_monthly.`variable_type`='2' and month='$month' and year='$year' order by `rank`");
 	    //$vdata= DB::Select("SELECT * FROM `tblpayroll_variable` where `variable_type`='2' ");
 	    foreach ($vdata as $v2){
 	        $ref=$v2->ref_code;
@@ -1047,7 +1047,7 @@ Public function BankList() {
 	    if($qdata)$qdata=$qdata[0];
 	    $vdata= DB::Select("SELECT tblpayroll_variable_monthly.* FROM `tblpayroll_variable_monthly`  join tblpayroll_variable 
 	    on tblpayroll_variable.id= tblpayroll_variable_monthly.variableid
-	    where tblpayroll_variable_monthly.`variable_type`='1' and tblpayroll_variable_monthly.istaxable=1 and month='$month' and year='$year' order by rank");
+	    where tblpayroll_variable_monthly.`variable_type`='1' and tblpayroll_variable_monthly.istaxable=1 and month='$month' and year='$year' order by `rank`");
 	    foreach ($vdata as $v2){
 	        $ref=$v2->ref_code;
 	       if(!$qdata->$ref==0) 
@@ -1070,7 +1070,7 @@ Public function BankList() {
 	    if($qdata)$qdata=$qdata[0];
 	    $vdata= DB::Select("SELECT tblpayroll_variable_monthly.* FROM `tblpayroll_variable_monthly`  join tblpayroll_variable 
 	    on tblpayroll_variable.id= tblpayroll_variable_monthly.variableid
-	    where tblpayroll_variable_monthly.`variable_type`='1' and tblpayroll_variable_monthly.istaxable=0 and month='$month' and year='$year' order by rank");
+	    where tblpayroll_variable_monthly.`variable_type`='1' and tblpayroll_variable_monthly.istaxable=0 and month='$month' and year='$year' order by `rank`");
 	    foreach ($vdata as $v2){
 	        $ref=$v2->ref_code;
 	       if(!$qdata->$ref==0) 
