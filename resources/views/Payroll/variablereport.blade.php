@@ -1,112 +1,137 @@
+<!-- Page Wrapper -->
 @extends('layouts.layout')
 @section('pageTitle')
     Payroll Mandate
 @endsection
-
-@section('pageHead')
-    <div id="page-head">
-        <div id="page-title">
-            <h1 class="page-header text-overflow">Report</h1>
-        </div>
-        <ol class="breadcrumb">
-            <li><a href="/"><i class="demo-pli-home"></i></a></li>
-            <li><a href="#">Payment Mandate</a></li>
-        </ol>
-    </div>
-@endsection
 @section('content')
-    <div class="boxed">
-        <div id="page-content">
-        <div class="panel">
-            <div class="panel-body">
-              @include('_partialView.nofication')
-	        
-                <form method="post" name="mainform" id="mainform">
-                    {{ csrf_field() }}
-                    <div class="panel-body">
-                        <div class="row">
-                            <div class="col-sm-3">
-                                <div class="form-group">
-                                    <label class="control-label">Year</label>
-                                    <select  class="form-control" name="year" onchange="Reload()">
-                                     <option value="">--Select--</option>
-                                         <?php $curyr= date("Y"); ?>
-                                        @for ($i = 2017; $i <= $curyr +1; $i++)
-                        				<option value="{{ $i }}" {{(old('year') == $i ||($year) == $i) ? "selected" : ""}}>{{ $i }}</option>
-                    				    @endfor
-                                   </select>
-                                </div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="form-group">
-                                    <label class="control-label">Month</label>
-                                    <select  class="form-control" name="month" onchange="Reload()">
-                                     <option value="">--Select--</option>
-                                          @foreach($Months as $list)
-                                     <option value="{{ $list->id }}" {{ (old('month') == $list->id ||($month) == $list->id  ) ? 'selected':'' }}>{{ $list->month }}</option>
-                                          @endforeach
-                                   </select>
-                                </div>
-                            </div>
-                            <div class="col-sm-4">
-                                <div class="form-group">
-                                    <label class="control-label">Particular</label>
-                                    <select  class="form-control" name="variable" >
-                                     <option value="">--Select--</option>
-                                    @foreach($PayrollVariable as $list)
-                                     <option value="{{ $list->id }}" {{ (old('variable') == $list->id ||($variable) == $list->id  ) ? 'selected':'' }}>{{ $list->variable }}</option>
-                                    @endforeach
-                                   </select>
-                                </div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="form-group">
-                                    <button class="btn btn-success" type="submit" name="view">View</button>
-                                </div>
-                            </div>
-                        </div>
-                       </div>
-                </form>
-                <h3>Salary Mandate</h3>
-            <div class="table-responsive" style="font-size: 11px; padding:10px;">
-                <table id="mytable" class="table table-bordered table-striped table-highlight">
-		        <thead>
-		          <tr bgcolor="#c7c7c7">
-		          
-		            <th>S/N</th>
-		            <th>Beneficiary</th>
-		            <th>Amount</th>
-		            <th>Bank</th>
-		            <th>Account Number</th>
-		            <th>Payment description</th>
-		          </tr>
-		        </thead>
-		        <tbody>
-		          @php $i=1; $net=0; @endphp
-		            @foreach($NetpaySummary as $list2)
-		               <tr>
-		               <td>{{ $i++ }} </td>
-		               <td>{{ $list2->fullname}} </td>
-		               <td>{{ number_format(abs($list2->Net),2, '.', ',')}} </td>
-		              <td>{{ $list2->bank}} </td>
-		               <td>{{ $list2->account_no}} </td>
-		               <td><code>-payment description-</code></td>
-		               </tr>
-		                @php $net+=$list2->Net; @endphp
-		            @endforeach
-		            <tr>
-		               <td colspan=2>Total</td>
-		                <td>@if( $net<0)({{ number_format(abs($net),2, '.', ',')}}) @else {{ number_format(abs($net),2, '.', ',')}}  @endif</td>
-		                    <td colspan=3></td>
-		               </tr>
-		            </tbody>
-		                   
-		      </table>
-		     </div>
-            </div>
-        </div>
-    </div>
-</div>
+            <div class="page-wrapper">
+				<div class="content container-fluid">
+					<!-- Page Header -->
+					<div class="page-header">
+						<div class="row">
+							<div class="col">
+								<h3 class="page-title">Report</h3>
+								<ul class="breadcrumb">
+									<li class="breadcrumb-item"><a href="/">Home</a></li>
+									<li class="breadcrumb-item active">Payment Mandate</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+					<!-- /Page Header -->
+					<!-- include notoifcation -->
+        			 @include('_partialView.nofication')
+        			 <!-- /include notoifcation -->
+					<div class="row">
+						<div class="col-md-12">
+							<div class="card">
+								<div class="card-header">
+									<h4 class="card-title">Payment Mandate</h4>
+								</div>
+								<div class="card-body">
+									<form method="post" name="mainform" id="mainform">
+                                    {{ csrf_field() }}
+										<div class="row">
+										    <div class="col-md-3">
+											    <div class="form-group">
+													<label>Year</label>
+													<select  class="form-control" name="year" onchange="Reload()">
+														<option value="">--Select--</option>
+														<?php $curyr= date("Y"); ?>
+														@for ($i = 2017; $i <= $curyr +1; $i++)
+														<option value="{{ $i }}" {{(old('year') == $i ||($year) == $i) ? "selected" : ""}}>{{ $i }}</option>
+														@endfor
+													</select>
+												</div>
+											</div>
+											<div class="col-md-3">
+											    <div class="form-group">
+													<label>Month</label>
+													<select  class="form-control" name="month" onchange="Reload()">
+														<option value="">--Select--</option>
+														@foreach($Months as $list)
+														<option value="{{ $list->id }}" {{ (old('month') == $list->id ||($month) == $list->id  ) ? 'selected':'' }}>{{ $list->month }}</option>
+														@endforeach
+													</select>
+												</div>
+											</div>
+											<div class="col-md-4">
+											    <div class="form-group">
+													<label>Particular</label>
+													<select  class="form-control" name="variable" >
+														<option value="">--Select--</option>
+														@foreach($PayrollVariable as $list)
+														<option value="{{ $list->id }}" {{ (old('variable') == $list->id ||($variable) == $list->id  ) ? 'selected':'' }}>{{ $list->variable }}</option>
+														@endforeach
+													</select>
+												</div>
+											</div>
+											<div class="col-md-2">
+											    <div class="form-group">
+													<label><br></label>
+													<br>
+													<button class="btn btn-primary" type="submit" name="view">View</button>
+												</div>
+											</div>
+										</div>
+									</form>
+								</div>
+							</div>
+						</div>
+					</div>
+					
+				<div class="row">
+						<div class="col-md-12">
+						
+							<!-- Salary Mandate -->
+							<div class="card card-table">
+								<div class="card-header">
+									<h4 class="card-title">Salary Mandate</h4>
+								</div>
+								<div class="card-body">
+									<div class="table-responsive">
+										<table class="table table-hover table-center mb-0">
+											<thead>
+												<tr>
+													<th rowspan="1">S/N</th>
+													<th rowspan="1">Beneficiary</th>
+													<th rowspan="1">Amount</th>
+													<th rowspan="1">Bank</th>
+													<th rowspan="1">Account Number</th>
+													<th rowspan="1">Payment description</th>
+												</tr>
+											</thead>
+											<tbody>
+											    @php $i=1; $net=0; @endphp
+											    @foreach($NetpaySummary as $list2)
+												<tr>
+													<td>{{ $i++ }}</td>
+													<td>{{ $list2->fullname}}</td>
+													<td>{{ number_format(abs($list2->Net),2, '.', ',')}}</td>
+													<td>{{ $list2->bank}}</td>
+													<td>{{ $list2->account_no}}</td>
+													<td><code>-payment description-</code></td>
+												</tr>
+												@php $net+=$list2->Net; @endphp
+											    @endforeach
+											    <tr>
+													<td colspan=2>Total</td>
+													<td>@if( $net<0)({{ number_format(abs($net),2, '.', ',')}}) @else {{ number_format(abs($net),2, '.', ',')}}  @endif</td>
+													<td colspan=3></td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+								</div>
+							</div>
+							<!-- /Salary Mandate -->
+							
+						</div>
+					</div>
+				</div>
+		
+			</div>
+
 @endsection
 @section('styles')
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
@@ -117,7 +142,7 @@ label {
   text-shadow: 1px 1px 2px #fff;
 }
 </style>
-@stop
+@endsection
 @section('scripts')
 
 <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
@@ -129,8 +154,5 @@ function Reload()
        document.forms["mainform"].submit();
     }
 </script>
-
-
-
-  
-@stop
+@endsection
+			<!-- /Page Wrapper -->
