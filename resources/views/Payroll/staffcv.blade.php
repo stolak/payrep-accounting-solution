@@ -35,7 +35,7 @@
 										    <div class="col-md-5">
 											    <div class="form-group">
 													<label>Staff Names</label>
-													<select class="select_picker form-control" id="staffid" data-live-search="true" name="staffid" onchange="Reload();">
+													<select class="form-control" id="staffid"  name="staffid" onchange="Reload();">
 														<option value="">--Select--</option>
 														@foreach($Staffs as $list)
 														<option value="{{ $list->id }}" {{ (old('staffid') == $list->id ||($staffid) == $list->id  ) ? 'selected':'' }}>{{ $list->first_name }} {{ $list->middle_name }} {{ $list->last_name }}</option>
