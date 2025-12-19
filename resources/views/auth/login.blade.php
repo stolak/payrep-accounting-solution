@@ -55,7 +55,7 @@
                         <div class="account-content">
                             <div class="row align-items-center justify-content-center">
                                 <div class="col-md-7 col-lg-6 login-left">
-                                    <h2 style="text-align: center">ACCOUNTING SOLUTIONS</h2>
+                                    <h2 style="text-align: center">FINANCE SOLUTIONS</h2>
                                     <img src="assets2/img/budget-banner.jpg" class="img-fluid"
                                         alt="Budget Management System">
                                 </div>
