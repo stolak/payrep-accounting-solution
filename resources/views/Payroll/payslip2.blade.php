@@ -108,20 +108,46 @@
                                     $totalEarnings = 0;
                                     $totalDeductions = 0;
 
-                                    // Calculate total earnings
+                                    // Filter earnings with non-zero values
+                                    $filteredEarnings = [];
                                     foreach ($EarningVariable as $earning) {
                                         $para = $earning->ref_code;
-                                        $totalEarnings += $Payroll->$para ?? 0;
+                                        $amount = $Payroll->$para ?? 0;
+                                        if ($amount != 0) {
+                                            $filteredEarnings[] = (object) [
+                                                'variable' => $earning->variable,
+                                                'ref_code' => $para,
+                                                'amount' => $amount,
+                                            ];
+                                            $totalEarnings += $amount;
+                                        }
                                     }
                                     foreach ($NonTaxableEarning as $earning) {
                                         $para = $earning->ref_code;
-                                        $totalEarnings += $Payroll->$para ?? 0;
+                                        $amount = $Payroll->$para ?? 0;
+                                        if ($amount != 0) {
+                                            $filteredEarnings[] = (object) [
+                                                'variable' => $earning->variable,
+                                                'ref_code' => $para,
+                                                'amount' => $amount,
+                                            ];
+                                            $totalEarnings += $amount;
+                                        }
                                     }
 
-                                    // Calculate total deductions
+                                    // Filter deductions with non-zero values
+                                    $filteredDeductions = [];
                                     foreach ($DeductionVariable as $deduction) {
                                         $para = $deduction->ref_code;
-                                        $totalDeductions += abs($Payroll->$para ?? 0);
+                                        $amount = abs($Payroll->$para ?? 0);
+                                        if ($amount != 0) {
+                                            $filteredDeductions[] = (object) [
+                                                'variable' => $deduction->variable,
+                                                'ref_code' => $para,
+                                                'amount' => $amount,
+                                            ];
+                                            $totalDeductions += $amount;
+                                        }
                                     }
                                 @endphp
                                 <style>
@@ -210,47 +236,31 @@
                                             <th>Amount (Naira)</th>
                                         </tr>
                                         @php
-                                            $maxRows = max(
-                                                count($EarningVariable) + count($NonTaxableEarning),
-                                                count($DeductionVariable),
-                                            );
-                                            $earningIndex = 0;
-                                            $deductionIndex = 0;
+                                            $maxRows = max(count($filteredEarnings), count($filteredDeductions));
                                         @endphp
                                         @for ($i = 0; $i < $maxRows; $i++)
                                             <tr>
-                                                @if ($i < count($EarningVariable))
+                                                @if ($i < count($filteredEarnings))
                                                     @php
-                                                        $earning = $EarningVariable[$i];
-                                                        $para = $earning->ref_code;
-                                                        $amount = $Payroll->$para ?? 0;
+                                                        $earning = $filteredEarnings[$i];
                                                     @endphp
                                                     <th colspan="2">{{ $earning->variable }}</th>
                                                     <td></td>
-                                                    <td class="myAlign">{{ number_format($amount, 2, '.', ',') }}</td>
-                                                @elseif($i < count($EarningVariable) + count($NonTaxableEarning))
-                                                    @php
-                                                        $earning = $NonTaxableEarning[$i - count($EarningVariable)];
-                                                        $para = $earning->ref_code;
-                                                        $amount = $Payroll->$para ?? 0;
-                                                    @endphp
-                                                    <th colspan="2">{{ $earning->variable }}</th>
-                                                    <td></td>
-                                                    <td class="myAlign">{{ number_format($amount, 2, '.', ',') }}</td>
+                                                    <td class="myAlign">{{ number_format($earning->amount, 2, '.', ',') }}
+                                                    </td>
                                                 @else
                                                     <th colspan="2"></th>
                                                     <td></td>
                                                     <td class="myAlign"></td>
                                                 @endif
-                                                @if ($i < count($DeductionVariable))
+                                                @if ($i < count($filteredDeductions))
                                                     @php
-                                                        $deduction = $DeductionVariable[$i];
-                                                        $para = $deduction->ref_code;
-                                                        $amount = abs($Payroll->$para ?? 0);
+                                                        $deduction = $filteredDeductions[$i];
                                                     @endphp
                                                     <th colspan="2">{{ $deduction->variable }}</th>
                                                     <td></td>
-                                                    <td class="myAlign">{{ number_format($amount, 2, '.', ',') }}</td>
+                                                    <td class="myAlign">
+                                                        {{ number_format($deduction->amount, 2, '.', ',') }}</td>
                                                 @else
                                                     <th colspan="2"></th>
                                                     <td></td>
