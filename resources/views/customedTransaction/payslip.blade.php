@@ -101,10 +101,10 @@
             </td>
             <td></td>
             <th>
-                Employee Number
+                Employee Numberefefefe
             </th>
             <td>
-                {{ $payslip->emp_no }}
+                {{ $payslip->emp_no }}ggggg
             </td>
             <td></td>
             <th>

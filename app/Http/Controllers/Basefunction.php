@@ -991,6 +991,9 @@ Public function BankList() {
 	    ,(SELECT `grade` FROM `tblstaff_grade_level` WHERE `tblstaff_grade_level`.`id`= tblpayroll_payment.grade) as grades
 	    FROM `tblpayroll_payment` WHERE `year`='$year' and `month`='$month'");
 	}
+	Public function Payroll($year,$month,$staffid) {
+	    return DB::table('tblpayroll_payment')->where('year',$year)->where('month',$month)->where('staffid',$staffid)->first();
+	}
 	Public function MonthlyActiveVariable($year,$month) {
 	    $allvariable=DB::Select("SELECT tblpayroll_variable.* 
 	    FROM `tblpayroll_variable_monthly`  

@@ -116,4 +116,6 @@ Route::middleware('auth')->group(function () {
  Route::any('/active-period',           [Payroll::class, 'ActivePeriod']);
  Route::any('/salary-mandate',          [Payroll::class, 'Payroll_Mandate']);
  Route::any('/salary-particular',       [Payroll::class, 'PayrollParticularReport']);
+ Route::any('/salary-payslip',       [Payroll::class, 'Payslip']);
     });
+

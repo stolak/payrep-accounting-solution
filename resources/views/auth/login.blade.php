@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>CREDIT HUB LTD</title>
+    <title>{{ env('Coy_Name', '') }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
 
     <!-- Favicons -->
@@ -108,7 +108,8 @@
                         <div class="row">
                             <div class="col-md-6 col-lg-6">
                                 <div class="copyright-text">
-                                    <p class="mb-0">&copy; 2020 CREDIT HUB LTD. All rights reserved.</p>
+                                    <p class="mb-0">&copy; {{ date('Y') }} {{ env('Coy_Name', '') }}. All rights
+                                        reserved.</p>
                                 </div>
                             </div>
                             <div class="col-md-6 col-lg-6">
