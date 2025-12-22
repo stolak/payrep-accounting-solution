@@ -95,7 +95,191 @@
                         <div class="card-header">
                             <h4 class="card-title">Payslip</h4>
                         </div>
-                        <!-- Body to be inserted here -->
+                        <div class="card-body">
+                            @if ($Payroll)
+                                @php
+                                    $monthName = '';
+                                    foreach ($Months as $m) {
+                                        if ($m->id == $Payroll->month) {
+                                            $monthName = $m->month;
+                                            break;
+                                        }
+                                    }
+                                    $totalEarnings = 0;
+                                    $totalDeductions = 0;
+
+                                    // Calculate total earnings
+                                    foreach ($EarningVariable as $earning) {
+                                        $para = $earning->ref_code;
+                                        $totalEarnings += $Payroll->$para ?? 0;
+                                    }
+                                    foreach ($NonTaxableEarning as $earning) {
+                                        $para = $earning->ref_code;
+                                        $totalEarnings += $Payroll->$para ?? 0;
+                                    }
+
+                                    // Calculate total deductions
+                                    foreach ($DeductionVariable as $deduction) {
+                                        $para = $deduction->ref_code;
+                                        $totalDeductions += abs($Payroll->$para ?? 0);
+                                    }
+                                @endphp
+                                <style>
+                                    .salary-slip {
+                                        margin: 15px;
+                                    }
+
+                                    .salary-slip .empDetail {
+                                        width: 100%;
+                                        text-align: left;
+                                        border: 2px solid black;
+                                        border-collapse: collapse;
+                                        table-layout: fixed;
+                                    }
+
+                                    .salary-slip .myBackground {
+                                        padding-top: 10px;
+                                        text-align: left;
+                                        border: 1px solid black;
+                                        height: 40px;
+                                    }
+
+                                    .salary-slip .myAlign {
+                                        text-align: center;
+                                        border-right: 1px solid black;
+                                    }
+
+                                    .salary-slip .myTotalBackground {
+                                        padding-top: 10px;
+                                        text-align: left;
+                                        background-color: #EBF1DE;
+                                        border-spacing: 0px;
+                                    }
+
+                                    .salary-slip .table-border-right {
+                                        border-right: 1px solid;
+                                    }
+
+                                    .salary-slip .companyName {
+                                        text-align: right;
+                                        font-size: 25px;
+                                        font-weight: bold;
+                                    }
+
+                                    .salary-slip th,
+                                    .salary-slip td {
+                                        padding-left: 6px;
+                                        border: 1px solid black;
+                                    }
+                                </style>
+                                <div class="salary-slip">
+                                    <table class="empDetail">
+                                        <tr height="100px">
+                                            <td colspan='4'>
+                                                <img height="90px" src='{{ asset('assets/img/logo.jpeg') }}' />
+                                            </td>
+                                            <td colspan='4' class="companyName">
+                                                {{ env('Coy_Name', 'ACCOUNTING SOLUTIONS') }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Name</th>
+                                            <td>{{ $Payroll->fullname ?? '' }}</td>
+                                            <td></td>
+                                            <th>Employee Number</th>
+                                            <td>{{ $Payroll->staff_no ?? '' }}</td>
+                                            <td></td>
+                                            <th>Position</th>
+                                            <td>{{ $Payroll->grades ?? '' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th></th>
+                                            <td></td>
+                                            <td></td>
+                                            <th></th>
+                                            <td></td>
+                                            <td></td>
+                                            <th>Period</th>
+                                            <td>{{ $monthName }}, {{ $Payroll->year ?? '' }}</td>
+                                        </tr>
+                                        <tr class="myBackground">
+                                            <th colspan="2">Earnings</th>
+                                            <th>Particular</th>
+                                            <th class="table-border-right">Amount (Naira)</th>
+                                            <th colspan="2">Deductions</th>
+                                            <th>Particular</th>
+                                            <th>Amount (Naira)</th>
+                                        </tr>
+                                        @php
+                                            $maxRows = max(
+                                                count($EarningVariable) + count($NonTaxableEarning),
+                                                count($DeductionVariable),
+                                            );
+                                            $earningIndex = 0;
+                                            $deductionIndex = 0;
+                                        @endphp
+                                        @for ($i = 0; $i < $maxRows; $i++)
+                                            <tr>
+                                                @if ($i < count($EarningVariable))
+                                                    @php
+                                                        $earning = $EarningVariable[$i];
+                                                        $para = $earning->ref_code;
+                                                        $amount = $Payroll->$para ?? 0;
+                                                    @endphp
+                                                    <th colspan="2">{{ $earning->variable }}</th>
+                                                    <td></td>
+                                                    <td class="myAlign">{{ number_format($amount, 2, '.', ',') }}</td>
+                                                @elseif($i < count($EarningVariable) + count($NonTaxableEarning))
+                                                    @php
+                                                        $earning = $NonTaxableEarning[$i - count($EarningVariable)];
+                                                        $para = $earning->ref_code;
+                                                        $amount = $Payroll->$para ?? 0;
+                                                    @endphp
+                                                    <th colspan="2">{{ $earning->variable }}</th>
+                                                    <td></td>
+                                                    <td class="myAlign">{{ number_format($amount, 2, '.', ',') }}</td>
+                                                @else
+                                                    <th colspan="2"></th>
+                                                    <td></td>
+                                                    <td class="myAlign"></td>
+                                                @endif
+                                                @if ($i < count($DeductionVariable))
+                                                    @php
+                                                        $deduction = $DeductionVariable[$i];
+                                                        $para = $deduction->ref_code;
+                                                        $amount = abs($Payroll->$para ?? 0);
+                                                    @endphp
+                                                    <th colspan="2">{{ $deduction->variable }}</th>
+                                                    <td></td>
+                                                    <td class="myAlign">{{ number_format($amount, 2, '.', ',') }}</td>
+                                                @else
+                                                    <th colspan="2"></th>
+                                                    <td></td>
+                                                    <td class="myAlign"></td>
+                                                @endif
+                                            </tr>
+                                        @endfor
+                                        <tr class="myBackground">
+                                            <th colspan="3">Total Payments</th>
+                                            <td class="myAlign">{{ number_format($totalEarnings, 2, '.', ',') }}</td>
+                                            <th colspan="3">Total Deductions</th>
+                                            <td class="myAlign">{{ number_format($totalDeductions, 2, '.', ',') }}</td>
+                                        </tr>
+                                        <tr height="40px">
+                                            <th colspan="2"></th>
+                                            <th></th>
+                                            <td class="table-border-right"></td>
+                                            <th colspan="2" class="table-border-bottom">Net Salary</th>
+                                            <td></td>
+                                            <td>{{ number_format($totalEarnings - $totalDeductions, 2, '.', ',') }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="alert alert-info">
+                                    <p>Please select Year, Month, and Staff to view payslip.</p>
+                                </div>
+                            @endif
+                        </div>
                     </div>
                     <!-- /Payroll Report -->
 

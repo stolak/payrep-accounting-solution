@@ -306,18 +306,15 @@ class Payroll extends Basefunction
    	$data['staffid']=$request->input('staffid');
    	$active_period=$this->Payroll_Active_period();
     $data['Staffs']=$this->Staffs('','');
-    // dd($data['Staffs']);
    	if($data['year']==''){$data['year']=$active_period->year;}
    	if($data['month']==''){$data['month']=$active_period->month;}
-    //$data['EarningVariable'] = $this->PEarningVariable($data['year'],$data['month']);
+
     $data['EarningVariable'] = $this->TaxableEarningVariableTaxable($data['year'],$data['month']);
     $data['NonTaxableEarning'] = $this->NonTaxableEarningVariable($data['year'],$data['month']);
     $data['DeductionVariable'] = $this->PDeductionVariable($data['year'],$data['month']);
     $data['Months'] = $this->Months();
     $data['Payroll']=$this->Payroll($data['year'],$data['month'],$data['staffid']);
     $data['MonthlyActiveVariable']=$this->MonthlyActiveVariable($data['year'],$data['month']);
-    //dd($this->NetpaySummary($data['year'],$data['month']));
-     dd($data['Payroll']);
 	return view('Payroll.payslip2', $data);
    }
 }
