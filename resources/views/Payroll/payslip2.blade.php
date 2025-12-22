@@ -197,42 +197,46 @@
                                         padding-left: 6px;
                                         border: 1px solid black;
                                     }
+
+                                    .salary-slip .no-border-right {
+                                        border-right: none;
+                                    }
+
+                                    .salary-slip .no-border-left {
+                                        border-left: none;
+                                    }
                                 </style>
                                 <div class="salary-slip">
                                     <table class="empDetail">
                                         <tr height="100px">
-                                            <td colspan='4'>
-                                                <img height="90px" src='{{ asset('assets/img/logo.jpeg') }}' />
+                                            <td class="no-border-right">
+                                                <img height="30px" src='{{ asset('assets/img/logo.jpeg') }}' />
                                             </td>
-                                            <td colspan='4' class="companyName">
+                                            <td colspan="2" class="no-border-left"></td>
+                                            <td colspan='3' class="companyName">
                                                 {{ env('Coy_Name', 'ACCOUNTING SOLUTIONS') }}</td>
                                         </tr>
                                         <tr>
                                             <th>Name</th>
-                                            <td>{{ $Payroll->fullname ?? '' }}</td>
-                                            <td></td>
+                                            <td colspan="2">{{ $Payroll->fullname ?? '' }}</td>
+
                                             <th>Employee Number</th>
                                             <td>{{ $Payroll->staff_no ?? '' }}</td>
+
+
                                             <td></td>
-                                            <th>Position</th>
-                                            <td>{{ $Payroll->grades ?? '' }}</td>
                                         </tr>
                                         <tr>
-                                            <th></th>
-                                            <td></td>
-                                            <td></td>
-                                            <th></th>
-                                            <td></td>
-                                            <td></td>
+                                            <th>Grade</th>
+                                            <td>{{ $Payroll->grades ?? '' }}</td>
+                                            <th colspan="2"></th>
                                             <th>Period</th>
                                             <td>{{ $monthName }}, {{ $Payroll->year ?? '' }}</td>
                                         </tr>
                                         <tr class="myBackground">
                                             <th colspan="2">Earnings</th>
-                                            <th>Particular</th>
                                             <th class="table-border-right">Amount (Naira)</th>
                                             <th colspan="2">Deductions</th>
-                                            <th>Particular</th>
                                             <th>Amount (Naira)</th>
                                         </tr>
                                         @php
@@ -245,12 +249,10 @@
                                                         $earning = $filteredEarnings[$i];
                                                     @endphp
                                                     <th colspan="2">{{ $earning->variable }}</th>
-                                                    <td></td>
                                                     <td class="myAlign">{{ number_format($earning->amount, 2, '.', ',') }}
                                                     </td>
                                                 @else
                                                     <th colspan="2"></th>
-                                                    <td></td>
                                                     <td class="myAlign"></td>
                                                 @endif
                                                 @if ($i < count($filteredDeductions))
@@ -258,28 +260,24 @@
                                                         $deduction = $filteredDeductions[$i];
                                                     @endphp
                                                     <th colspan="2">{{ $deduction->variable }}</th>
-                                                    <td></td>
                                                     <td class="myAlign">
                                                         {{ number_format($deduction->amount, 2, '.', ',') }}</td>
                                                 @else
                                                     <th colspan="2"></th>
-                                                    <td></td>
                                                     <td class="myAlign"></td>
                                                 @endif
                                             </tr>
                                         @endfor
                                         <tr class="myBackground">
-                                            <th colspan="3">Total Payments</th>
+                                            <th colspan="2">Total Payments</th>
                                             <td class="myAlign">{{ number_format($totalEarnings, 2, '.', ',') }}</td>
-                                            <th colspan="3">Total Deductions</th>
+                                            <th colspan="2">Total Deductions</th>
                                             <td class="myAlign">{{ number_format($totalDeductions, 2, '.', ',') }}</td>
                                         </tr>
                                         <tr height="40px">
-                                            <th colspan="2"></th>
-                                            <th></th>
-                                            <td class="table-border-right"></td>
+                                            <th colspan="3"></th>
+
                                             <th colspan="2" class="table-border-bottom">Net Salary</th>
-                                            <td></td>
                                             <td>{{ number_format($totalEarnings - $totalDeductions, 2, '.', ',') }}</td>
                                         </tr>
                                     </table>
