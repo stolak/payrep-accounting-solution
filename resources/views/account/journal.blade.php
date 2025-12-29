@@ -29,7 +29,7 @@
                             <h4 class="card-title">Journal Transfer</h4>
                         </div>
                         <div class="card-body">
-                            <form method="post" name="mainform" id="mainform">
+                            <form method="post" name="mainform" id="mainform" onsubmit="cleanAmountValues()">
                                 {{ csrf_field() }}
                                 <div class="table-responsive" style="font-size: 12px;">
                                     <table class="table table-bordered table-striped table-highlight">
@@ -82,18 +82,20 @@
                                                     $debitamount = old('debitamount');
                                                 } ?>
                                                 <input type="text" id="debitamount" name="debitamount"
-                                                    value="{{ $debitamount }}" class="form-control"
-                                                    style="width:150px; text-align: right;" {{ $dbtstatus }}
-                                                    autocomplete="off">
+                                                    value=" {{ number_format($debitamount, 2, '.', ',') }}"
+                                                    class="form-control" style="width:150px; text-align: right;"
+                                                    {{ $dbtstatus }} autocomplete="off"
+                                                    oninput="formatNumberInput(this)">
                                             </td>
                                             <td>
                                                 <?php if ($creditamount == '') {
                                                     $creditamount = old('creditamount');
                                                 } ?>
                                                 <input type="text" id="creditamount" name="creditamount"
-                                                    value="{{ $creditamount }}" class="form-control"
-                                                    style="width:150px; text-align: right;" {{ $crdtstatus }}
-                                                    autocomplete="off">
+                                                    value="{{ number_format($creditamount, 2, '.', ',') }}"
+                                                    class="form-control" style="width:150px; text-align: right;"
+                                                    {{ $crdtstatus }} autocomplete="off"
+                                                    oninput="formatNumberInput(this)">
                                             </td>
                                             <?php if ($remarks == '') {
                                                 $remarks = old('remarks');
@@ -209,6 +211,62 @@
                 return parseFloat(val
                     .toString().replace(/\,/g, '')).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
             }
+
+            function formatNumberInput(input) {
+                // Get cursor position
+                let cursorPos = input.selectionStart;
+                let originalLength = input.value.length;
+
+                // Remove all non-numeric characters except decimal point
+                let value = input.value.replace(/[^\d.]/g, '');
+
+                // Prevent multiple decimal points
+                let parts = value.split('.');
+                if (parts.length > 2) {
+                    value = parts[0] + '.' + parts.slice(1).join('');
+                }
+
+                // Limit to 2 decimal places
+                if (parts.length === 2 && parts[1].length > 2) {
+                    value = parts[0] + '.' + parts[1].substring(0, 2);
+                }
+
+                // Format with thousand separators
+                if (value) {
+                    parts = value.split('.');
+                    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                    value = parts.join('.');
+                }
+
+                // Update the input value
+                input.value = value;
+
+                // Adjust cursor position
+                let newLength = input.value.length;
+                let lengthDiff = newLength - originalLength;
+                let newCursorPos = cursorPos + lengthDiff;
+
+                // Ensure cursor position is within bounds
+                if (newCursorPos < 0) newCursorPos = 0;
+                if (newCursorPos > newLength) newCursorPos = newLength;
+
+                input.setSelectionRange(newCursorPos, newCursorPos);
+            }
+
+            function cleanAmountValues() {
+                // Remove commas from debitamount and creditamount before form submission
+                const debitInput = document.getElementById('debitamount');
+                const creditInput = document.getElementById('creditamount');
+
+                if (debitInput && debitInput.value) {
+                    debitInput.value = debitInput.value.replace(/,/g, '');
+                }
+
+                if (creditInput && creditInput.value) {
+                    creditInput.value = creditInput.value.replace(/,/g, '');
+                }
+            }
+
             const deleteRecord = (id) => {
                 document.getElementById('d-id').value = id;
                 $("#delete_modal").modal('show')
@@ -220,7 +278,8 @@
                 var Val = document.getElementById("transactiontype").value;
 
                 if (Val == "Debit") {
-                    document.getElementById('debitamount').value = "{{ $drbal }}";
+                    document.getElementById('debitamount').value =
+                        "{{ !empty($drbal) ? number_format($drbal, 2, '.', ',') : '' }}";
                     document.getElementById('creditamount').value = "";
                     document.getElementById('debitamount').removeAttribute('disabled');
                     document.getElementById('creditamount').setAttribute('disabled', 'disabled');
@@ -229,7 +288,8 @@
                     document.getElementById('creditamount').removeAttribute('disabled');
                     document.getElementById('debitamount').setAttribute('disabled', 'disabled');
                     document.getElementById('debitamount').value = "";
-                    document.getElementById('creditamount').value = "{{ $crbal }}";
+                    document.getElementById('creditamount').value =
+                        "{{ !empty($crbal) ? number_format($crbal, 2, '.', ',') : '' }}";
                 }
                 document.getElementById('remarks').value = "{{ $defaultremark }}"
                 return;

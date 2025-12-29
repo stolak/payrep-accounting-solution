@@ -83,9 +83,11 @@ class AccountSetup extends Controller {
         $data['accountname']=$request->input('accountname');
         $data['id']=$request->input('id');
         if ( isset( $_POST['addnew'] ) ) {
+            dd($request->all());
                 $this->validate($request, [
                 'accountname'      => 'required|string|unique:tblaccountchart,accountdescription',
                 'subhead'      => 'required|string',
+
                 ]);
                 $headid=$this->FetchAccHeadID($data['subhead']);
                 DB::table('tblaccountchart')->insert([

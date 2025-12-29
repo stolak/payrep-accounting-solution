@@ -99,7 +99,8 @@ if ( isset($_POST['delete']) ) {
         $this->validate($request, [
             'subaccount'          => 'required',
             'accountHead'    => 'required',
-            'account'    => 'required',
+            'account'    => 'required|unique:account_charts,accountdescription',
+            'accountno'    => 'nullable|unique:account_charts,accountno',
           ]);
     $subhead=DB::table('account_subheads')->where('id', $request->input('subaccount'))->first();
     if (!$subhead) {

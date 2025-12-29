@@ -88,9 +88,10 @@ trait AccountTrait
     public static function trialBal($from,$to) {
 	    if (date('m-d',strtotime($from))=="01-01")$from="1900-01-01";
 	    $timedate= "(DATE_FORMAT(`transdate`,'%Y-%m-%d') BETWEEN '$from' AND '$to')";
-	    return DB::Select("SELECT  Sum(`debit`-`credit`) as  Credit, accountdescription as accountName,accountid
+	    return DB::Select("SELECT  Sum(`debit`-`credit`) as  Credit, accountdescription as accountName, accountid, accounthead
 	    FROM `account_transactions`
         left join account_charts on account_charts.id=account_transactions.accountid
+        left join account_heads on account_charts.headid= account_heads.id
          WHERE  $timedate
 
          group by `accountid`,`accountdescription`   order by accountName");

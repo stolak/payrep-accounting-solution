@@ -40,7 +40,7 @@
                             <h4 class="card-title">Pre-Journal Transfer</h4>
                         </div>
                         <div class="card-body">
-                            <form method="post" id="transdetails" name="transdetails">
+                            <form method="post" id="transdetails" name="transdetails" onsubmit="cleanAmountValues()">
                                 <input type="hidden" name="ref" id="refid">
 
                                 {{ csrf_field() }}
@@ -123,9 +123,11 @@
                                                                 $debitamount = old('debitamount');
                                                             } ?>
                                                         </span><input disabled type="text" id="debitamount"
-                                                            name="debitamount" value="{{ $debitamount }}"
+                                                            name="debitamount"
+                                                            value="{{ number_format($debitamount, 2, '.', ',') }}"
                                                             class="form-control" style="width:150px; text-align: right;"
-                                                            {{ $dbtstatus }} autocomplete="off"></div>
+                                                            {{ $dbtstatus }} autocomplete="off"
+                                                            oninput="formatNumberInput(this)"></div>
                                                 </td>
                                                 <td>
                                                     <div class="input-group"><span class="input-group-btn">
@@ -134,9 +136,11 @@
                                                                 $creditamount = old('creditamount');
                                                             } ?>
                                                         </span><input disabled type="text" id="creditamount"
-                                                            name="creditamount" value="{{ $creditamount }}"
+                                                            name="creditamount"
+                                                            value="{{ number_format($creditamount, 2, '.', ',') }}"
                                                             class="form-control" style="width:150px; text-align: right;"
-                                                            {{ $crdtstatus }} autocomplete="off">
+                                                            {{ $crdtstatus }} autocomplete="off"
+                                                            oninput="formatNumberInput(this)">
                                                     </div>
                                                 </td>
                                                 <?php if ($remarks == '') {
@@ -251,11 +255,11 @@
                                                         <td><input type="text" class="form-control"
                                                                 value="{{ $data->accountdescription }}" readonly></td>
                                                         <td><input type="text" class="form-control"
-                                                                value="{{ number_format($data->debit, 2, '.', ',') }}" readonly
-                                                                style="text-align: right; "></td>
+                                                                value="{{ number_format($data->debit, 2, '.', ',') }}"
+                                                                readonly style="text-align: right; "></td>
                                                         <td><input type="text" class="form-control"
-                                                                value="{{ number_format($data->credit, 2, '.', ',') }}" readonly
-                                                                style="text-align: right; "></td>
+                                                                value="{{ number_format($data->credit, 2, '.', ',') }}"
+                                                                readonly style="text-align: right; "></td>
                                                         <td><input type="text" class="form-control"
                                                                 value="{{ $data->remarks }}" readonly></td>
                                                         <td>
@@ -274,8 +278,8 @@
                                                             value="{{ number_format($totaldebit, 2, '.', ',') }}" readonly
                                                             style="text-align: right; "></td>
                                                     <td><input type="text" class="form-control"
-                                                            value="{{ number_format($totalcredit, 2, '.', ',') }}" readonly
-                                                            style="text-align: right; "></td>
+                                                            value="{{ number_format($totalcredit, 2, '.', ',') }}"
+                                                            readonly style="text-align: right; "></td>
                                                     <td>
                                                         @if (number_format($totalcredit, 2, '.', ',') == number_format($totaldebit, 2, '.', ',') && $totaldebit > 0)
                                                             <b>Ref No:</b>{{ $data->manual_ref }}
@@ -343,7 +347,7 @@
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
-                        <form class="form-horizontal" method="post" role="form">
+                        <form class="form-horizontal" method="post" role="form" onsubmit="cleanAmountValues()">
                             {{ csrf_field() }}
                             <div class="modal-body">
                                 <div class="form-group" style="margin: 0 10px;">
@@ -387,7 +391,7 @@
                                                 <h5>Debit: </h5>
                                             </label>
                                             <input type="text" class="form-control" id="e-debitamount"
-                                                name="debitamount">
+                                                name="debitamount" oninput="formatNumberInput(this)">
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
@@ -396,7 +400,7 @@
                                                 <h5>Credit: </h5>
                                             </label>
                                             <input type="text" class="form-control" id="e-creditamount"
-                                                name="creditamount">
+                                                name="creditamount" oninput="formatNumberInput(this)">
                                         </div>
                                     </div>
                                     <div class="col-sm-12">
@@ -561,6 +565,79 @@
         <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
         <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
         <script>
+            function formatNumberInput(input) {
+                // Get cursor position
+                let cursorPos = input.selectionStart;
+                let originalLength = input.value.length;
+
+                // Remove all non-numeric characters except decimal point
+                let value = input.value.replace(/[^\d.]/g, '');
+
+                // Prevent multiple decimal points
+                let parts = value.split('.');
+                if (parts.length > 2) {
+                    value = parts[0] + '.' + parts.slice(1).join('');
+                }
+
+                // Limit to 2 decimal places
+                if (parts.length === 2 && parts[1].length > 2) {
+                    value = parts[0] + '.' + parts[1].substring(0, 2);
+                }
+
+                // Format with thousand separators
+                if (value) {
+                    parts = value.split('.');
+                    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                    value = parts.join('.');
+                }
+
+                // Update the input value
+                input.value = value;
+
+                // Adjust cursor position
+                let newLength = input.value.length;
+                let lengthDiff = newLength - originalLength;
+                let newCursorPos = cursorPos + lengthDiff;
+
+                // Ensure cursor position is within bounds
+                if (newCursorPos < 0) newCursorPos = 0;
+                if (newCursorPos > newLength) newCursorPos = newLength;
+
+                input.setSelectionRange(newCursorPos, newCursorPos);
+            }
+
+            function cleanAmountValues() {
+                // Remove commas from debitamount, creditamount, e-debitamount, and e-creditamount before form submission
+                const debitInput = document.getElementById('debitamount');
+                const creditInput = document.getElementById('creditamount');
+                const eDebitInput = document.getElementById('e-debitamount');
+                const eCreditInput = document.getElementById('e-creditamount');
+
+                if (debitInput && debitInput.value) {
+                    debitInput.value = debitInput.value.replace(/,/g, '');
+                }
+
+                if (creditInput && creditInput.value) {
+                    creditInput.value = creditInput.value.replace(/,/g, '');
+                }
+
+                if (eDebitInput && eDebitInput.value) {
+                    eDebitInput.value = eDebitInput.value.replace(/,/g, '');
+                }
+
+                if (eCreditInput && eCreditInput.value) {
+                    eCreditInput.value = eCreditInput.value.replace(/,/g, '');
+                }
+            }
+
+            function formatNumber(value) {
+                if (!value || value === '') return '';
+                // Remove commas, format to 2 decimal places, then add commas back
+                let numValue = parseFloat(value.toString().replace(/,/g, ''));
+                if (isNaN(numValue)) return '';
+                return numValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            }
+
             function editfunc(id, transtype, acctids, debitamount, creditamount, remarks) {
                 document.getElementById('id').value = id;
                 document.getElementById('e-transtype').value = transtype;
@@ -572,8 +649,8 @@
                     document.getElementById('e-debitamount').setAttribute('disabled', 'disabled');
                 }
                 document.getElementById('e-acctids').value = acctids;
-                document.getElementById('e-debitamount').value = debitamount;
-                document.getElementById('e-creditamount').value = creditamount;
+                document.getElementById('e-debitamount').value = formatNumber(debitamount);
+                document.getElementById('e-creditamount').value = formatNumber(creditamount);
                 document.getElementById('e-remarks').value = remarks;
 
                 $("#editModal").modal('show')
@@ -648,7 +725,8 @@
                 var Val = document.getElementById("transactiontype").value;
 
                 if (Val == "Debit") {
-                    document.getElementById('debitamount').value = "{{ $drbal }}";
+                    document.getElementById('debitamount').value =
+                        "{{ !empty($drbal) ? number_format($drbal, 2, '.', ',') : '' }}";
                     document.getElementById('creditamount').value = "";
                     document.getElementById('debitamount').removeAttribute('disabled');
                     document.getElementById('creditamount').setAttribute('disabled', 'disabled');
@@ -657,7 +735,8 @@
                     document.getElementById('creditamount').removeAttribute('disabled');
                     document.getElementById('debitamount').setAttribute('disabled', 'disabled');
                     document.getElementById('debitamount').value = "";
-                    document.getElementById('creditamount').value = "{{ $crbal }}";
+                    document.getElementById('creditamount').value =
+                        "{{ !empty($crbal) ? number_format($crbal, 2, '.', ',') : '' }}";
                 }
                 document.getElementById('remarks').value = "{{ $defaultremark }}"
                 return;
