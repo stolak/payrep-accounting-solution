@@ -93,6 +93,7 @@ Route::middleware('auth')->group(function () {
         Route::any('/account-statement',    [AccountReport::class, 'AccountStatements']);
         Route::any('/account-statement-pdf',[PDFReport::class, 'AccountStatements']);
         Route::any('/petty-cash',           [AccountSetup::class, 'PettyCashHandling']);
+        Route::any('/project-account-setup',       [AccountSetup::class, 'ProjectExpense']);
         Route::any('/particular-setup',     [AccountSetup::class, 'DefaultAccountSetup']);
         Route::any('/product-setup',        [AccountSetup::class, 'DefaultProductSetup']);
 

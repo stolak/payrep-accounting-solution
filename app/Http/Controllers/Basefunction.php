@@ -507,7 +507,7 @@ class Basefunction extends Controller
 	    return DB::Select("SELECT * ,(SELECT Concat(`accountdescription`,'(',`accountno`,')') FROM `tblaccountchart` WHERE `tblaccountchart`.`id`=accoountId) as AccountName FROM `tblDefault_setup`");
 	}
 	Public function ProjectAccount() {
-	    return DB::Select("SELECT * ,(SELECT Concat(`accountdescription`,'(',`accountno`,')') FROM `tblaccountchart` WHERE `tblaccountchart`.`id`=expensenid) as AccountName FROM `tblproject_expense`");
+	    return DB::Select("SELECT * ,(SELECT Concat(`accountdescription`,'(',`accountno`,')') FROM `tblaccountchart` WHERE `tblaccountchart`.`id`=expensenid) as AccountName FROM `project_expense`");
 	}
 		Public function PettyTransaction($petty='',$br='') {
 	    $qpetty=1;
@@ -516,7 +516,7 @@ class Basefunction extends Controller
 	    if($br!='')$qbr="`tblpettyhandling_transaction`.`branch_id`='$br'";
 	    return DB::Select("SELECT tblpettyhandling_transaction.*
 	    ,(SELECT Concat(`accountdescription`,'(',`accountno`,')') FROM `tblaccountchart` WHERE `tblaccountchart`.`id`=accountid) as AccountName
-	    ,(SELECT particular FROM `tblproject_expense` WHERE `tblproject_expense`.`id`=projectid) as Particular
+	    ,(SELECT particular FROM `project_expenses` WHERE `project_expenses`.`id`=projectid) as Particular
 	    ,(SELECT name FROM `users` WHERE `users`.`id`=postby) as Postedby
 	    ,tblbranch.branch as Branch
 	    ,users.name as FPost

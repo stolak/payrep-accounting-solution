@@ -423,10 +423,10 @@ class AccountSetup extends Controller {
         $data['accountid']=$request->input('accountid');
         if ( isset( $_POST['add'] ) ) {
                 $this->validate($request, [
-                'particular'      => 'required|string|unique:tblproject_expense,particular',
+                'particular'      => 'required|string|unique:project_expenses,particular',
                 'accountid'      => 'required|string',
                 ]);
-                DB::table('tblproject_expense')->insert([
+                DB::table('project_expenses')->insert([
                     'particular' => $data['particular'],
                     'expensenid' => $data['accountid'] ,
                     ]);
@@ -439,14 +439,15 @@ class AccountSetup extends Controller {
                 'expensenid'      => 'required|string',
                 ]);
         $data['expensenid']=$request->input('expensenid');
-                DB::table('tblproject_expense')->where('id',$data['id'])->update([
+                DB::table('project_expenses')->where('id',$data['id'])->update([
                     'particular' => $data['particular'] ,
                     'expensenid' => $data['expensenid'] ,
                     ]);
                     return back()->with('message','record successfully updated.'  );
             }
-        $data['DefaultAccountLookUp'] = DB::Select("SELECT * FROM `tblaccountchart` WHERE `headid`='6'");
-        $data['DefaultAccount'] = $this->ProjectAccount();
+        $data['DefaultAccountLookUp'] = DB::Select("SELECT * FROM `account_charts` WHERE `headid`='6'");
+        $data['DefaultAccount'] = AccountTrait::ProjectAccount();
+        // dd($data);
         return view('AccountSetup.projectaccount', $data);
 
     }
@@ -605,7 +606,7 @@ class AccountSetup extends Controller {
                     ]);
                     return back()->with('message','record successfully updated.'  );
             }
-        $data['DefaultAccountLookUp'] = DB::Select("SELECT * FROM `tblaccountchart` WHERE `headid`='6'");
+        $data['DefaultAccountLookUp'] = DB::Select("SELECT * FROM `account_charts` WHERE `headid`='6'");
         $data['DefaultAccount'] = $this->ProjectAccount();
         $data['Particulars'] =DB::Select("SELECT tblaccount_setup_subhead.*, tblaccountsubhead.subhead , tblaccountsubhead.subheadcode FROM `tblaccount_setup_subhead` left join tblaccountsubhead  on tblaccountsubhead.id=`subheadid` ");
         $data['AccountSubhead'] =DB::Select("SELECT * FROM `tblaccountsubhead` order by `subheadcode`");
