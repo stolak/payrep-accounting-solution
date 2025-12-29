@@ -94,7 +94,7 @@ trait AccountTrait
         left join account_heads on account_charts.headid= account_heads.id
          WHERE  $timedate
 
-         group by `accountid`,`accountdescription`   order by accountName");
+         group by `accountid`,`accountdescription`,`accounthead`   order by accountName");
 
 	}
     public static function balanceBreakdown($from, $to, $account) {
