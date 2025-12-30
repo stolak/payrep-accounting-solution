@@ -100,8 +100,8 @@
                                                         onclick="editfunc('{{ $list->id }}','{{ $list->expensenid }}','{{ $list->particular }}')"><i
                                                             class="fe fe-pencil"></i>
                                                     </a>&nbsp;
-                                                    <a class="btn btn-sm bg-danger-light"onclick="deletefunc('{{ $list->id }}')" "></a>
-                                                            ><i class="fe fe-trash"></i>
+                                                    <a class="btn btn-sm bg-danger-light" onclick="deletefunc('{{ $list->id }}')" ">
+                                                            <i class="fe fe-trash"></i>
                                                         </a>
                                                     </td>
                                                 </tr>
