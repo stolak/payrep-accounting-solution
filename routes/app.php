@@ -101,10 +101,11 @@ Route::middleware('auth')->group(function () {
         Route::any('/trans-summary',      	[AccountReport::class, 'Transaction_Summary']);
         Route::any('/trans-ref',      		[AccountReport::class, 'RefTransactionPost']);
         Route::any('/trans-summary-pdf',    [PDFReport::class, 'Transaction_Summary']);
-    //Project route
- Route::any('/project-setup',      	[ProjectController::class, 'project']);
- Route::any('/project-category',      	[ProjectController::class, 'projectCategory']);
- //
+        //Project route
+        Route::any('/project-setup',      	[ProjectController::class, 'project']);
+        Route::any('/project-category',      	[ProjectController::class, 'projectCategory']);
+        Route::any('/budget-setup',      	[ProjectController::class, 'budget']);
+        //
         Route::any('/staff-registration',      	[HR::class, 'StaffRreg']);
         Route::any('/staff-modification',      	[HR::class, 'StaffRecordUpdate']);
         Route::any('/staff-list',      	        [HR::class, 'StaffList']);

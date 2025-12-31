@@ -1,7 +1,7 @@
 <!-- Page Wrapper -->
 @extends('layouts.layout')
 @section('pageTitle')
-    Project Setup
+    Budget Setup
 @endsection
 @section('content')
     <div class="page-wrapper">
@@ -13,7 +13,7 @@
                         <h3 class="page-title">Setup</h3>
                         <ul class="breadcrumb">
                             <li class="breadcrumb-item"><a href="/">Home</a></li>
-                            <li class="breadcrumb-item active">Project Setup</li>
+                            <li class="breadcrumb-item active">Budget Setup</li>
                         </ul>
                     </div>
                 </div>
@@ -26,7 +26,7 @@
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-header">
-                            <h4 class="card-title">Create Project</h4>
+                            <h4 class="card-title">Create Budget</h4>
                         </div>
                         <div class="card-body">
                             <form method="post">
@@ -34,28 +34,12 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label>Project Name <span class="text-danger">*</span></label>
+                                            <label>Budget Name <span class="text-danger">*</span></label>
                                             <?php if ($name == '') {
                                                 $name = old('name');
                                             } ?>
                                             <input type="text" class="form-control" value="{{ $name }}" required
                                                 name="name">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Category</label>
-                                            <?php if ($categoryId == '') {
-                                                $categoryId = old('categoryId');
-                                            } ?>
-                                            <select class="form-control" name="categoryId">
-                                                <option value="">--Select--</option>
-                                                @foreach ($projectCategories as $cat)
-                                                    <option value="{{ $cat->id }}"
-                                                        {{ $categoryId == $cat->id ? 'selected' : '' }}>
-                                                        {{ $cat->category }}</option>
-                                                @endforeach
-                                            </select>
                                         </div>
                                     </div>
                                 </div>
@@ -67,30 +51,6 @@
                                                 $description = old('description');
                                             } ?>
                                             <textarea class="form-control" rows="3" name="description">{{ $description }}</textarea>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Location</label>
-                                            <?php if ($location == '') {
-                                                $location = old('location');
-                                            } ?>
-                                            <input type="text" class="form-control" value="{{ $location }}"
-                                                name="location">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Status</label>
-                                            <?php if ($status == '') {
-                                                $status = old('status');
-                                            } ?>
-                                            <select class="form-control" name="status">
-                                                <option value="1" {{ $status == 1 ? 'selected' : '' }}>Active</option>
-                                                <option value="0" {{ $status == 0 ? 'selected' : '' }}>Inactive</option>
-                                            </select>
                                         </div>
                                     </div>
                                 </div>
@@ -107,10 +67,10 @@
             <div class="row">
                 <div class="col-md-12">
 
-                    <!-- List of projects -->
+                    <!-- List of budgets -->
                     <div class="card card-table">
                         <div class="card-header">
-                            <h4 class="card-title">Projects</h4>
+                            <h4 class="card-title">Budgets</h4>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -119,10 +79,7 @@
                                         <tr>
                                             <th rowspan="1">S/N</th>
                                             <th rowspan="1">Name</th>
-                                            <th rowspan="1">Category</th>
                                             <th rowspan="1">Description</th>
-                                            <th rowspan="1">Location</th>
-                                            <th rowspan="1">Status</th>
                                             <th rowspan="1">Action</th>
                                         </tr>
                                     </thead>
@@ -131,10 +88,7 @@
                                             $i = 1;
                                         @endphp
 
-                                        @foreach ($projects as $list)
-                                            @php
-                                                $categoryName = $projectCategories->firstWhere('id', $list->categoryId);
-                                            @endphp
+                                        @foreach ($budgets as $list)
                                             <tr>
                                                 <td>
                                                     {{ $i++ }}
@@ -143,24 +97,11 @@
                                                     {{ $list->name }}
                                                 </td>
                                                 <td>
-                                                    {{ $categoryName ? $categoryName->category : 'N/A' }}
-                                                </td>
-                                                <td>
-                                                    {{ Str::limit($list->description ?? 'N/A', 50) }}
-                                                </td>
-                                                <td>
-                                                    {{ $list->location ?? 'N/A' }}
-                                                </td>
-                                                <td>
-                                                    @if ($list->status == 1)
-                                                        <span class="badge bg-success">Active</span>
-                                                    @else
-                                                        <span class="badge bg-danger">Inactive</span>
-                                                    @endif
+                                                    {{ Str::limit($list->description ?? 'N/A', 100) }}
                                                 </td>
                                                 <td>
                                                     <a class="btn btn-sm bg-success-light"
-                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->name }}','{{ $list->description }}','{{ $list->categoryId }}','{{ $list->location }}','{{ $list->status }}')">
+                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->name }}','{{ addslashes($list->description ?? '') }}')">
                                                         <i class="fe fe-pencil"></i>
                                                     </a>
                                                     <a class="btn btn-sm bg-danger-light"
@@ -175,7 +116,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /List of projects -->
+                    <!-- /List of budgets -->
 
                 </div>
             </div>
@@ -186,7 +127,7 @@
             <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Edit Project</h5>
+                        <h5 class="modal-title">Edit Budget</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -195,22 +136,11 @@
                         <form method="post">
                             {{ csrf_field() }}
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-12">
                                     <div class="form-group">
-                                        <label>Project Name <span class="text-danger">*</span></label>
+                                        <label>Budget Name <span class="text-danger">*</span></label>
                                         <input type="text" id="name" name="name" class="form-control"
                                             style="text-align: left;" autocomplete="off" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Category</label>
-                                        <select class="form-control" id="categoryId" name="categoryId">
-                                            <option value="">--Select--</option>
-                                            @foreach ($projectCategories as $cat)
-                                                <option value="{{ $cat->id }}">{{ $cat->category }}</option>
-                                            @endforeach
-                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -220,24 +150,6 @@
                                         <label>Description</label>
                                         <textarea class="form-control" rows="3" id="description"
                                             name="description"></textarea>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Location</label>
-                                        <input type="text" id="location" name="location" class="form-control"
-                                            style="text-align: left;" autocomplete="off">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Status</label>
-                                        <select class="form-control" id="status" name="status">
-                                            <option value="1">Active</option>
-                                            <option value="0">Inactive</option>
-                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -294,13 +206,10 @@
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
     <script>
-        function editfunc(id, name, description, categoryId, location, status) {
+        function editfunc(id, name, description) {
             document.getElementById('id').value = id;
             document.getElementById('name').value = name;
             document.getElementById('description').value = description || '';
-            document.getElementById('categoryId').value = categoryId || '';
-            document.getElementById('location').value = location || '';
-            document.getElementById('status').value = status || 1;
 
             $("#edit_details").modal('show')
         }
@@ -313,5 +222,4 @@
     </script>
 @endsection
 <!-- /Page Wrapper -->
-
 

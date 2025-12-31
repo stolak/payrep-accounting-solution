@@ -134,6 +134,59 @@ class ProjectController extends Controller {
         return view('Project.projectcategory', $data);
     }
 
+    public function budget(Request $request)
+    {
+        $data['name'] = $request->input('name');
+        $data['description'] = $request->input('description');
+        $data['id'] = $request->input('id');
+        
+        if (isset($_POST['addnew'])) {
+            $this->validate($request, [
+                'name' => 'required|string|unique:budgets,name',
+                'description' => 'nullable|string',
+            ]);
+
+            DB::table('budgets')->insert([
+                'name' => $data['name'],
+                'description' => $data['description'] ?? null,
+            ]);
+            return back()->with('message', 'New record successfully added.');
+        }
+        
+        if (isset($_POST['update'])) {
+            $this->validate($request, [
+                'name' => 'required|string|unique:budgets,name,' . $request->input('id'),
+                'description' => 'nullable|string',
+                'id' => 'required|integer',
+            ]);
+
+            DB::table('budgets')->where('id', $data['id'])->update([
+                'name' => $data['name'],
+                'description' => $data['description'] ?? null,
+            ]);
+            return back()->with('message', 'Record successfully updated.');
+        }
+        
+        if (isset($_POST['del'])) {
+            $del = $request->input('deleteid');
+            // Check if budget has related records before deletion
+            // Add your related table checks here if needed
+            // if (DB::table('related_table')->where('budgetId', $del)->first()) {
+            //     return back()->with('error_message', 'Budget has related records. Hence, record cannot be deleted!');
+            // }
+            DB::table('budgets')->where('id', $del)->delete();
+            return back()->with('message', 'Record successfully deleted.');
+        }
+        
+        // Fetch budgets list
+        $data['budgets'] = DB::table('budgets')
+            ->select('id', 'name', 'description')
+            ->orderBy('name', 'asc')
+            ->get();
+        
+        return view('Project.budget', $data);
+    }
+
    
 
 
