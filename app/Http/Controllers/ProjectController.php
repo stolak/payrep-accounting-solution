@@ -297,8 +297,10 @@ class ProjectController extends Controller {
         if (!empty($data['projectId'])) {
             $data['projectBudgets'] = DB::table('project_budget')
                 ->leftJoin('budgets', 'project_budget.budgetId', '=', 'budgets.id')
+                ->leftJoin('budget_categories', 'budgets.categoryId', '=', 'budget_categories.id')
                 ->where('project_budget.projectId', $data['projectId'])
-                ->select('project_budget.id', 'project_budget.projectId', 'project_budget.budgetId', 'project_budget.amount', 'budgets.name as budgetName')
+                ->select('project_budget.id', 'project_budget.projectId', 'project_budget.budgetId', 'project_budget.amount', 'budgets.name as budgetName', 'budget_categories.category as budgetCategoryName')
+                ->orderBy('budget_categories.category', 'asc')
                 ->orderBy('budgets.name', 'asc')
                 ->get();
         }
@@ -312,7 +314,7 @@ class ProjectController extends Controller {
         $data['id'] = $request->input('id');
         
         if (isset($_POST['addnew'])) {
-            $this->validate($request, [
+                $this->validate($request, [
                 'category' => 'required|string|unique:budget_categories,category',
             ]);
 
@@ -323,7 +325,7 @@ class ProjectController extends Controller {
         }
         
         if (isset($_POST['update'])) {
-            $this->validate($request, [
+                $this->validate($request, [
                 'category' => 'required|string|unique:budget_categories,category,' . $request->input('id'),
                 'id' => 'required|integer',
             ]);
@@ -354,7 +356,53 @@ class ProjectController extends Controller {
         return view('Project.budgetcategory', $data);
     }
 
+    public function projectBudgetSummary(Request $request)
+    {
+        $data['projectId'] = $request->input('projectId');
+        
+        // Handle project selection - reload page with selected project
+        if ($request->has('select_project')) {
+            $data['projectId'] = $request->input('projectId');
+            Session(['selected_project_id_summary' => $data['projectId']]);
+        }
+        
+        // Get selected project from session if not in request
+        if (empty($data['projectId'])) {
+            $data['projectId'] = Session::get('selected_project_id_summary');
+        }
+        
+        // Fetch projects list
+        $data['projects'] = DB::table('projects')
+            ->select('id', 'name')
+            ->orderBy('name', 'asc')
+            ->get();
+        
+        // Fetch project budget summary by category for selected project
+        $data['budgetSummary'] = collect();
+        $data['totalAmount'] = 0;
+        
+        if (!empty($data['projectId'])) {
+            $data['budgetSummary'] = DB::table('project_budget')
+                ->leftJoin('budgets', 'project_budget.budgetId', '=', 'budgets.id')
+                ->leftJoin('budget_categories', 'budgets.categoryId', '=', 'budget_categories.id')
+                ->where('project_budget.projectId', $data['projectId'])
+                ->select(
+                    'budget_categories.id as categoryId',
+                    'budget_categories.category as categoryName',
+                    DB::raw('SUM(project_budget.amount) as totalAmount')
+                )
+                ->groupBy('budget_categories.id', 'budget_categories.category')
+                ->orderBy('budget_categories.category', 'asc')
+                ->get();
+            
+            // Calculate grand total
+            $data['totalAmount'] = $data['budgetSummary']->sum('totalAmount');
+        }
+        
+        return view('Project.projectbudgetsummary', $data);
+    }
    
+
 
 
 

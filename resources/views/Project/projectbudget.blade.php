@@ -75,7 +75,7 @@
                                                 <?php if ($budgetId == '') {
                                                     $budgetId = old('budgetId');
                                                 } ?>
-                                                <select class="form-control" name="budgetId" required>
+                                                <select class="select2 form-control" name="budgetId" required>
                                                     <option value="">--Select Budget--</option>
                                                     @foreach ($budgets as $budget)
                                                         <option value="{{ $budget->id }}"
@@ -119,6 +119,7 @@
                                         <thead>
                                             <tr>
                                                 <th rowspan="1">S/N</th>
+                                                <th rowspan="1">Budget Category</th>
                                                 <th rowspan="1">Budget Name</th>
                                                 <th rowspan="1">Amount</th>
                                                 <th rowspan="1">Action</th>
@@ -128,44 +129,78 @@
                                             @php
                                                 $i = 1;
                                                 $totalAmount = 0;
+                                                // Group budgets by category
+                                                $groupedBudgets = [];
+                                                foreach ($projectBudgets as $list) {
+                                                    $categoryName = $list->budgetCategoryName ?? 'Uncategorized';
+                                                    if (!isset($groupedBudgets[$categoryName])) {
+                                                        $groupedBudgets[$categoryName] = [];
+                                                    }
+                                                    $groupedBudgets[$categoryName][] = $list;
+                                                }
                                             @endphp
 
                                             @if ($projectBudgets->count() > 0)
-                                                @foreach ($projectBudgets as $list)
+                                                @foreach ($groupedBudgets as $categoryName => $budgets)
                                                     @php
-                                                        $totalAmount += $list->amount;
+                                                        $categorySubtotal = 0;
+                                                        $firstInCategory = true;
                                                     @endphp
-                                                    <tr>
-                                                        <td>
-                                                            {{ $i++ }}
+                                                    @foreach ($budgets as $list)
+                                                        @php
+                                                            $categorySubtotal += $list->amount;
+                                                            $totalAmount += $list->amount;
+                                                        @endphp
+                                                        <tr>
+                                                            <td>
+                                                                {{ $i++ }}
+                                                            </td>
+                                                            <td>
+                                                                @if ($firstInCategory)
+                                                                    <strong>{{ $categoryName }}</strong>
+                                                                    @php $firstInCategory = false; @endphp
+                                                                @endif
+                                                            </td>
+                                                            <td>
+                                                                {{ $list->budgetName }}
+                                                            </td>
+                                                            <td>
+                                                                {{ number_format($list->amount, 2, '.', ',') }}
+                                                            </td>
+                                                            <td>
+                                                                <a class="btn btn-sm bg-success-light"
+                                                                    href="javascript: editfunc('{{ $list->id }}','{{ $list->budgetId }}','{{ $list->amount }}')">
+                                                                    <i class="fe fe-pencil"></i>
+                                                                </a>
+                                                                <a class="btn btn-sm bg-danger-light"
+                                                                    href="javascript: deletefunc('{{ $list->id }}')">
+                                                                    <i class="fe fe-trash"></i>
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                    <tr style="background-color: #e8e8e8; font-weight: bold;">
+                                                        <td></td>
+                                                        <td class="text-right">
+                                                            <strong>{{ $categoryName }} Subtotal:</strong>
                                                         </td>
+                                                        <td></td>
                                                         <td>
-                                                            {{ $list->budgetName }}
+                                                            <strong>{{ number_format($categorySubtotal, 2, '.', ',') }}</strong>
                                                         </td>
-                                                        <td>
-                                                            {{ number_format($list->amount, 2, '.', ',') }}
-                                                        </td>
-                                                        <td>
-                                                            <a class="btn btn-sm bg-success-light"
-                                                                href="javascript: editfunc('{{ $list->id }}','{{ $list->budgetId }}','{{ $list->amount }}')">
-                                                                <i class="fe fe-pencil"></i>
-                                                            </a>
-                                                            <a class="btn btn-sm bg-danger-light"
-                                                                href="javascript: deletefunc('{{ $list->id }}')">
-                                                                <i class="fe fe-trash"></i>
-                                                            </a>
-                                                        </td>
+                                                        <td></td>
                                                     </tr>
                                                 @endforeach
-                                                <tr style="background-color: #f5f5f5; font-weight: bold;">
-                                                    <td colspan="2" class="text-right"><strong>Total:</strong></td>
+                                                <tr style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
+                                                    <td></td>
+                                                    <td colspan="2" class="text-right"><strong>Grand Total:</strong></td>
                                                     <td><strong>{{ number_format($totalAmount, 2, '.', ',') }}</strong>
                                                     </td>
                                                     <td></td>
                                                 </tr>
                                             @else
                                                 <tr>
-                                                    <td colspan="4" class="text-center">No budgets assigned to this
+                                                    <td colspan="5" class="text-center">No budgets assigned to this
                                                         project
                                                         yet.</td>
                                                 </tr>
@@ -211,7 +246,7 @@
                                 <select class="form-control" id="edit_budgetId" name="budgetId" required>
                                     <option value="">--Select Budget--</option>
                                     @foreach ($budgets as $budget)
-                                        <option value="{{ $budget->id }}">{{ $budget->name }}</option>
+                                        <option value="{{ $budget->id }}">{{ $budget->budgetName }}</option>
                                     @endforeach
                                 </select>
                             </div>
