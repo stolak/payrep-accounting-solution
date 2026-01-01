@@ -1,7 +1,7 @@
 <!-- Page Wrapper -->
 @extends('layouts.layout')
 @section('pageTitle')
-    Budget Setup
+    Budget Category Setup
 @endsection
 @section('content')
     <div class="page-wrapper">
@@ -13,7 +13,7 @@
                         <h3 class="page-title">Setup</h3>
                         <ul class="breadcrumb">
                             <li class="breadcrumb-item"><a href="/">Home</a></li>
-                            <li class="breadcrumb-item active">Budget Setup</li>
+                            <li class="breadcrumb-item active">Budget Category Setup</li>
                         </ul>
                     </div>
                 </div>
@@ -26,7 +26,7 @@
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-header">
-                            <h4 class="card-title">Create Budget</h4>
+                            <h4 class="card-title">Create Budget Category</h4>
                         </div>
                         <div class="card-body">
                             <form method="post">
@@ -34,39 +34,12 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label>Budget Name <span class="text-danger">*</span></label>
-                                            <?php if ($name == '') {
-                                                $name = old('name');
+                                            <label>Category</label>
+                                            <?php if ($category == '') {
+                                                $category = old('category');
                                             } ?>
-                                            <input type="text" class="form-control" value="{{ $name }}" required
-                                                name="name">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Category <span class="text-danger">*</span></label>
-                                            <?php if ($categoryId == '') {
-                                                $categoryId = old('categoryId');
-                                            } ?>
-                                            <select class="form-control" name="categoryId" required>
-                                                <option value="">--Select Category--</option>
-                                                @foreach ($budgetCategories as $cat)
-                                                    <option value="{{ $cat->id }}"
-                                                        {{ $categoryId == $cat->id ? 'selected' : '' }}>
-                                                        {{ $cat->category }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <div class="form-group">
-                                            <label>Description</label>
-                                            <?php if ($description == '') {
-                                                $description = old('description');
-                                            } ?>
-                                            <textarea class="form-control" rows="3" name="description">{{ $description }}</textarea>
+                                            <input type="text" class="form-control" value="{{ $category }}" required
+                                                name="category">
                                         </div>
                                     </div>
                                 </div>
@@ -83,10 +56,10 @@
             <div class="row">
                 <div class="col-md-12">
 
-                    <!-- List of budgets -->
+                    <!-- List of budget categories -->
                     <div class="card card-table">
                         <div class="card-header">
-                            <h4 class="card-title">Budgets</h4>
+                            <h4 class="card-title">Budget Categories</h4>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -94,9 +67,7 @@
                                     <thead>
                                         <tr>
                                             <th rowspan="1">S/N</th>
-                                            <th rowspan="1">Name</th>
                                             <th rowspan="1">Category</th>
-                                            <th rowspan="1">Description</th>
                                             <th rowspan="1">Action</th>
                                         </tr>
                                     </thead>
@@ -105,23 +76,17 @@
                                             $i = 1;
                                         @endphp
 
-                                        @foreach ($budgets as $list)
+                                        @foreach ($budgetCategories as $list)
                                             <tr>
                                                 <td>
                                                     {{ $i++ }}
                                                 </td>
                                                 <td>
-                                                    {{ $list->name }}
-                                                </td>
-                                                <td>
-                                                    {{ $list->categoryName ?? 'N/A' }}
-                                                </td>
-                                                <td>
-                                                    {{ Str::limit($list->description ?? 'N/A', 100) }}
+                                                    {{ $list->category }}
                                                 </td>
                                                 <td>
                                                     <a class="btn btn-sm bg-success-light"
-                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->name }}','{{ addslashes($list->description ?? '') }}','{{ $list->categoryId }}')">
+                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->category }}')">
                                                         <i class="fe fe-pencil"></i>
                                                     </a>
                                                     <a class="btn btn-sm bg-danger-light"
@@ -136,7 +101,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /List of budgets -->
+                    <!-- /List of budget categories -->
 
                 </div>
             </div>
@@ -144,10 +109,10 @@
 
         <!-- Edit Details Modal -->
         <div class="modal fade" id="edit_details" aria-hidden="true" role="dialog">
-            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Edit Budget</h5>
+                        <h5 class="modal-title">Edit Budget Category</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -155,32 +120,12 @@
                     <div class="modal-body">
                         <form method="post">
                             {{ csrf_field() }}
-                            <div class="row">
-                                <div class="col-md-6">
+                            <div class="row ">
+                                <div class="col-12 col-sm-12">
                                     <div class="form-group">
-                                        <label>Budget Name <span class="text-danger">*</span></label>
-                                        <input type="text" id="name" name="name" class="form-control"
-                                            style="text-align: left;" autocomplete="off" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Category <span class="text-danger">*</span></label>
-                                        <select class="form-control" id="categoryId" name="categoryId" required>
-                                            <option value="">--Select Category--</option>
-                                            @foreach ($budgetCategories as $cat)
-                                                <option value="{{ $cat->id }}">{{ $cat->category }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <label>Description</label>
-                                        <textarea class="form-control" rows="3" id="description"
-                                            name="description"></textarea>
+                                        <label>Category</label>
+                                        <input type="text" id="category" name="category" class="form-control"
+                                            style="text-align: left;" autocomplete="off">
                                     </div>
                                 </div>
                             </div>
@@ -190,6 +135,8 @@
                                 <button type="submit" class="btn btn-primary " name="update">Save Changes</button>
                                 <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
                             </div>
+
+
                         </form>
                     </div>
                 </div>
@@ -237,11 +184,9 @@
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
     <script>
-        function editfunc(id, name, description, categoryId) {
+        function editfunc(id, cat) {
             document.getElementById('id').value = id;
-            document.getElementById('name').value = name;
-            document.getElementById('description').value = description || '';
-            document.getElementById('categoryId').value = categoryId || '';
+            document.getElementById('category').value = cat;
 
             $("#edit_details").modal('show')
         }
@@ -254,5 +199,4 @@
     </script>
 @endsection
 <!-- /Page Wrapper -->
-
 

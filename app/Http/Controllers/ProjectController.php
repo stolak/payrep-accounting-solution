@@ -6,10 +6,12 @@ use Illuminate\Http\Request;
 use App\Http\Requests;
 use DB;
 use Auth;
+use Session;
 class ProjectController extends Controller {
 
     public function project(Request $request)
     {
+        $data['projectCode'] = $request->input('projectCode');
         $data['name'] = $request->input('name');
         $data['description'] = $request->input('description');
         $data['categoryId'] = $request->input('categoryId');
@@ -19,6 +21,7 @@ class ProjectController extends Controller {
         
         if (isset($_POST['addnew'])) {
             $this->validate($request, [
+                'projectCode' => 'required|string|unique:projects,projectCode',
                 'name' => 'required|string|unique:projects,name',
                 'description' => 'nullable|string',
                 'categoryId' => 'nullable|integer',
@@ -27,6 +30,7 @@ class ProjectController extends Controller {
             ]);
 
             DB::table('projects')->insert([
+                'projectCode' => $data['projectCode'],
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
                 'categoryId' => $data['categoryId'] ?? null,
@@ -41,6 +45,7 @@ class ProjectController extends Controller {
         
         if (isset($_POST['update'])) {
             $this->validate($request, [
+                'projectCode' => 'required|string|unique:projects,projectCode,' . $request->input('id'),
                 'name' => 'required|string|unique:projects,name,' . $request->input('id'),
                 'description' => 'nullable|string',
                 'categoryId' => 'nullable|integer',
@@ -50,6 +55,7 @@ class ProjectController extends Controller {
             ]);
 
             DB::table('projects')->where('id', $data['id'])->update([
+                'projectCode' => $data['projectCode'],
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
                 'categoryId' => $data['categoryId'] ?? null,
@@ -73,7 +79,7 @@ class ProjectController extends Controller {
         
         // Fetch projects list
         $data['projects'] = DB::table('projects')
-            ->select('id', 'name', 'description', 'categoryId', 'location', 'status', 'createdAt', 'updateAt', 'createdBy')
+            ->select('id', 'projectCode', 'name', 'description', 'categoryId', 'location', 'status', 'createdAt', 'updateAt', 'createdBy')
             ->orderBy('createdAt', 'desc')
             ->get();
         
@@ -138,17 +144,20 @@ class ProjectController extends Controller {
     {
         $data['name'] = $request->input('name');
         $data['description'] = $request->input('description');
+        $data['categoryId'] = $request->input('categoryId');
         $data['id'] = $request->input('id');
         
         if (isset($_POST['addnew'])) {
             $this->validate($request, [
                 'name' => 'required|string|unique:budgets,name',
                 'description' => 'nullable|string',
+                'categoryId' => 'required|integer',
             ]);
 
             DB::table('budgets')->insert([
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
+                'categoryId' => $data['categoryId'],
             ]);
             return back()->with('message', 'New record successfully added.');
         }
@@ -157,12 +166,14 @@ class ProjectController extends Controller {
             $this->validate($request, [
                 'name' => 'required|string|unique:budgets,name,' . $request->input('id'),
                 'description' => 'nullable|string',
+                'categoryId' => 'required|integer',
                 'id' => 'required|integer',
             ]);
 
             DB::table('budgets')->where('id', $data['id'])->update([
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
+                'categoryId' => $data['categoryId'],
             ]);
             return back()->with('message', 'Record successfully updated.');
         }
@@ -171,20 +182,176 @@ class ProjectController extends Controller {
             $del = $request->input('deleteid');
             // Check if budget has related records before deletion
             // Add your related table checks here if needed
-            // if (DB::table('related_table')->where('budgetId', $del)->first()) {
-            //     return back()->with('error_message', 'Budget has related records. Hence, record cannot be deleted!');
-            // }
+            if (DB::table('project_budget')->where('budgetId', $del)->first()) {
+                return back()->with('error_message', 'Budget has related project budgets. Hence, record cannot be deleted!');
+            }
             DB::table('budgets')->where('id', $del)->delete();
             return back()->with('message', 'Record successfully deleted.');
         }
         
-        // Fetch budgets list
+        // Fetch budgets list with category
         $data['budgets'] = DB::table('budgets')
-            ->select('id', 'name', 'description')
-            ->orderBy('name', 'asc')
+            ->leftJoin('budget_categories', 'budgets.categoryId', '=', 'budget_categories.id')
+            ->select('budgets.id', 'budgets.name', 'budgets.description', 'budgets.categoryId', 'budget_categories.category as categoryName')
+            ->orderBy('budgets.name', 'asc')
+            ->get();
+        
+        // Fetch budget categories for dropdown
+        $data['budgetCategories'] = DB::table('budget_categories')
+            ->select('id', 'category')
+            ->orderBy('category', 'asc')
             ->get();
         
         return view('Project.budget', $data);
+    }
+
+    public function projectBudget(Request $request)
+    {
+        $data['projectId'] = $request->input('projectId');
+        $data['budgetId'] = $request->input('budgetId');
+        $data['amount'] = $request->input('amount');
+        $data['id'] = $request->input('id');
+        
+        // Handle project selection - reload page with selected project
+        if ($request->has('select_project')) {
+            $data['projectId'] = $request->input('projectId');
+            Session(['selected_project_id' => $data['projectId']]);
+        }
+        
+        // Get selected project from session if not in request
+        if (empty($data['projectId'])) {
+            $data['projectId'] = Session::get('selected_project_id');
+        }
+        
+        if (isset($_POST['addnew'])) {
+            $this->validate($request, [
+                'projectId' => 'required|integer',
+                'budgetId' => 'required|integer',
+                'amount' => 'required|numeric|min:0',
+            ]);
+
+            // Check if this project-budget combination already exists
+            $existing = DB::table('project_budget')
+                ->where('projectId', $data['projectId'])
+                ->where('budgetId', $data['budgetId'])
+                ->first();
+            
+            if ($existing) {
+                return back()->with('error_message', 'This budget is already assigned to this project.');
+            }
+
+            DB::table('project_budget')->insert([
+                'projectId' => $data['projectId'],
+                'budgetId' => $data['budgetId'],
+                'amount' => $data['amount'],
+            ]);
+            return back()->with('message', 'New record successfully added.');
+        }
+        
+        if (isset($_POST['update'])) {
+            $this->validate($request, [
+                'projectId' => 'required|integer',
+                'budgetId' => 'required|integer',
+                'amount' => 'required|numeric|min:0',
+                'id' => 'required|integer',
+            ]);
+
+            // Check if this project-budget combination already exists (excluding current record)
+            $existing = DB::table('project_budget')
+                ->where('projectId', $data['projectId'])
+                ->where('budgetId', $data['budgetId'])
+                ->where('id', '!=', $data['id'])
+                ->first();
+            
+            if ($existing) {
+                return back()->with('error_message', 'This budget is already assigned to this project.');
+            }
+
+            DB::table('project_budget')->where('id', $data['id'])->update([
+                'budgetId' => $data['budgetId'],
+                'amount' => $data['amount'],
+            ]);
+            return back()->with('message', 'Record successfully updated.');
+        }
+        
+        if (isset($_POST['del'])) {
+            $del = $request->input('deleteid');
+            DB::table('project_budget')->where('id', $del)->delete();
+            return back()->with('message', 'Record successfully deleted.');
+        }
+        
+        // Fetch projects list
+        $data['projects'] = DB::table('projects')
+            ->select('id', 'name')
+            ->orderBy('name', 'asc')
+            ->get();
+        
+        // Fetch budgets list
+        $data['budgets'] = DB::table('budgets')
+            ->select('id', 'name')
+            ->orderBy('name', 'asc')
+            ->get();
+        
+        // Fetch project budgets for selected project
+        $data['projectBudgets'] = collect();
+        if (!empty($data['projectId'])) {
+            $data['projectBudgets'] = DB::table('project_budget')
+                ->leftJoin('budgets', 'project_budget.budgetId', '=', 'budgets.id')
+                ->where('project_budget.projectId', $data['projectId'])
+                ->select('project_budget.id', 'project_budget.projectId', 'project_budget.budgetId', 'project_budget.amount', 'budgets.name as budgetName')
+                ->orderBy('budgets.name', 'asc')
+                ->get();
+        }
+        
+        return view('Project.projectbudget', $data);
+    }
+
+    public function budgetCategory(Request $request)
+    {
+        $data['category'] = $request->input('category');
+        $data['id'] = $request->input('id');
+        
+        if (isset($_POST['addnew'])) {
+            $this->validate($request, [
+                'category' => 'required|string|unique:budget_categories,category',
+            ]);
+
+            DB::table('budget_categories')->insert([
+                'category' => $data['category'],
+            ]);
+            return back()->with('message', 'New record successfully added.');
+        }
+        
+        if (isset($_POST['update'])) {
+            $this->validate($request, [
+                'category' => 'required|string|unique:budget_categories,category,' . $request->input('id'),
+                'id' => 'required|integer',
+            ]);
+
+            DB::table('budget_categories')->where('id', $data['id'])->update([
+                'category' => $data['category'],
+            ]);
+            return back()->with('message', 'Record successfully updated.');
+        }
+        
+        if (isset($_POST['del'])) {
+            $del = $request->input('deleteid');
+            // Check if category has related records before deletion
+            // Add your related table checks here if needed
+            if (DB::table('budgets')->where('categoryId', $del)->first()) {
+                return back()->with('error_message', 'Category has related budgets. Hence, record cannot be deleted!');
+            }
+            DB::table('budget_categories')->where('id', $del)->delete();
+            return back()->with('message', 'Record successfully deleted.');
+        }
+        
+        // Fetch budget categories list
+        $data['budgetCategories'] = DB::table('budget_categories')
+            ->select('id', 'category')
+            ->orderBy('category', 'asc')
+            ->get();
+        
+        return view('Project.budgetcategory', $data);
     }
 
    

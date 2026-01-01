@@ -34,6 +34,16 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
+                                            <label>Project Code <span class="text-danger">*</span></label>
+                                            <?php if ($projectCode == '') {
+                                                $projectCode = old('projectCode');
+                                            } ?>
+                                            <input type="text" class="form-control" value="{{ $projectCode }}" required
+                                                name="projectCode">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
                                             <label>Project Name <span class="text-danger">*</span></label>
                                             <?php if ($name == '') {
                                                 $name = old('name');
@@ -42,6 +52,8 @@
                                                 name="name">
                                         </div>
                                     </div>
+                                </div>
+                                <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label>Category</label>
@@ -89,7 +101,8 @@
                                             } ?>
                                             <select class="form-control" name="status">
                                                 <option value="1" {{ $status == 1 ? 'selected' : '' }}>Active</option>
-                                                <option value="0" {{ $status == 0 ? 'selected' : '' }}>Inactive</option>
+                                                <option value="0" {{ $status == 0 ? 'selected' : '' }}>Inactive
+                                                </option>
                                             </select>
                                         </div>
                                     </div>
@@ -118,6 +131,7 @@
                                     <thead>
                                         <tr>
                                             <th rowspan="1">S/N</th>
+                                            <th rowspan="1">Project Code</th>
                                             <th rowspan="1">Name</th>
                                             <th rowspan="1">Category</th>
                                             <th rowspan="1">Description</th>
@@ -140,6 +154,9 @@
                                                     {{ $i++ }}
                                                 </td>
                                                 <td>
+                                                    {{ $list->projectCode ?? 'N/A' }}
+                                                </td>
+                                                <td>
                                                     {{ $list->name }}
                                                 </td>
                                                 <td>
@@ -160,7 +177,7 @@
                                                 </td>
                                                 <td>
                                                     <a class="btn btn-sm bg-success-light"
-                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->name }}','{{ $list->description }}','{{ $list->categoryId }}','{{ $list->location }}','{{ $list->status }}')">
+                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->projectCode }}','{{ $list->name }}','{{ $list->description }}','{{ $list->categoryId }}','{{ $list->location }}','{{ $list->status }}')">
                                                         <i class="fe fe-pencil"></i>
                                                     </a>
                                                     <a class="btn btn-sm bg-danger-light"
@@ -197,11 +214,20 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
+                                        <label>Project Code <span class="text-danger">*</span></label>
+                                        <input type="text" id="projectCode" name="projectCode" class="form-control"
+                                            style="text-align: left;" autocomplete="off" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
                                         <label>Project Name <span class="text-danger">*</span></label>
                                         <input type="text" id="name" name="name" class="form-control"
                                             style="text-align: left;" autocomplete="off" required>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Category</label>
@@ -218,8 +244,7 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label>Description</label>
-                                        <textarea class="form-control" rows="3" id="description"
-                                            name="description"></textarea>
+                                        <textarea class="form-control" rows="3" id="description" name="description"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -276,7 +301,6 @@
         <!-- /Delete Modal -->
 
     </div>
-
 @endsection
 @section('styles')
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
@@ -294,8 +318,9 @@
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
     <script>
-        function editfunc(id, name, description, categoryId, location, status) {
+        function editfunc(id, projectCode, name, description, categoryId, location, status) {
             document.getElementById('id').value = id;
+            document.getElementById('projectCode').value = projectCode || '';
             document.getElementById('name').value = name;
             document.getElementById('description').value = description || '';
             document.getElementById('categoryId').value = categoryId || '';
@@ -313,5 +338,3 @@
     </script>
 @endsection
 <!-- /Page Wrapper -->
-
-
