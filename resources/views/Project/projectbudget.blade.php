@@ -81,7 +81,7 @@
                                                     @foreach ($budgets as $budget)
                                                         <option value="{{ $budget->id }}"
                                                             {{ $budgetId == $budget->id ? 'selected' : '' }}>
-                                                            {{ $budget->name }}</option>
+                                                            {{ $budget->budgetName }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>

@@ -271,7 +271,7 @@ class Payroll extends Basefunction
     $data['Payroll']=$this->Payrolls($data['year'],$data['month']);
     $data['MonthlyActiveVariable']=$this->MonthlyActiveVariable($data['year'],$data['month']);
     //dd($this->NetpaySummary($data['year'],$data['month']));
-    dd($data['Payroll']);
+   
 	return view('Payroll.payroll', $data);
    }
    public function Payroll_Mandate(Request $request)
@@ -288,13 +288,21 @@ class Payroll extends Basefunction
    public function PayrollParticularReport(Request $request)
    {
    	$data['variable']=$request->input('variable');
+    // dd($data['variable']);
    	$data['year']=$request->input('year');
    	$data['month']=$request->input('month');
    	$active_period=$this->Payroll_Active_period();
    	if($data['year']==''){$data['year']=$active_period->year;}
    	if($data['month']==''){$data['month']=$active_period->month;}
     $data['Months'] = $this->Months();
-    $data['NetpaySummary']=$this->NetpaySummary($data['year'],$data['month']);
+    $data['PayrollVariable'] = $this->PayrollVariable('');
+    // dd($data['PayrollVariable']);
+    $data['NetpaySummary']=$this->PayrollParticular($data['year'], $data['month'], $data['variable']);
+    // dd($data['NetpaySummary']);
+    // $data['NetpaySummary']=[];
+    $variableData = DB::table('tblpayroll_variable')->where('ref_code', $data['variable'])->first();
+    
+    $data['variableName'] = $variableData? ($variableData->variable_type==1 ? 'Earning' : 'Deduction') . " - " . $variableData->variable : '';
     $data['PayrollVariable'] = $this->PayrollVariable('');
 	return view('Payroll.variablereport', $data);
    }

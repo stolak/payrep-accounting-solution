@@ -1114,6 +1114,20 @@ Public function BankList() {
 	    WHERE `year`='$year' and `month`='$month'");
 	    return $qdata;
 	}
+	Public function PayrollParticular($year, $month, $particular) {
+		$isVariableExist=DB::Select("SELECT * 
+	    FROM `tblpayroll_variable_monthly`  
+	    WHERE `year`='$year' and `month`='$month' and `ref_code`= '$particular'");
+		if(!$isVariableExist){
+			return [];
+		}
+	    $particular_variable = " `$particular` as Net";
+	    $qdata= DB::Select("SELECT tblpayroll_payment.*, $particular_variable, tblbanklist.bank
+	    FROM `tblpayroll_payment` 
+	    left join tblbanklist on tblbanklist.bankID=tblpayroll_payment.bankid
+	    WHERE `year`='$year' and `month`='$month' and `$particular`<>0");
+	    return $qdata;
+	}
 	Public function GradeChart($grade,$step=1,$emp=1) {
 	   return DB::table ('tblpayroll_salary_new_chart')->where('grade',$grade)
 		->first();

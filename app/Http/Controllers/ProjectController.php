@@ -37,7 +37,7 @@ class ProjectController extends Controller {
                 'location' => $data['location'] ?? null,
                 'status' => $data['status'] ?? 1,
                 'createdAt' => now(),
-                'updateAt' => now(),
+                'updatedAt' => now(),
                 'createdBy' => Auth::user()->id,
             ]);
             return back()->with('message', 'New record successfully added.');
@@ -61,7 +61,7 @@ class ProjectController extends Controller {
                 'categoryId' => $data['categoryId'] ?? null,
                 'location' => $data['location'] ?? null,
                 'status' => $data['status'] ?? 1,
-                'updateAt' => now(),
+                'updatedAt' => now(),
             ]);
             return back()->with('message', 'Record successfully updated.');
         }
@@ -79,7 +79,7 @@ class ProjectController extends Controller {
         
         // Fetch projects list
         $data['projects'] = DB::table('projects')
-            ->select('id', 'projectCode', 'name', 'description', 'categoryId', 'location', 'status', 'createdAt', 'updateAt', 'createdBy')
+            ->select('id', 'projectCode', 'name', 'description', 'categoryId', 'location', 'status', 'createdAt', 'updatedAt', 'createdBy')
             ->orderBy('createdAt', 'desc')
             ->get();
         
@@ -356,7 +356,7 @@ class ProjectController extends Controller {
         
         // Fetch budgets list
         $data['budgets'] = DB::table('budgets')
-            ->select('id', 'name')
+            ->select('id', 'name as budgetName' )
             ->orderBy('name', 'asc')
             ->get();
         
