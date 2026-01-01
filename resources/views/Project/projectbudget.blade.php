@@ -147,6 +147,8 @@
                                                 <th rowspan="1">S/N</th>
                                                 <th rowspan="1">Budget Category</th>
                                                 <th rowspan="1">Budget Name</th>
+                                                <th rowspan="1">Unit</th>
+                                                <th rowspan="1">Unit Cost</th>
                                                 <th rowspan="1">Amount</th>
                                                 <th rowspan="1">Action</th>
                                             </tr>
@@ -190,7 +192,13 @@
                                                             <td>
                                                                 {{ $list->budgetName }}
                                                             </td>
-                                                            <td>
+                                                            <td style="text-align: right;">
+                                                                {{ $list->unit ? number_format($list->unit, 2, '.', ',') : '-' }}
+                                                            </td>
+                                                            <td style="text-align: right;">
+                                                                {{ $list->unitCost ? number_format($list->unitCost, 2, '.', ',') : '-' }}
+                                                            </td>
+                                                            <td style="text-align: right;">
                                                                 {{ number_format($list->amount, 2, '.', ',') }}
                                                             </td>
                                                             <td>
@@ -211,7 +219,9 @@
                                                             <strong>{{ $categoryName }} Subtotal:</strong>
                                                         </td>
                                                         <td></td>
-                                                        <td>
+                                                        <td></td>
+                                                        <td></td>
+                                                        <td style="text-align: right;">
                                                             <strong>{{ number_format($categorySubtotal, 2, '.', ',') }}</strong>
                                                         </td>
                                                         <td></td>
@@ -220,15 +230,16 @@
                                                 <tr
                                                     style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
                                                     <td></td>
-                                                    <td colspan="2" class="text-right"><strong>Grand Total:</strong>
+                                                    <td colspan="4" class="text-right"><strong>Grand Total:</strong>
                                                     </td>
-                                                    <td><strong>{{ number_format($totalAmount, 2, '.', ',') }}</strong>
+                                                    <td style="text-align: right;">
+                                                        <strong>{{ number_format($totalAmount, 2, '.', ',') }}</strong>
                                                     </td>
                                                     <td></td>
                                                 </tr>
                                             @else
                                                 <tr>
-                                                    <td colspan="5" class="text-center">No budgets assigned to this
+                                                    <td colspan="7" class="text-center">No budgets assigned to this
                                                         project
                                                         yet.</td>
                                                 </tr>
