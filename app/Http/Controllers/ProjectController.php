@@ -209,6 +209,8 @@ class ProjectController extends Controller {
     {
         $data['projectId'] = $request->input('projectId');
         $data['budgetId'] = $request->input('budgetId');
+        $data['unit'] = $request->input('unit');
+        $data['unitCost'] = $request->input('unitCost');
         $data['amount'] = $request->input('amount');
         $data['id'] = $request->input('id');
         
@@ -224,11 +226,34 @@ class ProjectController extends Controller {
         }
         
         if (isset($_POST['addnew'])) {
-            $this->validate($request, [
+            // Custom validation logic
+            $unit = $request->input('unit');
+            $unitCost = $request->input('unitCost');
+            $amount = $request->input('amount');
+            
+            // Check if unit and unitCost are both present and > 0
+            $hasUnitAndCost = !empty($unit) && $unit > 0 && !empty($unitCost) && $unitCost > 0;
+            
+            // Validation rules
+            $rules = [
                 'projectId' => 'required|integer',
                 'budgetId' => 'required|integer',
-                'amount' => 'required|numeric|min:0',
-            ]);
+            ];
+            
+            // If both unit and unitCost are present, they must both be valid
+            if (!empty($unit) || !empty($unitCost)) {
+                $rules['unit'] = 'required|numeric|min:0';
+                $rules['unitCost'] = 'required|numeric|min:0';
+            }
+            
+            // If unit and unitCost are not both present and > 0, amount is required
+            if (!$hasUnitAndCost) {
+                $rules['amount'] = 'required|numeric|min:0';
+            } else {
+                $rules['amount'] = 'nullable|numeric|min:0';
+            }
+            
+            $this->validate($request, $rules);
 
             // Check if this project-budget combination already exists
             $existing = DB::table('project_budget')
@@ -240,21 +265,55 @@ class ProjectController extends Controller {
                 return back()->with('error_message', 'This budget is already assigned to this project.');
             }
 
+            // Calculate amount if unit and unitCost are present and > 0
+            $calculatedAmount = $amount;
+            if ($hasUnitAndCost) {
+                $calculatedAmount = $unit * $unitCost;
+            }
+
             DB::table('project_budget')->insert([
                 'projectId' => $data['projectId'],
                 'budgetId' => $data['budgetId'],
-                'amount' => $data['amount'],
+                'unit' => $unit ?? null,
+                'unitCost' => $unitCost ?? null,
+                'amount' => $calculatedAmount,
+                'createdBy' => Auth::user()->id,
+                'createdAt' => now(),
+                'updatedAt' => now(),
             ]);
             return back()->with('message', 'New record successfully added.');
         }
         
         if (isset($_POST['update'])) {
-            $this->validate($request, [
+            // Custom validation logic
+            $unit = $request->input('unit');
+            $unitCost = $request->input('unitCost');
+            $amount = $request->input('amount');
+            
+            // Check if unit and unitCost are both present and > 0
+            $hasUnitAndCost = !empty($unit) && $unit > 0 && !empty($unitCost) && $unitCost > 0;
+            
+            // Validation rules
+            $rules = [
                 'projectId' => 'required|integer',
                 'budgetId' => 'required|integer',
-                'amount' => 'required|numeric|min:0',
                 'id' => 'required|integer',
-            ]);
+            ];
+            
+            // If both unit and unitCost are present, they must both be valid
+            if (!empty($unit) || !empty($unitCost)) {
+                $rules['unit'] = 'required|numeric|min:0';
+                $rules['unitCost'] = 'required|numeric|min:0';
+            }
+            
+            // If unit and unitCost are not both present and > 0, amount is required
+            if (!$hasUnitAndCost) {
+                $rules['amount'] = 'required|numeric|min:0';
+            } else {
+                $rules['amount'] = 'nullable|numeric|min:0';
+            }
+            
+            $this->validate($request, $rules);
 
             // Check if this project-budget combination already exists (excluding current record)
             $existing = DB::table('project_budget')
@@ -267,9 +326,18 @@ class ProjectController extends Controller {
                 return back()->with('error_message', 'This budget is already assigned to this project.');
             }
 
+            // Calculate amount if unit and unitCost are present and > 0
+            $calculatedAmount = $amount;
+            if ($hasUnitAndCost) {
+                $calculatedAmount = $unit * $unitCost;
+            }
+
             DB::table('project_budget')->where('id', $data['id'])->update([
                 'budgetId' => $data['budgetId'],
-                'amount' => $data['amount'],
+                'unit' => $unit ?? null,
+                'unitCost' => $unitCost ?? null,
+                'amount' => $calculatedAmount,
+                'updatedAt' => now(),
             ]);
             return back()->with('message', 'Record successfully updated.');
         }
@@ -299,7 +367,7 @@ class ProjectController extends Controller {
                 ->leftJoin('budgets', 'project_budget.budgetId', '=', 'budgets.id')
                 ->leftJoin('budget_categories', 'budgets.categoryId', '=', 'budget_categories.id')
                 ->where('project_budget.projectId', $data['projectId'])
-                ->select('project_budget.id', 'project_budget.projectId', 'project_budget.budgetId', 'project_budget.amount', 'budgets.name as budgetName', 'budget_categories.category as budgetCategoryName')
+                ->select('project_budget.id', 'project_budget.projectId', 'project_budget.budgetId', 'project_budget.unit', 'project_budget.unitCost', 'project_budget.amount', 'budgets.name as budgetName', 'budget_categories.category as budgetCategoryName')
                 ->orderBy('budget_categories.category', 'asc')
                 ->orderBy('budgets.name', 'asc')
                 ->get();

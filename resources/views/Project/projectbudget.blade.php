@@ -75,7 +75,8 @@
                                                 <?php if ($budgetId == '') {
                                                     $budgetId = old('budgetId');
                                                 } ?>
-                                                <select class="select2 form-control" name="budgetId" required>
+                                                <select class="select2 form-control" name="budgetId" id="budgetId"
+                                                    required>
                                                     <option value="">--Select Budget--</option>
                                                     @foreach ($budgets as $budget)
                                                         <option value="{{ $budget->id }}"
@@ -85,14 +86,39 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4">
                                             <div class="form-group">
-                                                <label>Amount <span class="text-danger">*</span></label>
+                                                <label>Unit</label>
+                                                <?php if ($unit == '') {
+                                                    $unit = old('unit');
+                                                } ?>
+                                                <input type="number" class="form-control" value="{{ $unit }}"
+                                                    name="unit" id="unit" step="0.01" min="0"
+                                                    oninput="calculateAmount(); validateAmount();">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Unit Cost</label>
+                                                <?php if ($unitCost == '') {
+                                                    $unitCost = old('unitCost');
+                                                } ?>
+                                                <input type="number" class="form-control" value="{{ $unitCost }}"
+                                                    name="unitCost" id="unitCost" step="0.01" min="0"
+                                                    oninput="calculateAmount(); validateAmount();">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Amount <span id="amountRequired" class="text-danger">*</span></label>
                                                 <?php if ($amount == '') {
                                                     $amount = old('amount');
                                                 } ?>
                                                 <input type="number" class="form-control" value="{{ $amount }}"
-                                                    name="amount" step="0.01" min="0" required>
+                                                    name="amount" id="amount" step="0.01" min="0"
+                                                    oninput="validateAmount()">
                                             </div>
                                         </div>
                                     </div>
@@ -169,7 +195,7 @@
                                                             </td>
                                                             <td>
                                                                 <a class="btn btn-sm bg-success-light"
-                                                                    href="javascript: editfunc('{{ $list->id }}','{{ $list->budgetId }}','{{ $list->amount }}')">
+                                                                    href="javascript: editfunc('{{ $list->id }}','{{ $list->budgetId }}','{{ $list->amount }}','{{ $list->unit ?? '' }}','{{ $list->unitCost ?? '' }}')">
                                                                     <i class="fe fe-pencil"></i>
                                                                 </a>
                                                                 <a class="btn btn-sm bg-danger-light"
@@ -191,9 +217,11 @@
                                                         <td></td>
                                                     </tr>
                                                 @endforeach
-                                                <tr style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
+                                                <tr
+                                                    style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
                                                     <td></td>
-                                                    <td colspan="2" class="text-right"><strong>Grand Total:</strong></td>
+                                                    <td colspan="2" class="text-right"><strong>Grand Total:</strong>
+                                                    </td>
                                                     <td><strong>{{ number_format($totalAmount, 2, '.', ',') }}</strong>
                                                     </td>
                                                     <td></td>
@@ -250,10 +278,30 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="form-group">
-                                <label>Amount <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="edit_amount" name="amount"
-                                    step="0.01" min="0" required>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Unit</label>
+                                        <input type="number" class="form-control" id="edit_unit" name="unit"
+                                            step="0.01" min="0"
+                                            oninput="calculateEditAmount(); validateEditAmount();">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Unit Cost</label>
+                                        <input type="number" class="form-control" id="edit_unitCost" name="unitCost"
+                                            step="0.01" min="0"
+                                            oninput="calculateEditAmount(); validateEditAmount();">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Amount <span id="edit_amountRequired" class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" id="edit_amount" name="amount"
+                                            step="0.01" min="0" oninput="validateEditAmount()">
+                                    </div>
+                                </div>
                             </div>
                             <input type="hidden" id="edit_id" name="id">
                         </div>
@@ -314,10 +362,119 @@
             }
         }
 
-        function editfunc(id, budgetId, amount) {
+        function calculateAmount() {
+            var unit = parseFloat(document.getElementById('unit').value) || 0;
+            var unitCost = parseFloat(document.getElementById('unitCost').value) || 0;
+            var amountInput = document.getElementById('amount');
+
+            if (unit > 0 && unitCost > 0) {
+                var calculatedAmount = unit * unitCost;
+                amountInput.value = calculatedAmount.toFixed(2);
+                amountInput.readOnly = true;
+                amountInput.style.backgroundColor = '#f0f0f0';
+                document.getElementById('amountRequired').style.display = 'none';
+            } else {
+                amountInput.readOnly = false;
+                amountInput.style.backgroundColor = '';
+                validateAmount();
+            }
+        }
+
+        function validateAmount() {
+            var unit = parseFloat(document.getElementById('unit').value) || 0;
+            var unitCost = parseFloat(document.getElementById('unitCost').value) || 0;
+            var amountInput = document.getElementById('amount');
+            var amountRequired = document.getElementById('amountRequired');
+
+            // If one is present, the other must be present
+            var unitValue = document.getElementById('unit').value.trim();
+            var unitCostValue = document.getElementById('unitCost').value.trim();
+
+            if ((unitValue && !unitCostValue) || (!unitValue && unitCostValue)) {
+                if (unitValue && !unitCostValue) {
+                    document.getElementById('unitCost').setCustomValidity('Unit Cost is required when Unit is provided.');
+                } else {
+                    document.getElementById('unit').setCustomValidity('Unit is required when Unit Cost is provided.');
+                }
+            } else {
+                document.getElementById('unit').setCustomValidity('');
+                document.getElementById('unitCost').setCustomValidity('');
+            }
+
+            // If both are absent or 0, amount is required
+            if (unit == 0 && unitCost == 0) {
+                amountInput.required = true;
+                amountRequired.style.display = 'inline';
+            } else {
+                amountInput.required = false;
+                amountRequired.style.display = 'none';
+            }
+
+            return true;
+        }
+
+        function calculateEditAmount() {
+            var unit = parseFloat(document.getElementById('edit_unit').value) || 0;
+            var unitCost = parseFloat(document.getElementById('edit_unitCost').value) || 0;
+            var amountInput = document.getElementById('edit_amount');
+
+            if (unit > 0 && unitCost > 0) {
+                var calculatedAmount = unit * unitCost;
+                amountInput.value = calculatedAmount.toFixed(2);
+                amountInput.readOnly = true;
+                amountInput.style.backgroundColor = '#f0f0f0';
+                document.getElementById('edit_amountRequired').style.display = 'none';
+            } else {
+                amountInput.readOnly = false;
+                amountInput.style.backgroundColor = '';
+                validateEditAmount();
+            }
+        }
+
+        function validateEditAmount() {
+            var unit = parseFloat(document.getElementById('edit_unit').value) || 0;
+            var unitCost = parseFloat(document.getElementById('edit_unitCost').value) || 0;
+            var amountInput = document.getElementById('edit_amount');
+            var amountRequired = document.getElementById('edit_amountRequired');
+
+            // If one is present, the other must be present
+            var unitValue = document.getElementById('edit_unit').value.trim();
+            var unitCostValue = document.getElementById('edit_unitCost').value.trim();
+
+            if ((unitValue && !unitCostValue) || (!unitValue && unitCostValue)) {
+                if (unitValue && !unitCostValue) {
+                    document.getElementById('edit_unitCost').setCustomValidity(
+                        'Unit Cost is required when Unit is provided.');
+                } else {
+                    document.getElementById('edit_unit').setCustomValidity('Unit is required when Unit Cost is provided.');
+                }
+            } else {
+                document.getElementById('edit_unit').setCustomValidity('');
+                document.getElementById('edit_unitCost').setCustomValidity('');
+            }
+
+            // If both are absent or 0, amount is required
+            if (unit == 0 && unitCost == 0) {
+                amountInput.required = true;
+                amountRequired.style.display = 'inline';
+            } else {
+                amountInput.required = false;
+                amountRequired.style.display = 'none';
+            }
+
+            return true;
+        }
+
+        function editfunc(id, budgetId, amount, unit, unitCost) {
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_budgetId').value = budgetId;
-            document.getElementById('edit_amount').value = amount;
+            document.getElementById('edit_unit').value = unit || '';
+            document.getElementById('edit_unitCost').value = unitCost || '';
+            document.getElementById('edit_amount').value = amount || '';
+
+            // Trigger validation to set required state
+            validateEditAmount();
+
             $("#edit_modal").modal('show')
         }
 
@@ -325,6 +482,21 @@
             document.getElementById('deleteid').value = id;
             $("#delete_modal").modal('show')
         }
+
+        // Form validation on submit
+        document.getElementById('addBudgetForm').addEventListener('submit', function(e) {
+            if (!validateAmount()) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        document.getElementById('editForm').addEventListener('submit', function(e) {
+            if (!validateEditAmount()) {
+                e.preventDefault();
+                return false;
+            }
+        });
     </script>
 @endsection
 <!-- /Page Wrapper -->
