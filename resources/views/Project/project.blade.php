@@ -60,12 +60,29 @@
                                             <?php if ($categoryId == '') {
                                                 $categoryId = old('categoryId');
                                             } ?>
-                                            <select class="form-control" name="categoryId">
+                                            <select class="select2 form-control" name="categoryId">
                                                 <option value="">--Select--</option>
                                                 @foreach ($projectCategories as $cat)
                                                     <option value="{{ $cat->id }}"
                                                         {{ $categoryId == $cat->id ? 'selected' : '' }}>
                                                         {{ $cat->category }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Expense Account</label>
+                                            <?php if ($expenseAccountId == '') {
+                                                $expenseAccountId = old('expenseAccountId');
+                                            } ?>
+                                            <select class="select2 form-control" name="expenseAccountId">
+                                                <option value="">--Select--</option>
+                                                @foreach ($accountLookUp as $account)
+                                                    <option value="{{ $account->id }}"
+                                                        {{ $expenseAccountId == $account->id ? 'selected' : '' }}>
+                                                        {{ $account->accountdescription }}
+                                                    </option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -134,6 +151,7 @@
                                             <th rowspan="1">Project Code</th>
                                             <th rowspan="1">Name</th>
                                             <th rowspan="1">Category</th>
+                                            <th rowspan="1">Expense Account</th>
                                             <th rowspan="1">Description</th>
                                             <th rowspan="1">Location</th>
                                             <th rowspan="1">Status</th>
@@ -146,9 +164,6 @@
                                         @endphp
 
                                         @foreach ($projects as $list)
-                                            @php
-                                                $categoryName = $projectCategories->firstWhere('id', $list->categoryId);
-                                            @endphp
                                             <tr>
                                                 <td>
                                                     {{ $i++ }}
@@ -160,7 +175,10 @@
                                                     {{ $list->name }}
                                                 </td>
                                                 <td>
-                                                    {{ $categoryName ? $categoryName->category : 'N/A' }}
+                                                    {{ $list->categoryName ?? 'N/A' }}
+                                                </td>
+                                                <td>
+                                                    {{ $list->expenseAccountName ?? 'N/A' }}
                                                 </td>
                                                 <td>
                                                     {{ Str::limit($list->description ?? 'N/A', 50) }}
@@ -239,6 +257,18 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Expense Account</label>
+                                        <select class="form-control" id="expenseAccountId" name="expenseAccountId">
+                                            <option value="">--Select--</option>
+                                            @foreach ($accountLookUp as $account)
+                                                <option value="{{ $account->id }}">{{ $account->accountdescription }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-12">
@@ -260,8 +290,9 @@
                                     <div class="form-group">
                                         <label>Status</label>
                                         <select class="form-control" id="status" name="status">
-                                            <option value="1">Active</option>
-                                            <option value="0">Inactive</option>
+                                            <option value="Active" {{ $status == 'Active' ? 'selected' : '' }}>Active
+                                            </option>
+                                            <option value="Inactive">Inactive</option>
                                         </select>
                                     </div>
                                 </div>
@@ -290,7 +321,7 @@
                                 <h4 class="modal-title">Delete</h4>
                                 <p class="mb-4">Are you sure want to delete?</p>
                                 <button type="submit" class="btn btn-primary" name="del">Continue </button>
-                                <input type="hidden" id="deleteid" name="id">
+                                <input type="hidden" id="deleteid" name="deleteid">
                                 <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
                             </div>
                         </div>

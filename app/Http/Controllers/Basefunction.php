@@ -51,63 +51,10 @@ class Basefunction extends Controller
 	 Public function BrandList() {
 	    return DB::Select("SELECT * FROM `tblbrand` join `tblmanufacturer` on `tblmanufacturer`.id= `tblbrand`.manufacturerid");
 	}
-	Public function CurrentPeriod() {
-		return DB::table ('tblcurrent_period')->select('*','tblevaluation_period.id as pid')
-		->join('tblevaluation_period','tblcurrent_period.quarterid', '=', 'tblevaluation_period.id')
-		->first();
-	}
-
 	
-
-
-
-
-	Public function ComputableCases($yr,$qtr) {
-	return DB::Select("SELECT * FROM `tblcases` WHERE `qtrcommenced`='0' or `qtrclosed`='0' or
-	(`qtrcommenced`='$qtr' and `yearcommenced`='$yr')
-	or (`yearclosed`='$yr' and `qtrclosed`='$qtr')");
-	}
-	Public function MyComputableCases($yr,$qtr,$judge) {
-	return DB::Select("SELECT * FROM `tblcases` WHERE (`qtrcommenced`='0' or `qtrclosed`='0' or
-	(`qtrcommenced`='$qtr' and `yearcommenced`='$yr')
-	or (`yearclosed`='$yr' and `qtrclosed`='$qtr'))and `leadJudge`='$judge'");
-	}
-	Public function TotalWitness($id) {
-	$dt=DB::Select("SELECT count(*) as cnt FROM `tblwitness` WHERE `case_id`='$id'");
-	if($dt) return $dt[0]->cnt;
-	return 0 ;
-	}
-	Public function DeleteThisPeriodReports($yr,$qtr) {
-	DB::Select("DELETE FROM `tblevaluation` WHERE `year`='$yr' and `qtr`='$qtr'");
-	DB::Select("DELETE FROM `tblevaluation_judges` WHERE `year`='$yr' and `qtr`='$qtr'");
-	return null ;
-	}
-	Public function DeleteMyThisPeriodReports($yr,$qtr,$judge) {
-	$tobedeleted=DB::Select("SELECT `caseid` FROM `tblevaluation` WHERE `year`='$yr' and `qtr`='$qtr' and `leadjudge`='$judge'");
-	foreach ($tobedeleted as $d){
-	$caseid=$d->caseid;
-	DB::Select("DELETE FROM `tblevaluation_judges` WHERE `year`='$yr' and `qtr`='$qtr' and `caseid`='$caseid'");
-	}
-	DB::Select("DELETE FROM `tblevaluation` WHERE `year`='$yr' and `qtr`='$qtr' and `leadjudge`='$judge'");
-	return null ;
-	}
-	Public function Quarterslist() {
-	return DB::Select("SELECT * FROM `tblevaluation_period`");
-	}
-
-	Public function CourtList() {
-	return DB::Select("SELECT * FROM `tblcourt`");
-	}
-	Public function ReportStatus() {
-	return DB::Select("SELECT * FROM `tblreportstatus`");
-	}
-	Public function JudgesList($court) {
-	$qcourt="1";
-	if($court <>''){$qcourt = "`court_id`='$court'";}
-	//dd($qcourt);
-	return DB::Select("SELECT * FROM `tbljudges` WHERE $qcourt");
-	}
-
+	
+	
+	
 
 
 
@@ -503,8 +450,8 @@ class Basefunction extends Controller
 	    $id2=DB::table('tblDefault_setup')->where('id', '=', $id)->value('headid');
 	    return DB::Select("SELECT * FROM `tblaccountchart` WHERE `headid`='$id2'");
 	}
-	Public function DefaultAccount() {
-	    return DB::Select("SELECT * ,(SELECT Concat(`accountdescription`,'(',`accountno`,')') FROM `tblaccountchart` WHERE `tblaccountchart`.`id`=accoountId) as AccountName FROM `tblDefault_setup`");
+	Public function AccountLookUpByHeadId($id) {
+	    return DB::Select("SELECT * FROM `account_charts` WHERE `headid`='$id'");
 	}
 	Public function ProjectAccount() {
 	    return DB::Select("SELECT * ,(SELECT Concat(`accountdescription`,'(',`accountno`,')') FROM `tblaccountchart` WHERE `tblaccountchart`.`id`=expensenid) as AccountName FROM `project_expense`");

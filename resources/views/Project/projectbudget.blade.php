@@ -38,7 +38,7 @@
                                             <?php if ($projectId == '') {
                                                 $projectId = old('projectId');
                                             } ?>
-                                            <select class="form-control" name="projectId" id="projectId" required
+                                            <select class="select2 form-control" name="projectId" id="projectId" required
                                                 onchange="selectProject()">
                                                 <option value="">--Select Project--</option>
                                                 @foreach ($projects as $project)
@@ -282,7 +282,7 @@
                         <div class="modal-body">
                             <div class="form-group">
                                 <label>Budget <span class="text-danger">*</span></label>
-                                <select class="form-control" id="edit_budgetId" name="budgetId" required>
+                                <select class="select2 form-control" id="edit_budgetId" name="budgetId" required>
                                     <option value="">--Select Budget--</option>
                                     @foreach ($budgets as $budget)
                                         <option value="{{ $budget->id }}">{{ $budget->budgetName }}</option>

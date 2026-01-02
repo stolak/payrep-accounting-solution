@@ -7,7 +7,7 @@ use App\Http\Requests;
 use DB;
 use Auth;
 use Session;
-class ProjectController extends Controller {
+class ProjectController extends Basefunction {
 
     public function project(Request $request)
     {
@@ -18,6 +18,7 @@ class ProjectController extends Controller {
         $data['location'] = $request->input('location');
         $data['status'] = $request->input('status');
         $data['id'] = $request->input('id');
+        $data['expenseAccountId'] = $request->input('expenseAccountId');
         
         if (isset($_POST['addnew'])) {
             $this->validate($request, [
@@ -36,6 +37,7 @@ class ProjectController extends Controller {
                 'categoryId' => $data['categoryId'] ?? null,
                 'location' => $data['location'] ?? null,
                 'status' => $data['status'] ?? 1,
+                'expenseAccountId' => $data['expenseAccountId'] ?? null,
                 'createdAt' => now(),
                 'updatedAt' => now(),
                 'createdBy' => Auth::user()->id,
@@ -61,6 +63,8 @@ class ProjectController extends Controller {
                 'categoryId' => $data['categoryId'] ?? null,
                 'location' => $data['location'] ?? null,
                 'status' => $data['status'] ?? 1,
+                'expenseAccountId' => $data['expenseAccountId'] ?? null,
+                // 'incomeAccountId' => $data['incomeAccountId'] ?? null,
                 'updatedAt' => now(),
             ]);
             return back()->with('message', 'Record successfully updated.');
@@ -79,7 +83,9 @@ class ProjectController extends Controller {
         
         // Fetch projects list
         $data['projects'] = DB::table('projects')
-            ->select('id', 'projectCode', 'name', 'description', 'categoryId', 'location', 'status', 'createdAt', 'updatedAt', 'createdBy')
+            ->select('projects.id', 'projectCode', 'name', 'description', 'categoryId', 'location', 'projects.status', 'createdAt', 'updatedAt', 'createdBy', 'account_charts.accountdescription as expenseAccountName', 'project_categories.category as categoryName')
+            ->leftJoin('account_charts', 'projects.expenseAccountId', '=', 'account_charts.id')
+            ->leftJoin('project_categories', 'projects.categoryId', '=', 'project_categories.id')
             ->orderBy('createdAt', 'desc')
             ->get();
         
@@ -88,6 +94,7 @@ class ProjectController extends Controller {
             ->select('id', 'category')
             ->orderBy('category', 'asc')
             ->get();
+        $data['accountLookUp'] = $this->AccountLookUpByHeadId(6);
         
         return view('Project.project', $data);
     }
