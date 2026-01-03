@@ -72,6 +72,24 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
+                                            <label>Client</label>
+                                            <?php if ($clientId == '') {
+                                                $clientId = old('clientId');
+                                            } ?>
+                                            <select class="select2 form-control" name="clientId">
+                                                <option value="">--Select--</option>
+                                                @foreach ($clients as $client)
+                                                    <option value="{{ $client->id }}"
+                                                        {{ $clientId == $client->id ? 'selected' : '' }}>
+                                                        {{ $client->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
                                             <label>Expense Account</label>
                                             <?php if ($expenseAccountId == '') {
                                                 $expenseAccountId = old('expenseAccountId');
@@ -150,6 +168,7 @@
                                             <th rowspan="1">S/N</th>
                                             <th rowspan="1">Project Code</th>
                                             <th rowspan="1">Name</th>
+                                            <th rowspan="1">Client</th>
                                             <th rowspan="1">Category</th>
                                             <th rowspan="1">Expense Account</th>
                                             <th rowspan="1">Description</th>
@@ -175,6 +194,9 @@
                                                     {{ $list->name }}
                                                 </td>
                                                 <td>
+                                                    {{ $list->clientName ?? 'N/A' }}
+                                                </td>
+                                                <td>
                                                     {{ $list->categoryName ?? 'N/A' }}
                                                 </td>
                                                 <td>
@@ -195,7 +217,7 @@
                                                 </td>
                                                 <td>
                                                     <a class="btn btn-sm bg-success-light"
-                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->projectCode }}','{{ $list->name }}','{{ $list->description }}','{{ $list->categoryId }}','{{ $list->location }}','{{ $list->status }}')">
+                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->projectCode }}','{{ $list->name }}','{{ $list->description }}','{{ $list->categoryId }}','{{ $list->location }}','{{ $list->status }}','{{ $list->clientId ?? '' }}','{{ $list->expenseAccountId ?? '' }}')">
                                                         <i class="fe fe-pencil"></i>
                                                     </a>
                                                     <a class="btn btn-sm bg-danger-light"
@@ -257,6 +279,19 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Client</label>
+                                        <select class="form-control" id="clientId" name="clientId">
+                                            <option value="">--Select--</option>
+                                            @foreach ($clients as $client)
+                                                <option value="{{ $client->id }}">{{ $client->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Expense Account</label>
@@ -349,7 +384,7 @@
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
     <script>
-        function editfunc(id, projectCode, name, description, categoryId, location, status) {
+        function editfunc(id, projectCode, name, description, categoryId, location, status, clientId, expenseAccountId) {
             document.getElementById('id').value = id;
             document.getElementById('projectCode').value = projectCode || '';
             document.getElementById('name').value = name;
@@ -357,6 +392,8 @@
             document.getElementById('categoryId').value = categoryId || '';
             document.getElementById('location').value = location || '';
             document.getElementById('status').value = status || 1;
+            document.getElementById('clientId').value = clientId || '';
+            document.getElementById('expenseAccountId').value = expenseAccountId || '';
 
             $("#edit_details").modal('show')
         }

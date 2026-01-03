@@ -19,6 +19,7 @@ class ProjectController extends Basefunction {
         $data['status'] = $request->input('status');
         $data['id'] = $request->input('id');
         $data['expenseAccountId'] = $request->input('expenseAccountId');
+        $data['clientId'] = $request->input('clientId');
         
         if (isset($_POST['addnew'])) {
             $this->validate($request, [
@@ -28,6 +29,7 @@ class ProjectController extends Basefunction {
                 'categoryId' => 'nullable|integer',
                 'location' => 'nullable|string',
                 'status' => 'nullable|string',
+                'clientId' => 'nullable|integer',
             ]);
 
             DB::table('projects')->insert([
@@ -38,6 +40,7 @@ class ProjectController extends Basefunction {
                 'location' => $data['location'] ?? null,
                 'status' => $data['status'] ?? "Active",
                 'expenseAccountId' => $data['expenseAccountId'] ?? null,
+                'clientId' => $data['clientId'] ?? null,
                 'createdAt' => now(),
                 'updatedAt' => now(),
                 'createdBy' => Auth::user()->id,
@@ -53,6 +56,7 @@ class ProjectController extends Basefunction {
                 'categoryId' => 'nullable|integer',
                 'location' => 'nullable|string',
                 'status' => 'nullable|string',
+                'clientId' => 'nullable|integer',
                 'id' => 'required|integer',
             ]);
 
@@ -64,6 +68,7 @@ class ProjectController extends Basefunction {
                 'location' => $data['location'] ?? null,
                 'status' => $data['status'] ?? "Active",
                 'expenseAccountId' => $data['expenseAccountId'] ?? null,
+                'clientId' => $data['clientId'] ?? null,
                 // 'incomeAccountId' => $data['incomeAccountId'] ?? null,
                 'updatedAt' => now(),
             ]);
@@ -83,9 +88,10 @@ class ProjectController extends Basefunction {
         
         // Fetch projects list
         $data['projects'] = DB::table('projects')
-            ->select('projects.id', 'projectCode', 'name', 'description', 'categoryId', 'location', 'projects.status', 'createdAt', 'updatedAt', 'createdBy', 'account_charts.accountdescription as expenseAccountName', 'project_categories.category as categoryName')
+            ->select('projects.id', 'projectCode', 'projects.clientId', 'projects.expenseAccountId', 'projects.name', 'description', 'categoryId', 'location', 'projects.status', 'createdAt', 'updatedAt', 'createdBy', 'account_charts.accountdescription as expenseAccountName', 'project_categories.category as categoryName', 'clients.name as clientName')
             ->leftJoin('account_charts', 'projects.expenseAccountId', '=', 'account_charts.id')
             ->leftJoin('project_categories', 'projects.categoryId', '=', 'project_categories.id')
+            ->leftJoin('clients', 'projects.clientId', '=', 'clients.id')
             ->orderBy('createdAt', 'desc')
             ->get();
         
@@ -94,7 +100,13 @@ class ProjectController extends Basefunction {
             ->select('id', 'category')
             ->orderBy('category', 'asc')
             ->get();
-        $data['accountLookUp'] = $this->AccountLookUpByHeadId(6);
+        $data['accountLookUp'] = $this->AccountLookUpByHeadId(1);
+        
+        // Fetch clients list for dropdown
+        $data['clients'] = DB::table('clients')
+            ->select('id', 'name')
+            ->orderBy('name', 'asc')
+            ->get();
         
         return view('Project.project', $data);
     }
