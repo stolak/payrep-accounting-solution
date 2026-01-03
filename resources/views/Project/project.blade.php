@@ -187,9 +187,9 @@
                                                     {{ $list->location ?? 'N/A' }}
                                                 </td>
                                                 <td>
-                                                    @if ($list->status == 1)
+                                                    @if ($list->status == 'Active')
                                                         <span class="badge bg-success">Active</span>
-                                                    @else
+                                                    @elseif ($list->status == 'Inactive')
                                                         <span class="badge bg-danger">Inactive</span>
                                                     @endif
                                                 </td>

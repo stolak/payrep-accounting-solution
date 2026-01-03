@@ -27,7 +27,7 @@ class ProjectController extends Basefunction {
                 'description' => 'nullable|string',
                 'categoryId' => 'nullable|integer',
                 'location' => 'nullable|string',
-                'status' => 'nullable|integer',
+                'status' => 'nullable|string',
             ]);
 
             DB::table('projects')->insert([
@@ -36,7 +36,7 @@ class ProjectController extends Basefunction {
                 'description' => $data['description'] ?? null,
                 'categoryId' => $data['categoryId'] ?? null,
                 'location' => $data['location'] ?? null,
-                'status' => $data['status'] ?? 1,
+                'status' => $data['status'] ?? "Active",
                 'expenseAccountId' => $data['expenseAccountId'] ?? null,
                 'createdAt' => now(),
                 'updatedAt' => now(),
@@ -52,7 +52,7 @@ class ProjectController extends Basefunction {
                 'description' => 'nullable|string',
                 'categoryId' => 'nullable|integer',
                 'location' => 'nullable|string',
-                'status' => 'nullable|integer',
+                'status' => 'nullable|string',
                 'id' => 'required|integer',
             ]);
 
@@ -62,7 +62,7 @@ class ProjectController extends Basefunction {
                 'description' => $data['description'] ?? null,
                 'categoryId' => $data['categoryId'] ?? null,
                 'location' => $data['location'] ?? null,
-                'status' => $data['status'] ?? 1,
+                'status' => $data['status'] ?? "Active",
                 'expenseAccountId' => $data['expenseAccountId'] ?? null,
                 // 'incomeAccountId' => $data['incomeAccountId'] ?? null,
                 'updatedAt' => now(),
@@ -475,6 +475,63 @@ class ProjectController extends Basefunction {
         }
         
         return view('Project.projectbudgetsummary', $data);
+    }
+
+    public function client(Request $request)
+    {
+        $data['name'] = $request->input('name');
+        $data['clientAccountId'] = $request->input('clientAccountId');
+        $data['id'] = $request->input('id');
+        
+        if (isset($_POST['addnew'])) {
+            $this->validate($request, [
+                'name' => 'required|string|unique:clients,name',
+                'clientAccountId' => 'nullable|integer',
+            ]);
+
+            DB::table('clients')->insert([
+                'name' => $data['name'],
+                'clientAccountId' => $data['clientAccountId'] ?? null,
+            ]);
+            return back()->with('message', 'New record successfully added.');
+        }
+        
+        if (isset($_POST['update'])) {
+            $this->validate($request, [
+                'name' => 'required|string|unique:clients,name,' . $request->input('id'),
+                'clientAccountId' => 'nullable|integer',
+                'id' => 'required|integer',
+            ]);
+
+            DB::table('clients')->where('id', $data['id'])->update([
+                'name' => $data['name'],
+                'clientAccountId' => $data['clientAccountId'] ?? null,
+            ]);
+            return back()->with('message', 'Record successfully updated.');
+        }
+        
+        if (isset($_POST['del'])) {
+            $del = $request->input('deleteid');
+            // Check if client has related records before deletion
+            // Add your related table checks here if needed
+            // if (DB::table('related_table')->where('clientId', $del)->first()) {
+            //     return back()->with('error_message', 'Client has related records. Hence, record cannot be deleted!');
+            // }
+            DB::table('clients')->where('id', $del)->delete();
+            return back()->with('message', 'Record successfully deleted.');
+        }
+        
+        // Fetch clients list with account information
+        $data['clients'] = DB::table('clients')
+            ->leftJoin('account_charts', 'clients.clientAccountId', '=', 'account_charts.id')
+            ->select('clients.id', 'clients.name', 'clients.clientAccountId', 'account_charts.accountdescription as accountName')
+            ->orderBy('clients.name', 'asc')
+            ->get();
+        
+        // Fetch account charts for dropdown (using headId 6 as default, adjust if needed)
+        $data['accountLookUp'] = $this->AccountLookUpByHeadId(6);
+        
+        return view('Project.client', $data);
     }
    
 

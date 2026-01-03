@@ -26,7 +26,8 @@ trait AccountTrait
             'manual_ref' => $manual_ref ,
             'transdate' => $transdate ,
             'postby' => $userid ,
-            'account_sub'=>$account
+            'account_sub'=>$account,
+            'projectid' => $account,
         ]);
 	}
 

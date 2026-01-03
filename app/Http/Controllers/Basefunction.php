@@ -223,7 +223,7 @@ class Basefunction extends Controller
 	    return DB::table('tblaccountchart')->where('id', '=', $id)->first();
 	}
 
-	Public function CreditAccount($accountid, $amount,$ref,$transdate,$remark,$userid,$manual_ref) {
+	Public function CreditAccount($accountid, $amount,$ref,$transdate,$remark,$userid,$manual_ref, $account=null) {
 	    $accountdetails=$this->FetchAccountCodes($accountid);
 	    return DB::table('tblaccount_transaction')->insertGetId([
     	          'groupid' => $accountdetails->groupid ,
@@ -238,12 +238,13 @@ class Basefunction extends Controller
     	          'manual_ref' => $manual_ref ,
     	          'transdate' => $transdate ,
     	          'postby' => $userid ,
-
+				  'account_sub'=>$account,
+				  'projectid' => $account,
     	]);
 	}
 
 
-	Public function DebitAccount($accountid, $amount,$ref,$transdate,$remark,$userid,$manual_ref) {
+	Public function DebitAccount($accountid, $amount,$ref,$transdate,$remark,$userid,$manual_ref, $account=null) {
 	    $accountdetails=$this->FetchAccountCodes($accountid);
 	    return DB::table('tblaccount_transaction')->insertGetId([
     	          'groupid' => $accountdetails->groupid ,
@@ -258,6 +259,8 @@ class Basefunction extends Controller
     	          'manual_ref' => $manual_ref ,
     	          'transdate' => $transdate ,
     	          'postby' => $userid ,
+				  'account_sub'=>$account,
+				  'projectid' => $account,
 
     	]);
 	}
