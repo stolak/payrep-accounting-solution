@@ -545,6 +545,215 @@ class ProjectController extends Basefunction {
         
         return view('Project.client', $data);
     }
+
+    public function projectPo(Request $request)
+    {
+        $data['projectId'] = $request->input('projectId');
+        $data['description'] = $request->input('description');
+        $data['uomId'] = $request->input('uomId');
+        $data['qty'] = $request->input('qty');
+        $data['unitCost'] = $request->input('unitCost');
+        $data['subcost'] = $request->input('subcost');
+        $data['vat'] = $request->input('vat');
+        $data['vatAmount'] = $request->input('vatAmount');
+        $data['subnet'] = $request->input('subnet');
+        $data['id'] = $request->input('id');
+        
+        // Handle project selection - reload page with selected project
+        if ($request->has('select_project')) {
+            $data['projectId'] = $request->input('projectId');
+            Session(['selected_project_po_id' => $data['projectId']]);
+        }
+        
+        // Get selected project from session if not in request
+        if (empty($data['projectId'])) {
+            $data['projectId'] = Session::get('selected_project_po_id');
+        }
+        
+        if (isset($_POST['addnew'])) {
+            $this->validate($request, [
+                'projectId' => 'required|integer',
+                'description' => 'required|string',
+                'uomId' => 'nullable|integer',
+                'qty' => 'required|numeric|min:0',
+                'unitCost' => 'required|numeric|min:0',
+                'vat' => 'nullable|numeric|min:0|max:100',
+            ]);
+
+            // Calculate subcost, vatAmount, and subnet
+            $qty = $data['qty'];
+            $unitCost = $data['unitCost'];
+            $vat = $data['vat'] ?? 0;
+            
+            $subcost = $qty * $unitCost;
+            $vatAmount = $subcost * ($vat / 100);
+            $subnet = $subcost + $vatAmount;
+
+            DB::table('project_po')->insert([
+                'projectId' => $data['projectId'],
+                'description' => $data['description'],
+                'uomId' => $data['uomId'] ?? null,
+                'qty' => $qty,
+                'unitCost' => $unitCost,
+                'subcost' => $subcost,
+                'vat' => $vat,
+                'vatAmount' => $vatAmount,
+                'subnet' => $subnet,
+                'status' => 'Pending', // Default status
+                'createdAt' => now(),
+                'updatedAt' => now(),
+                'createdBy' => Auth::user()->id,
+            ]);
+            return back()->with('message', 'New PO record successfully added.');
+        }
+        
+        if (isset($_POST['update'])) {
+            $this->validate($request, [
+                'projectId' => 'required|integer',
+                'description' => 'required|string',
+                'uomId' => 'nullable|integer',
+                'qty' => 'required|numeric|min:0',
+                'unitCost' => 'required|numeric|min:0',
+                'vat' => 'nullable|numeric|min:0|max:100',
+                'id' => 'required|integer',
+            ]);
+
+            // Calculate subcost, vatAmount, and subnet
+            $qty = $data['qty'];
+            $unitCost = $data['unitCost'];
+            $vat = $data['vat'] ?? 0;
+            
+            $subcost = $qty * $unitCost;
+            $vatAmount = $subcost * ($vat / 100);
+            $subnet = $subcost + $vatAmount;
+
+            DB::table('project_po')->where('id', $data['id'])->update([
+                'description' => $data['description'],
+                'uomId' => $data['uomId'] ?? null,
+                'qty' => $qty,
+                'unitCost' => $unitCost,
+                'subcost' => $subcost,
+                'vat' => $vat,
+                'vatAmount' => $vatAmount,
+                'subnet' => $subnet,
+                'updatedAt' => now(),
+            ]);
+            return back()->with('message', 'PO record successfully updated.');
+        }
+        
+        if (isset($_POST['approve'])) {
+            $approveId = $request->input('approveid');
+            DB::table('project_po')->where('id', $approveId)->update([
+                'status' => 'Approved',
+                'approvedBy' => Auth::user()->id,
+                'updatedAt' => now(),
+            ]);
+            return back()->with('message', 'PO record successfully approved.');
+        }
+        
+        if (isset($_POST['del'])) {
+            $del = $request->input('deleteid');
+            DB::table('project_po')->where('id', $del)->delete();
+            return back()->with('message', 'PO record successfully deleted.');
+        }
+        
+        // Fetch projects list
+        $data['projects'] = DB::table('projects')
+            ->select('id', 'name')
+            ->orderBy('name', 'asc')
+            ->get();
+        
+        // Fetch UOMs list for dropdown
+        $data['uoms'] = DB::table('uom')
+            ->select('id', 'measurement')
+            ->orderBy('measurement', 'asc')
+            ->get();
+        
+        // Fetch project POs for selected project with joins
+        $data['projectPos'] = collect();
+        if (!empty($data['projectId'])) {
+            $data['projectPos'] = DB::table('project_po')
+                ->leftJoin('uom', 'project_po.uomId', '=', 'uom.id')
+                ->leftJoin('users as creator', 'project_po.createdBy', '=', 'creator.id')
+                ->leftJoin('users as approver', 'project_po.approvedBy', '=', 'approver.id')
+                ->where('project_po.projectId', $data['projectId'])
+                ->select(
+                    'project_po.id',
+                    'project_po.projectId',
+                    'project_po.description',
+                    'project_po.uomId',
+                    'project_po.qty',
+                    'project_po.unitCost',
+                    'project_po.subcost',
+                    'project_po.vat',
+                    'project_po.vatAmount',
+                    'project_po.subnet',
+                    'project_po.status',
+                    'project_po.createdBy',
+                    'project_po.approvedBy',
+                    'project_po.createdAt',
+                    'project_po.updatedAt',
+                    'uom.measurement as uomMeasurement',
+                    'creator.name as createdByName',
+                    'approver.name as approvedByName'
+                )
+                ->orderBy('project_po.createdAt', 'desc')
+                ->get();
+        }
+        
+        return view('Project.projectpo', $data);
+    }
+
+    public function uom(Request $request)
+    {
+        $data['measurement'] = $request->input('measurement');
+        $data['id'] = $request->input('id');
+        
+        if (isset($_POST['addnew'])) {
+            $this->validate($request, [
+                'measurement' => 'required|string|unique:uom,measurement',
+            ]);
+
+            DB::table('uom')->insert([
+                'measurement' => $data['measurement'],
+            ]);
+            return back()->with('message', 'New record successfully added.');
+        }
+        
+        if (isset($_POST['update'])) {
+            $this->validate($request, [
+                'measurement' => 'required|string|unique:uom,measurement,' . $request->input('id'),
+                'id' => 'required|integer',
+            ]);
+
+            DB::table('uom')->where('id', $data['id'])->update([
+                'measurement' => $data['measurement'],
+            ]);
+            return back()->with('message', 'Record successfully updated.');
+        }
+        
+        if (isset($_POST['del'])) {
+            $del = $request->input('deleteid');
+            // Get the measurement value before deletion
+            $uomRecord = DB::table('uom')->where('id', $del)->first();
+            
+            // Check if UOM has related records before deletion
+            // Check if any project_po uses this measurement
+            if ($uomRecord && DB::table('project_po')->where('uom', $uomRecord->measurement)->first()) {
+                return back()->with('error_message', 'UOM has related purchase orders. Hence, record cannot be deleted!');
+            }
+            DB::table('uom')->where('id', $del)->delete();
+            return back()->with('message', 'Record successfully deleted.');
+        }
+        
+        // Fetch UOM list
+        $data['uoms'] = DB::table('uom')
+            ->select('id', 'measurement')
+            ->orderBy('measurement', 'asc')
+            ->get();
+        
+        return view('Project.uom', $data);
+    }
    
 
 

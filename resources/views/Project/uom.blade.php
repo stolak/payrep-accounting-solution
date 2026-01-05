@@ -1,7 +1,7 @@
 <!-- Page Wrapper -->
 @extends('layouts.layout')
 @section('pageTitle')
-    Client Setup
+    Unit of Measure Setup
 @endsection
 @section('content')
     <div class="page-wrapper">
@@ -13,7 +13,7 @@
                         <h3 class="page-title">Setup</h3>
                         <ul class="breadcrumb">
                             <li class="breadcrumb-item"><a href="/">Home</a></li>
-                            <li class="breadcrumb-item active">Client Setup</li>
+                            <li class="breadcrumb-item active">Unit of Measure Setup</li>
                         </ul>
                     </div>
                 </div>
@@ -26,7 +26,7 @@
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-header">
-                            <h4 class="card-title">Create Client</h4>
+                            <h4 class="card-title">Create Unit of Measure</h4>
                         </div>
                         <div class="card-body">
                             <form method="post">
@@ -34,29 +34,12 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label>Name</label>
-                                            <?php if ($name == '') {
-                                                $name = old('name');
+                                            <label>Measurement</label>
+                                            <?php if ($measurement == '') {
+                                                $measurement = old('measurement');
                                             } ?>
-                                            <input type="text" class="form-control" value="{{ $name }}" required
-                                                name="name">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Client Account</label>
-                                            <?php if ($clientAccountId == '') {
-                                                $clientAccountId = old('clientAccountId');
-                                            } ?>
-                                            <select class="select2 form-control" name="clientAccountId">
-                                                <option value="">--Select--</option>
-                                                @foreach ($accountLookUp as $account)
-                                                    <option value="{{ $account->id }}"
-                                                        {{ $clientAccountId == $account->id ? 'selected' : '' }}>
-                                                        {{ $account->accountdescription }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                            <input type="text" class="form-control" value="{{ $measurement }}" required
+                                                name="measurement" placeholder="e.g., kg, pcs, m, l">
                                         </div>
                                     </div>
                                 </div>
@@ -73,10 +56,10 @@
             <div class="row">
                 <div class="col-md-12">
 
-                    <!-- List of clients -->
+                    <!-- List of UOMs -->
                     <div class="card card-table">
                         <div class="card-header">
-                            <h4 class="card-title">Clients</h4>
+                            <h4 class="card-title">Units of Measure</h4>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -84,8 +67,7 @@
                                     <thead>
                                         <tr>
                                             <th rowspan="1">S/N</th>
-                                            <th rowspan="1">Name</th>
-                                            <th rowspan="1">Client Account</th>
+                                            <th rowspan="1">Measurement</th>
                                             <th rowspan="1">Action</th>
                                         </tr>
                                     </thead>
@@ -94,20 +76,17 @@
                                             $i = 1;
                                         @endphp
 
-                                        @foreach ($clients as $list)
+                                        @foreach ($uoms as $list)
                                             <tr>
                                                 <td>
                                                     {{ $i++ }}
                                                 </td>
                                                 <td>
-                                                    {{ $list->name }}
-                                                </td>
-                                                <td>
-                                                    {{ $list->accountName ?? 'N/A' }}
+                                                    {{ $list->measurement }}
                                                 </td>
                                                 <td>
                                                     <a class="btn btn-sm bg-success-light"
-                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->name }}','{{ $list->clientAccountId ?? '' }}')">
+                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->measurement }}')">
                                                         <i class="fe fe-pencil"></i>
                                                     </a>
                                                     <a class="btn btn-sm bg-danger-light"
@@ -122,7 +101,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /List of clients -->
+                    <!-- /List of UOMs -->
 
                 </div>
             </div>
@@ -133,7 +112,7 @@
             <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Edit Client</h5>
+                        <h5 class="modal-title">Edit Unit of Measure</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -144,22 +123,9 @@
                             <div class="row ">
                                 <div class="col-12 col-sm-12">
                                     <div class="form-group">
-                                        <label>Name</label>
-                                        <input type="text" id="name" name="name" class="form-control"
+                                        <label>Measurement</label>
+                                        <input type="text" id="measurement" name="measurement" class="form-control"
                                             style="text-align: left;" autocomplete="off">
-                                    </div>
-                                </div>
-                                <div class="col-12 col-sm-12">
-                                    <div class="form-group">
-                                        <label>Client Account</label>
-                                        <select class="select2 form-control" id="clientAccountId" name="clientAccountId">
-                                            <option value="">--Select--</option>
-                                            @foreach ($accountLookUp as $account)
-                                                <option value="{{ $account->id }}">
-                                                    {{ $account->accountdescription }}
-                                                </option>
-                                            @endforeach
-                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -218,10 +184,9 @@
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
     <script>
-        function editfunc(id, name, clientAccountId) {
+        function editfunc(id, measurement) {
             document.getElementById('id').value = id;
-            document.getElementById('name').value = name;
-            document.getElementById('clientAccountId').value = clientAccountId || '';
+            document.getElementById('measurement').value = measurement;
 
             $("#edit_details").modal('show')
         }
@@ -234,8 +199,4 @@
     </script>
 @endsection
 <!-- /Page Wrapper -->
-
-
-
-
 
