@@ -22,6 +22,7 @@ class ProjectController extends Basefunction {
         $data['clientId'] = $request->input('clientId');
         
         if (isset($_POST['addnew'])) {
+            // Validate project fields
             $this->validate($request, [
                 'projectCode' => 'required|string|unique:projects,projectCode',
                 'name' => 'required|string|unique:projects,name',
@@ -30,9 +31,20 @@ class ProjectController extends Basefunction {
                 'location' => 'nullable|string',
                 'status' => 'nullable|string',
                 'clientId' => 'nullable|integer',
+                'po_description' => 'required|array|min:1',
+                'po_description.*' => 'required|string',
+                'po_qty' => 'required|array|min:1',
+                'po_qty.*' => 'required|numeric|min:0',
+                'po_unitCost' => 'required|array|min:1',
+                'po_unitCost.*' => 'required|numeric|min:0',
+                'po_uomId' => 'nullable|array',
+                'po_uomId.*' => 'nullable|integer',
+                'po_vat' => 'nullable|array',
+                'po_vat.*' => 'nullable|numeric|min:0|max:100',
             ]);
 
-            DB::table('projects')->insert([
+            // Create project first
+            $projectId = DB::table('projects')->insertGetId([
                 'projectCode' => $data['projectCode'],
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
@@ -45,7 +57,43 @@ class ProjectController extends Basefunction {
                 'updatedAt' => now(),
                 'createdBy' => Auth::user()->id,
             ]);
-            return back()->with('message', 'New record successfully added.');
+
+            // Create POs for the project
+            $poDescriptions = $request->input('po_description', []);
+            $poUomIds = $request->input('po_uomId', []);
+            $poQties = $request->input('po_qty', []);
+            $poUnitCosts = $request->input('po_unitCost', []);
+            $poVats = $request->input('po_vat', []);
+
+            foreach ($poDescriptions as $index => $description) {
+                if (!empty($description)) {
+                    $qty = $poQties[$index] ?? 0;
+                    $unitCost = $poUnitCosts[$index] ?? 0;
+                    $vat = $poVats[$index] ?? 0;
+                    
+                    $subcost = $qty * $unitCost;
+                    $vatAmount = $subcost * ($vat / 100);
+                    $subnet = $subcost + $vatAmount;
+
+                    DB::table('project_po')->insert([
+                        'projectId' => $projectId,
+                        'description' => $description,
+                        'uomId' => $poUomIds[$index] ?? null,
+                        'qty' => $qty,
+                        'unitCost' => $unitCost,
+                        'subcost' => $subcost,
+                        'vat' => $vat,
+                        'vatAmount' => $vatAmount,
+                        'subnet' => $subnet,
+                        'status' => 'Pending',
+                        'createdAt' => now(),
+                        'updatedAt' => now(),
+                        'createdBy' => Auth::user()->id,
+                    ]);
+                }
+            }
+
+            return back()->with('message', 'New project with purchase order(s) successfully added.');
         }
         
         if (isset($_POST['update'])) {
@@ -106,6 +154,12 @@ class ProjectController extends Basefunction {
         $data['clients'] = DB::table('clients')
             ->select('id', 'name')
             ->orderBy('name', 'asc')
+            ->get();
+        
+        // Fetch UOMs list for dropdown
+        $data['uoms'] = DB::table('uom')
+            ->select('id', 'measurement')
+            ->orderBy('measurement', 'asc')
             ->get();
         
         return view('Project.project', $data);

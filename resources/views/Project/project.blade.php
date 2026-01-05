@@ -143,8 +143,106 @@
                                     </div>
                                 </div>
 
+                                <!-- Purchase Orders Section -->
+                                <div class="row mt-3">
+                                    <div class="col-md-12">
+                                        <h5 class="mb-3">Purchase Orders <span class="text-danger">*</span> <small
+                                                class="text-muted">(At least one PO is required)</small></h5>
+                                        <div id="po-container">
+                                            <div class="po-item card mb-3" data-po-index="0">
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <div class="col-md-12">
+                                                            <div class="form-group">
+                                                                <label>Description <span
+                                                                        class="text-danger">*</span></label>
+                                                                <input type="text" class="form-control"
+                                                                    name="po_description[]" required>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-md-3">
+                                                            <div class="form-group">
+                                                                <label>Unit of Measure (UOM)</label>
+                                                                <select class="select2 form-control" name="po_uomId[]">
+                                                                    <option value="">--Select UOM--</option>
+                                                                    @foreach ($uoms as $uom)
+                                                                        <option value="{{ $uom->id }}">
+                                                                            {{ $uom->measurement }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <div class="form-group">
+                                                                <label>Quantity <span class="text-danger">*</span></label>
+                                                                <input type="number" class="form-control po-qty"
+                                                                    name="po_qty[]" step="0.01" min="0" required
+                                                                    oninput="calculatePoAmounts(this)">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <div class="form-group">
+                                                                <label>Unit Cost <span class="text-danger">*</span></label>
+                                                                <input type="number" class="form-control po-unitCost"
+                                                                    name="po_unitCost[]" step="0.01" min="0"
+                                                                    required oninput="calculatePoAmounts(this)">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <div class="form-group">
+                                                                <label>VAT %</label>
+                                                                <input type="number" class="form-control po-vat"
+                                                                    name="po_vat[]" step="0.01" min="0"
+                                                                    max="100" oninput="calculatePoAmounts(this)">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-md-4">
+                                                            <div class="form-group">
+                                                                <label>Sub Cost</label>
+                                                                <input type="number" class="form-control po-subcost"
+                                                                    readonly style="background-color: #f0f0f0;">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="form-group">
+                                                                <label>VAT Amount</label>
+                                                                <input type="number" class="form-control po-vatAmount"
+                                                                    readonly style="background-color: #f0f0f0;">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="form-group">
+                                                                <label>Sub Net</label>
+                                                                <input type="number" class="form-control po-subnet"
+                                                                    readonly style="background-color: #f0f0f0;">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <button type="button" class="btn btn-sm btn-danger remove-po"
+                                                            onclick="removePoItem(this)" style="display: none;">
+                                                            <i class="fe fe-trash"></i> Remove
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right mb-3">
+                                            <button type="button" class="btn btn-sm btn-secondary"
+                                                onclick="addPoItem()">
+                                                <i class="fe fe-plus"></i> Add Another PO
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- /Purchase Orders Section -->
+
                                 <div class="text-right">
-                                    <button type="submit" class="btn btn-primary" name="addnew">Create</button>
+                                    <button type="submit" class="btn btn-primary" name="addnew">Create Project</button>
                                 </div>
                             </form>
                         </div>
@@ -402,6 +500,65 @@
             document.getElementById('deleteid').value = id;
 
             $("#delete_modal").modal('show')
+        }
+
+        let poIndex = 1;
+
+        function addPoItem() {
+            const container = document.getElementById('po-container');
+            const firstItem = container.querySelector('.po-item');
+            const newItem = firstItem.cloneNode(true);
+
+            // Clear input values
+            newItem.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
+                if (!input.readOnly) {
+                    input.value = '';
+                } else {
+                    input.value = '0.00';
+                }
+            });
+
+            // Reset select dropdowns
+            newItem.querySelectorAll('select').forEach(select => {
+                select.value = '';
+            });
+
+            // Show remove button for all items
+            container.querySelectorAll('.remove-po').forEach(btn => {
+                btn.style.display = 'inline-block';
+            });
+
+            container.appendChild(newItem);
+            poIndex++;
+        }
+
+        function removePoItem(button) {
+            const container = document.getElementById('po-container');
+            const items = container.querySelectorAll('.po-item');
+
+            if (items.length > 1) {
+                button.closest('.po-item').remove();
+
+                // Hide remove button if only one item remains
+                if (container.querySelectorAll('.po-item').length === 1) {
+                    container.querySelector('.remove-po').style.display = 'none';
+                }
+            }
+        }
+
+        function calculatePoAmounts(element) {
+            const poItem = element.closest('.po-item');
+            const qty = parseFloat(poItem.querySelector('.po-qty').value) || 0;
+            const unitCost = parseFloat(poItem.querySelector('.po-unitCost').value) || 0;
+            const vat = parseFloat(poItem.querySelector('.po-vat').value) || 0;
+
+            const subcost = qty * unitCost;
+            const vatAmount = subcost * (vat / 100);
+            const subnet = subcost + vatAmount;
+
+            poItem.querySelector('.po-subcost').value = subcost.toFixed(2);
+            poItem.querySelector('.po-vatAmount').value = vatAmount.toFixed(2);
+            poItem.querySelector('.po-subnet').value = subnet.toFixed(2);
         }
     </script>
 @endsection
