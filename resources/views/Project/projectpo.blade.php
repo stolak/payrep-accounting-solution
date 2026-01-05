@@ -69,7 +69,17 @@
                                     {{ csrf_field() }}
                                     <input type="hidden" name="projectId" value="{{ $projectId }}">
                                     <div class="row">
-                                        <div class="col-md-12">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>PO Number <span class="text-danger">*</span></label>
+                                                <?php if ($poNumber == '') {
+                                                    $poNumber = old('poNumber');
+                                                } ?>
+                                                <input type="text" class="form-control" value="{{ $poNumber }}"
+                                                    name="poNumber" id="poNumber" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
                                             <div class="form-group">
                                                 <label>Description <span class="text-danger">*</span></label>
                                                 <?php if ($description == '') {
@@ -177,6 +187,7 @@
                                         <thead>
                                             <tr>
                                                 <th rowspan="1">S/N</th>
+                                                <th rowspan="1">PO Number</th>
                                                 <th rowspan="1">Description</th>
                                                 <th rowspan="1">UOM</th>
                                                 <th rowspan="1">Qty</th>
@@ -205,6 +216,9 @@
                                                     <tr>
                                                         <td>
                                                             {{ $i++ }}
+                                                        </td>
+                                                        <td>
+                                                            {{ $list->poNumber }}
                                                         </td>
                                                         <td>
                                                             {{ $list->description }}
@@ -246,7 +260,7 @@
                                                         <td>
                                                             @if ($list->status != 'Approved')
                                                                 <a class="btn btn-sm bg-success-light"
-                                                                    href="javascript: editfunc('{{ $list->id }}','{{ addslashes($list->description) }}','{{ $list->uomId ?? '' }}','{{ $list->qty }}','{{ $list->unitCost }}','{{ $list->vat ?? 0 }}')">
+                                                                    href="javascript: editfunc('{{ $list->id }}','{{ $list->poNumber }}','{{ addslashes($list->description) }}','{{ $list->uomId ?? '' }}','{{ $list->qty }}','{{ $list->unitCost }}','{{ $list->vat ?? 0 }}')">
                                                                     <i class="fe fe-pencil"></i>
                                                                 </a>
                                                                 <a class="btn btn-sm bg-info-light"
@@ -263,6 +277,7 @@
                                                 @endforeach
                                                 <tr style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
                                                     <td></td>
+                                                    <td></td>
                                                     <td colspan="9" class="text-right"><strong>Grand Total:</strong>
                                                     </td>
                                                     <td style="text-align: right;">
@@ -274,7 +289,7 @@
                                                 </tr>
                                             @else
                                                 <tr>
-                                                    <td colspan="13" class="text-center">No purchase orders for this
+                                                    <td colspan="14" class="text-center">No purchase orders for this
                                                         project yet.</td>
                                                 </tr>
                                             @endif
@@ -314,6 +329,10 @@
                             </button>
                         </div>
                         <div class="modal-body">
+                            <div class="form-group">
+                                <label>PO Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="edit_poNumber" name="poNumber" required>
+                            </div>
                             <div class="form-group">
                                 <label>Description <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="edit_description" name="description" required>
@@ -483,8 +502,9 @@
             document.getElementById('edit_subnet').value = subnet.toFixed(2);
         }
 
-        function editfunc(id, description, uomId, qty, unitCost, vat) {
+        function editfunc(id, poNumber, description, uomId, qty, unitCost, vat) {
             document.getElementById('edit_id').value = id;
+            document.getElementById('edit_poNumber').value = poNumber || '';
             document.getElementById('edit_description').value = description || '';
             document.getElementById('edit_uomId').value = uomId || '';
             document.getElementById('edit_qty').value = qty || '';

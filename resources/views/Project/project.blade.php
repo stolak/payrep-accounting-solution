@@ -152,7 +152,14 @@
                                             <div class="po-item card mb-3" data-po-index="0">
                                                 <div class="card-body">
                                                     <div class="row">
-                                                        <div class="col-md-12">
+                                                        <div class="col-md-6">
+                                                            <div class="form-group">
+                                                                <label>PO Number <span class="text-danger">*</span></label>
+                                                                <input type="text" class="form-control"
+                                                                    name="po_poNumber[]" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
                                                             <div class="form-group">
                                                                 <label>Description <span
                                                                         class="text-danger">*</span></label>
@@ -178,8 +185,8 @@
                                                             <div class="form-group">
                                                                 <label>Quantity <span class="text-danger">*</span></label>
                                                                 <input type="number" class="form-control po-qty"
-                                                                    name="po_qty[]" step="0.01" min="0" required
-                                                                    oninput="calculatePoAmounts(this)">
+                                                                    name="po_qty[]" step="0.01" min="0"
+                                                                    required oninput="calculatePoAmounts(this)">
                                                             </div>
                                                         </div>
                                                         <div class="col-md-3">

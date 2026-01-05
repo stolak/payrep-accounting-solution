@@ -31,6 +31,8 @@ class ProjectController extends Basefunction {
                 'location' => 'nullable|string',
                 'status' => 'nullable|string',
                 'clientId' => 'nullable|integer',
+                'po_poNumber' => 'required|array|min:1',
+                'po_poNumber.*' => 'required|string|distinct',
                 'po_description' => 'required|array|min:1',
                 'po_description.*' => 'required|string',
                 'po_qty' => 'required|array|min:1',
@@ -59,6 +61,7 @@ class ProjectController extends Basefunction {
             ]);
 
             // Create POs for the project
+            $poPoNumbers = $request->input('po_poNumber', []);
             $poDescriptions = $request->input('po_description', []);
             $poUomIds = $request->input('po_uomId', []);
             $poQties = $request->input('po_qty', []);
@@ -66,7 +69,7 @@ class ProjectController extends Basefunction {
             $poVats = $request->input('po_vat', []);
 
             foreach ($poDescriptions as $index => $description) {
-                if (!empty($description)) {
+                if (!empty($description) && !empty($poPoNumbers[$index])) {
                     $qty = $poQties[$index] ?? 0;
                     $unitCost = $poUnitCosts[$index] ?? 0;
                     $vat = $poVats[$index] ?? 0;
@@ -77,6 +80,7 @@ class ProjectController extends Basefunction {
 
                     DB::table('project_po')->insert([
                         'projectId' => $projectId,
+                        'poNumber' => $poPoNumbers[$index],
                         'description' => $description,
                         'uomId' => $poUomIds[$index] ?? null,
                         'qty' => $qty,
@@ -603,6 +607,7 @@ class ProjectController extends Basefunction {
     public function projectPo(Request $request)
     {
         $data['projectId'] = $request->input('projectId');
+        $data['poNumber'] = $request->input('poNumber');
         $data['description'] = $request->input('description');
         $data['uomId'] = $request->input('uomId');
         $data['qty'] = $request->input('qty');
@@ -627,6 +632,7 @@ class ProjectController extends Basefunction {
         if (isset($_POST['addnew'])) {
             $this->validate($request, [
                 'projectId' => 'required|integer',
+                'poNumber' => 'required|string|unique:project_po,poNumber',
                 'description' => 'required|string',
                 'uomId' => 'nullable|integer',
                 'qty' => 'required|numeric|min:0',
@@ -645,6 +651,7 @@ class ProjectController extends Basefunction {
 
             DB::table('project_po')->insert([
                 'projectId' => $data['projectId'],
+                'poNumber' => $data['poNumber'],
                 'description' => $data['description'],
                 'uomId' => $data['uomId'] ?? null,
                 'qty' => $qty,
@@ -664,6 +671,7 @@ class ProjectController extends Basefunction {
         if (isset($_POST['update'])) {
             $this->validate($request, [
                 'projectId' => 'required|integer',
+                'poNumber' => 'required|string|unique:project_po,poNumber,' . $request->input('id'),
                 'description' => 'required|string',
                 'uomId' => 'nullable|integer',
                 'qty' => 'required|numeric|min:0',
@@ -682,6 +690,7 @@ class ProjectController extends Basefunction {
             $subnet = $subcost + $vatAmount;
 
             DB::table('project_po')->where('id', $data['id'])->update([
+                'poNumber' => $data['poNumber'],
                 'description' => $data['description'],
                 'uomId' => $data['uomId'] ?? null,
                 'qty' => $qty,
@@ -734,6 +743,7 @@ class ProjectController extends Basefunction {
                 ->select(
                     'project_po.id',
                     'project_po.projectId',
+                    'project_po.poNumber',
                     'project_po.description',
                     'project_po.uomId',
                     'project_po.qty',
