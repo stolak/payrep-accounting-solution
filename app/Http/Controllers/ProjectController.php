@@ -26,7 +26,7 @@ class ProjectController extends Basefunction {
             $this->validate($request, [
                 'projectCode' => 'required|string|unique:projects,projectCode',
                 'name' => 'required|string|unique:projects,name',
-                'description' => 'nullable|string',
+                'description' => 'required|string',
                 'categoryId' => 'nullable|integer',
                 'location' => 'nullable|string',
                 'status' => 'nullable|string',

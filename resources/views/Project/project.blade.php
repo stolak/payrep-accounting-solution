@@ -32,7 +32,7 @@
                             <form method="post">
                                 {{ csrf_field() }}
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label>Project Code <span class="text-danger">*</span></label>
                                             <?php if ($projectCode == '') {
@@ -52,25 +52,7 @@
                                                 name="name">
                                         </div>
                                     </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Category</label>
-                                            <?php if ($categoryId == '') {
-                                                $categoryId = old('categoryId');
-                                            } ?>
-                                            <select class="select2 form-control" name="categoryId">
-                                                <option value="">--Select--</option>
-                                                @foreach ($projectCategories as $cat)
-                                                    <option value="{{ $cat->id }}"
-                                                        {{ $categoryId == $cat->id ? 'selected' : '' }}>
-                                                        {{ $cat->category }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label>Client</label>
                                             <?php if ($clientId == '') {
@@ -88,7 +70,36 @@
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label>Description</label>
+                                            <?php if ($description == '') {
+                                                $description = old('description');
+                                            } ?>
+                                            <textarea class="form-control" rows="3" name="description">{{ $description }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label>Category</label>
+                                            <?php if ($categoryId == '') {
+                                                $categoryId = old('categoryId');
+                                            } ?>
+                                            <select class="select2 form-control" name="categoryId">
+                                                <option value="">--Select--</option>
+                                                @foreach ($projectCategories as $cat)
+                                                    <option value="{{ $cat->id }}"
+                                                        {{ $categoryId == $cat->id ? 'selected' : '' }}>
+                                                        {{ $cat->category }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+
+
+                                    <div class="col-md-4">
                                         <div class="form-group">
                                             <label>Expense Account</label>
                                             <?php if ($expenseAccountId == '') {
@@ -105,20 +116,8 @@
                                             </select>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <div class="form-group">
-                                            <label>Description</label>
-                                            <?php if ($description == '') {
-                                                $description = old('description');
-                                            } ?>
-                                            <textarea class="form-control" rows="3" name="description">{{ $description }}</textarea>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">
+
+                                    <div class="col-md-4">
                                         <div class="form-group">
                                             <label>Location</label>
                                             <?php if ($location == '') {
@@ -128,19 +127,7 @@
                                                 name="location">
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Status</label>
-                                            <?php if ($status == '') {
-                                                $status = old('status');
-                                            } ?>
-                                            <select class="form-control" name="status">
-                                                <option value="1" {{ $status == 1 ? 'selected' : '' }}>Active</option>
-                                                <option value="0" {{ $status == 0 ? 'selected' : '' }}>Inactive
-                                                </option>
-                                            </select>
-                                        </div>
-                                    </div>
+
                                 </div>
 
                                 <!-- Purchase Orders Section -->
@@ -185,8 +172,8 @@
                                                             <div class="form-group">
                                                                 <label>Quantity <span class="text-danger">*</span></label>
                                                                 <input type="number" class="form-control po-qty"
-                                                                    name="po_qty[]" step="0.01" min="0"
-                                                                    required oninput="calculatePoAmounts(this)">
+                                                                    name="po_qty[]" step="0.01" min="0" required
+                                                                    oninput="calculatePoAmounts(this)">
                                                             </div>
                                                         </div>
                                                         <div class="col-md-3">
