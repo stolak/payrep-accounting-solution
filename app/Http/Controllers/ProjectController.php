@@ -433,10 +433,21 @@ class ProjectController extends Basefunction {
         
         // Fetch budgets list
         $data['budgets'] = DB::table('budgets')
-            ->select('id', 'name as budgetName' )
-            ->orderBy('name', 'asc')
+            ->leftJoin('budget_classifications', 'budgets.categoryId', '=', 'budget_classifications.id')
+            ->select(
+                'budgets.id',
+                'budgets.categoryId', 
+                'budgets.name as budgetName', 
+                'budget_classifications.category as budgetCategoryName', 
+                DB::raw('COALESCE(budget_classifications.isMeasure, 0) as isMeasure'),
+                'budget_classifications.isMilestone', 
+                'budget_classifications.isSubContrator'
+            )   
+            ->orderBy('budget_classifications.category', 'asc')
+            ->orderBy('budgets.name', 'asc')
             ->get();
         
+        // dd($data['budgets']);
         // Fetch project budgets for selected project
         $data['projectBudgets'] = collect();
         if (!empty($data['projectId'])) {

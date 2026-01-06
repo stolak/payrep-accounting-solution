@@ -69,26 +69,25 @@
                                     {{ csrf_field() }}
                                     <input type="hidden" name="projectId" value="{{ $projectId }}">
                                     <div class="row">
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="form-group">
-                                                <label>Budget <span class="text-danger">*</span></label>
+                                                <label>Budget/sub contractor <span class="text-danger">*</span></label>
                                                 <?php if ($budgetId == '') {
                                                     $budgetId = old('budgetId');
                                                 } ?>
-                                                <select class="select2 form-control" name="budgetId" id="budgetId"
-                                                    required>
+                                                <select class="select2 form-control" name="budgetId" id="budgetId" required
+                                                    onchange="handleBudgetChange()">
                                                     <option value="">--Select Budget--</option>
                                                     @foreach ($budgets as $budget)
                                                         <option value="{{ $budget->id }}"
+                                                            data-ismeasure="{{ $budget->isMeasure ?? 0 }}"
                                                             {{ $budgetId == $budget->id ? 'selected' : '' }}>
                                                             {{ $budget->budgetName }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-4">
+                                        <div class="col-md-2" id="unitFieldContainer">
                                             <div class="form-group">
                                                 <label>Unit</label>
                                                 <?php if ($unit == '') {
@@ -99,7 +98,7 @@
                                                     oninput="calculateAmount(); validateAmount();">
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
+                                        <div class="col-md-3" id="unitCostFieldContainer">
                                             <div class="form-group">
                                                 <label>Unit Cost</label>
                                                 <?php if ($unitCost == '') {
@@ -110,7 +109,7 @@
                                                     oninput="calculateAmount(); validateAmount();">
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
+                                        <div class="col-md-3" id="amountFieldContainer">
                                             <div class="form-group">
                                                 <label>Amount <span id="amountRequired" class="text-danger">*</span></label>
                                                 <?php if ($amount == '') {
@@ -122,6 +121,7 @@
                                             </div>
                                         </div>
                                     </div>
+
 
                                     <div class="text-right">
                                         <button type="submit" class="btn btn-primary" name="addnew">Add Budget</button>
@@ -282,15 +282,18 @@
                         <div class="modal-body">
                             <div class="form-group">
                                 <label>Budget <span class="text-danger">*</span></label>
-                                <select class="select2 form-control" id="edit_budgetId" name="budgetId" required>
+                                <select class="select2 form-control" id="edit_budgetId" name="budgetId" required
+                                    onchange="handleEditBudgetChange()">
                                     <option value="">--Select Budget--</option>
                                     @foreach ($budgets as $budget)
-                                        <option value="{{ $budget->id }}">{{ $budget->budgetName }}</option>
+                                        <option value="{{ $budget->id }}"
+                                            data-ismeasure="{{ $budget->isMeasure ?? 0 }}">
+                                            {{ $budget->budgetName }}</option>
                                     @endforeach
                                 </select>
                             </div>
                             <div class="row">
-                                <div class="col-md-4">
+                                <div class="col-md-4" id="edit_unitFieldContainer">
                                     <div class="form-group">
                                         <label>Unit</label>
                                         <input type="number" class="form-control" id="edit_unit" name="unit"
@@ -298,7 +301,7 @@
                                             oninput="calculateEditAmount(); validateEditAmount();">
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-4" id="edit_unitCostFieldContainer">
                                     <div class="form-group">
                                         <label>Unit Cost</label>
                                         <input type="number" class="form-control" id="edit_unitCost" name="unitCost"
@@ -306,7 +309,7 @@
                                             oninput="calculateEditAmount(); validateEditAmount();">
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-4" id="edit_amountFieldContainer">
                                     <div class="form-group">
                                         <label>Amount <span id="edit_amountRequired" class="text-danger">*</span></label>
                                         <input type="number" class="form-control" id="edit_amount" name="amount"
@@ -370,6 +373,61 @@
             var projectId = document.getElementById('projectId').value;
             if (projectId) {
                 document.getElementById('projectSelectForm').submit();
+            }
+        }
+
+        function handleBudgetChange() {
+            var budgetSelect = document.getElementById('budgetId');
+            var selectedOption = budgetSelect.options[budgetSelect.selectedIndex];
+            var isMeasure = selectedOption ? selectedOption.getAttribute('data-ismeasure') : '0';
+
+            var unitContainer = document.getElementById('unitFieldContainer');
+            var unitCostContainer = document.getElementById('unitCostFieldContainer');
+            var amountContainer = document.getElementById('amountFieldContainer');
+
+            // Clear unit and unitCost values when hiding
+            if (isMeasure == '1' || isMeasure == 1) {
+                // Show Unit and Unit Cost fields
+                unitContainer.style.display = 'block';
+                unitCostContainer.style.display = 'block';
+                // amountContainer.className = 'col-md-4';
+            } else {
+                // Hide Unit and Unit Cost fields
+                unitContainer.style.display = 'none';
+                unitCostContainer.style.display = 'none';
+                // amountContainer.className = 'col-md-12';
+                // Clear unit and unitCost values
+                document.getElementById('unit').value = '';
+                document.getElementById('unitCost').value = '';
+                // Trigger validation
+                validateAmount();
+            }
+        }
+
+        function handleEditBudgetChange() {
+            var budgetSelect = document.getElementById('edit_budgetId');
+            var selectedOption = budgetSelect.options[budgetSelect.selectedIndex];
+            var isMeasure = selectedOption ? selectedOption.getAttribute('data-ismeasure') : '0';
+
+            var unitContainer = document.getElementById('edit_unitFieldContainer');
+            var unitCostContainer = document.getElementById('edit_unitCostFieldContainer');
+            var amountContainer = document.getElementById('edit_amountFieldContainer');
+
+            // Clear unit and unitCost values when hiding
+            if (isMeasure == '1' || isMeasure == 1) {
+                // Show Unit and Unit Cost fields
+                unitContainer.style.display = 'block';
+                unitCostContainer.style.display = 'block';
+            } else {
+                // Hide Unit and Unit Cost fields
+                unitContainer.style.display = 'none';
+                unitCostContainer.style.display = 'none';
+
+                // Clear unit and unitCost values
+                document.getElementById('edit_unit').value = '';
+                document.getElementById('edit_unitCost').value = '';
+                // Trigger validation
+                validateEditAmount();
             }
         }
 
@@ -483,6 +541,9 @@
             document.getElementById('edit_unitCost').value = unitCost || '';
             document.getElementById('edit_amount').value = amount || '';
 
+            // Handle visibility based on selected budget's isMeasure
+            handleEditBudgetChange();
+
             // Trigger validation to set required state
             validateEditAmount();
 
@@ -493,6 +554,25 @@
             document.getElementById('deleteid').value = id;
             $("#delete_modal").modal('show')
         }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if budget is already selected and handle visibility
+            var budgetSelect = document.getElementById('budgetId');
+            if (budgetSelect && budgetSelect.value) {
+                handleBudgetChange();
+            } else {
+                // If no budget selected, hide unit and unitCost fields by default
+                var unitContainer = document.getElementById('unitFieldContainer');
+                var unitCostContainer = document.getElementById('unitCostFieldContainer');
+                var amountContainer = document.getElementById('amountFieldContainer');
+                if (unitContainer && unitCostContainer && amountContainer) {
+                    unitContainer.style.display = 'none';
+                    unitCostContainer.style.display = 'none';
+
+                }
+            }
+        });
 
         // Form validation on submit
         document.getElementById('addBudgetForm').addEventListener('submit', function(e) {
