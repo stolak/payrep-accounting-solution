@@ -69,7 +69,7 @@
                                     {{ csrf_field() }}
                                     <input type="hidden" name="projectId" value="{{ $projectId }}">
                                     <div class="row">
-                                        <div class="col-md-4">
+                                        <div class="col-md-5">
                                             <div class="form-group">
                                                 <label>Budget/sub contractor <span class="text-danger">*</span></label>
                                                 <?php if ($budgetId == '') {
@@ -82,7 +82,8 @@
                                                         <option value="{{ $budget->id }}"
                                                             data-ismeasure="{{ $budget->isMeasure ?? 0 }}"
                                                             {{ $budgetId == $budget->id ? 'selected' : '' }}>
-                                                            {{ $budget->budgetName }}</option>
+                                                            {{ $budget->budgetName }} - {{ $budget->budgetCategoryName }}
+                                                        </option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -98,7 +99,7 @@
                                                     oninput="calculateAmount(); validateAmount();">
                                             </div>
                                         </div>
-                                        <div class="col-md-3" id="unitCostFieldContainer">
+                                        <div class="col-md-2" id="unitCostFieldContainer">
                                             <div class="form-group">
                                                 <label>Unit Cost</label>
                                                 <?php if ($unitCost == '') {
@@ -145,7 +146,7 @@
                                         <thead>
                                             <tr>
                                                 <th rowspan="1">S/N</th>
-                                                <th rowspan="1">Budget Classification</th>
+
                                                 <th rowspan="1">Budget Name</th>
                                                 <th rowspan="1">Unit</th>
                                                 <th rowspan="1">Unit Cost</th>
@@ -183,12 +184,7 @@
                                                             <td>
                                                                 {{ $i++ }}
                                                             </td>
-                                                            <td>
-                                                                @if ($firstInCategory)
-                                                                    <strong>{{ $categoryName }}</strong>
-                                                                    @php $firstInCategory = false; @endphp
-                                                                @endif
-                                                            </td>
+
                                                             <td>
                                                                 {{ $list->budgetName }}
                                                             </td>
@@ -218,7 +214,7 @@
                                                         <td class="text-right">
                                                             <strong>{{ $categoryName }} Subtotal:</strong>
                                                         </td>
-                                                        <td></td>
+
                                                         <td></td>
                                                         <td></td>
                                                         <td style="text-align: right;">
@@ -229,7 +225,7 @@
                                                 @endforeach
                                                 <tr
                                                     style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
-                                                    <td></td>
+
                                                     <td colspan="4" class="text-right"><strong>Grand Total:</strong>
                                                     </td>
                                                     <td style="text-align: right;">
