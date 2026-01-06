@@ -145,7 +145,7 @@
                                         <thead>
                                             <tr>
                                                 <th rowspan="1">S/N</th>
-                                                <th rowspan="1">Budget Category</th>
+                                                <th rowspan="1">Budget Classification</th>
                                                 <th rowspan="1">Budget Name</th>
                                                 <th rowspan="1">Unit</th>
                                                 <th rowspan="1">Unit Cost</th>
@@ -157,7 +157,7 @@
                                             @php
                                                 $i = 1;
                                                 $totalAmount = 0;
-                                                // Group budgets by category
+                                                // Group budgets by classification
                                                 $groupedBudgets = [];
                                                 foreach ($projectBudgets as $list) {
                                                     $categoryName = $list->budgetCategoryName ?? 'Uncategorized';

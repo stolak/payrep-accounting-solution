@@ -60,10 +60,10 @@
             @if (!empty($projectId))
                 <div class="row">
                     <div class="col-md-12">
-                        <!-- Budget Summary by Category -->
+                        <!-- Budget Summary by Classification -->
                         <div class="card card-table">
                             <div class="card-header">
-                                <h4 class="card-title">Budget Summary by Category</h4>
+                                <h4 class="card-title">Budget Summary by Classification</h4>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -71,7 +71,7 @@
                                         <thead>
                                             <tr>
                                                 <th rowspan="1">S/N</th>
-                                                <th rowspan="1">Budget Category</th>
+                                                <th rowspan="1">Budget Classification</th>
                                                 <th rowspan="1">Total Amount</th>
                                             </tr>
                                         </thead>
@@ -112,7 +112,7 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- /Budget Summary by Category -->
+                        <!-- /Budget Summary by Classification -->
                     </div>
                 </div>
             @else

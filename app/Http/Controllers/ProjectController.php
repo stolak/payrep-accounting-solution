@@ -268,13 +268,13 @@ class ProjectController extends Basefunction {
         
         // Fetch budgets list with category
         $data['budgets'] = DB::table('budgets')
-            ->leftJoin('budget_categories', 'budgets.categoryId', '=', 'budget_categories.id')
-            ->select('budgets.id', 'budgets.name', 'budgets.description', 'budgets.categoryId', 'budget_categories.category as categoryName')
+            ->leftJoin('budget_classifications', 'budgets.categoryId', '=', 'budget_classifications.id')
+            ->select('budgets.id', 'budgets.name', 'budgets.description', 'budgets.categoryId', 'budget_classifications.category as categoryName')
             ->orderBy('budgets.name', 'asc')
             ->get();
         
-        // Fetch budget categories for dropdown
-        $data['budgetCategories'] = DB::table('budget_categories')
+        // Fetch budget classifications for dropdown
+        $data['budgetCategories'] = DB::table('budget_classifications')
             ->select('id', 'category')
             ->orderBy('category', 'asc')
             ->get();
@@ -442,10 +442,10 @@ class ProjectController extends Basefunction {
         if (!empty($data['projectId'])) {
             $data['projectBudgets'] = DB::table('project_budget')
                 ->leftJoin('budgets', 'project_budget.budgetId', '=', 'budgets.id')
-                ->leftJoin('budget_categories', 'budgets.categoryId', '=', 'budget_categories.id')
+                ->leftJoin('budget_classifications', 'budgets.categoryId', '=', 'budget_classifications.id')
                 ->where('project_budget.projectId', $data['projectId'])
-                ->select('project_budget.id', 'project_budget.projectId', 'project_budget.budgetId', 'project_budget.unit', 'project_budget.unitCost', 'project_budget.amount', 'budgets.name as budgetName', 'budget_categories.category as budgetCategoryName')
-                ->orderBy('budget_categories.category', 'asc')
+                ->select('project_budget.id', 'project_budget.projectId', 'project_budget.budgetId', 'project_budget.unit', 'project_budget.unitCost', 'project_budget.amount', 'budgets.name as budgetName', 'budget_classifications.category as budgetCategoryName')
+                ->orderBy('budget_classifications.category', 'asc')
                 ->orderBy('budgets.name', 'asc')
                 ->get();
         }
@@ -456,45 +456,60 @@ class ProjectController extends Basefunction {
     public function budgetCategory(Request $request)
     {
         $data['category'] = $request->input('category');
+        $data['isMeasure'] = $request->input('isMeasure', 0);
+        $data['isMilestone'] = $request->input('isMilestone', 0);
+        $data['isSubContrator'] = $request->input('isSubContrator', 0);
         $data['id'] = $request->input('id');
         
         if (isset($_POST['addnew'])) {
                 $this->validate($request, [
-                'category' => 'required|string|unique:budget_categories,category',
+                'category' => 'required|string|unique:budget_classifications,category',
+                'isMeasure' => 'nullable|boolean',
+                'isMilestone' => 'nullable|boolean',
+                'isSubContrator' => 'nullable|boolean',
             ]);
 
-            DB::table('budget_categories')->insert([
+            DB::table('budget_classifications')->insert([
                 'category' => $data['category'],
+                'isMeasure' => $data['isMeasure'] ? 1 : 0,
+                'isMilestone' => $data['isMilestone'] ? 1 : 0,
+                'isSubContrator' => $data['isSubContrator'] ? 1 : 0,
             ]);
             return back()->with('message', 'New record successfully added.');
         }
         
         if (isset($_POST['update'])) {
                 $this->validate($request, [
-                'category' => 'required|string|unique:budget_categories,category,' . $request->input('id'),
+                'category' => 'required|string|unique:budget_classifications,category,' . $request->input('id'),
+                'isMeasure' => 'nullable|boolean',
+                'isMilestone' => 'nullable|boolean',
+                'isSubContrator' => 'nullable|boolean',
                 'id' => 'required|integer',
             ]);
 
-            DB::table('budget_categories')->where('id', $data['id'])->update([
+            DB::table('budget_classifications')->where('id', $data['id'])->update([ 
                 'category' => $data['category'],
+                'isMeasure' => $data['isMeasure'] ? 1 : 0,
+                'isMilestone' => $data['isMilestone'] ? 1 : 0,
+                'isSubContrator' => $data['isSubContrator'] ? 1 : 0,
             ]);
             return back()->with('message', 'Record successfully updated.');
         }
         
         if (isset($_POST['del'])) {
             $del = $request->input('deleteid');
-            // Check if category has related records before deletion
+            // Check if classification has related records before deletion
             // Add your related table checks here if needed
             if (DB::table('budgets')->where('categoryId', $del)->first()) {
-                return back()->with('error_message', 'Category has related budgets. Hence, record cannot be deleted!');
+                return back()->with('error_message', 'Classification has related budgets. Hence, record cannot be deleted!');
             }
-            DB::table('budget_categories')->where('id', $del)->delete();
+            DB::table('budget_classifications')->where('id', $del)->delete();
             return back()->with('message', 'Record successfully deleted.');
         }
         
-        // Fetch budget categories list
-        $data['budgetCategories'] = DB::table('budget_categories')
-            ->select('id', 'category')
+        // Fetch budget classifications list
+        $data['budgetCategories'] = DB::table('budget_classifications')
+            ->select('id', 'category', 'isMeasure', 'isMilestone', 'isSubContrator')
             ->orderBy('category', 'asc')
             ->get();
         
@@ -522,22 +537,22 @@ class ProjectController extends Basefunction {
             ->orderBy('name', 'asc')
             ->get();
         
-        // Fetch project budget summary by category for selected project
+        // Fetch project budget summary by classification for selected project
         $data['budgetSummary'] = collect();
         $data['totalAmount'] = 0;
         
         if (!empty($data['projectId'])) {
             $data['budgetSummary'] = DB::table('project_budget')
                 ->leftJoin('budgets', 'project_budget.budgetId', '=', 'budgets.id')
-                ->leftJoin('budget_categories', 'budgets.categoryId', '=', 'budget_categories.id')
+                ->leftJoin('budget_classifications', 'budgets.categoryId', '=', 'budget_classifications.id')
                 ->where('project_budget.projectId', $data['projectId'])
                 ->select(
-                    'budget_categories.id as categoryId',
-                    'budget_categories.category as categoryName',
+                    'budget_classifications.id as categoryId',
+                    'budget_classifications.category as categoryName',
                     DB::raw('SUM(project_budget.amount) as totalAmount')
                 )
-                ->groupBy('budget_categories.id', 'budget_categories.category')
-                ->orderBy('budget_categories.category', 'asc')
+                ->groupBy('budget_classifications.id', 'budget_classifications.category')
+                ->orderBy('budget_classifications.category', 'asc')
                 ->get();
             
             // Calculate grand total

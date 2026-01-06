@@ -466,7 +466,7 @@ class Basefunction extends Controller
 	    if($br!='')$qbr="`tblpettyhandling_transaction`.`branch_id`='$br'";
 	    return DB::Select("SELECT tblpettyhandling_transaction.*
 	    ,(SELECT Concat(`accountdescription`,'(',`accountno`,')') FROM `tblaccountchart` WHERE `tblaccountchart`.`id`=accountid) as AccountName
-	    ,(SELECT particular FROM `project_expenses` WHERE `project_expenses`.`id`=projectid) as Particular
+	    ,(SELECT particular FROM `petty_expenses` WHERE `petty_expenses`.`id`=projectid) as Particular
 	    ,(SELECT name FROM `users` WHERE `users`.`id`=postby) as Postedby
 	    ,tblbranch.branch as Branch
 	    ,users.name as FPost
