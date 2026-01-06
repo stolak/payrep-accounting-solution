@@ -104,7 +104,7 @@ class AccountJournalController extends Controller
 
     	        foreach ($data['JournalPending'] as $b){
     	          if ($b->debit!=0) {
-                  AccountTrait::debitAccount($b->accountid, $b->debit,$refno,$data['transdate'],$b->remarks,$userid,$data['manual_ref']);
+                  AccountTrait::debitAccount($b->accountid, $b->debit,$refno,$data['transdate'], $b->remarks, $userid, $data['manual_ref']);
 
     	          }
     	          if ($b->credit!=0) {

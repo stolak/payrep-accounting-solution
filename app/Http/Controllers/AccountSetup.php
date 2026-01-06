@@ -292,7 +292,6 @@ class AccountSetup extends Controller {
                     'endofyear'=>'End of financial year date',
                     'manual_ref'=>'Reference Number',
                 ]);
-                dd($data['endofyear']);
                 $date=$data['endofyear'];
                 $return= DB::Select("SELECT * FROM `tblfinancial_end` WHERE DATE_FORMAT(`year_end_date`,'%Y-%m-%d')<='$date'");
                 if($return) return back()->with('error_message','This process cannot be completed because end of the year for '. $return[0]->year_end_date. ' has been computed'   );
@@ -423,10 +422,10 @@ class AccountSetup extends Controller {
         $data['accountid']=$request->input('accountid');
         if ( isset( $_POST['add'] ) ) {
                 $this->validate($request, [
-                'particular'      => 'required|string|unique:project_expenses,particular',
+                'particular'      => 'required|string|unique:petty_expenses,particular',
                 'accountid'      => 'required|string',
                 ]);
-                DB::table('project_expenses')->insert([
+                DB::table('petty_expenses')->insert([
                     'particular' => $data['particular'],
                     'expensenid' => $data['accountid'] ,
                     ]);
@@ -439,7 +438,7 @@ class AccountSetup extends Controller {
                 'expensenid'      => 'required|string',
                 ]);
         $data['expensenid']=$request->input('expensenid');
-                DB::table('project_expenses')->where('id',$data['id'])->update([
+                DB::table('petty_expenses')->where('id',$data['id'])->update([
                     'particular' => $data['particular'] ,
                     'expensenid' => $data['expensenid'] ,
                     ]);
@@ -895,7 +894,7 @@ class AccountSetup extends Controller {
 
         if ( isset( $_POST['post'] ) ) {
 
-                $data['particular_accountid']=DB::table('project_expenses')->where('id', '=', $data['particular'])->value('expensenid');
+                $data['particular_accountid']=DB::table('petty_expenses')->where('id', '=', $data['particular'])->value('expensenid');
                 $data['petty_accountid']=DB::table('default_setups')->where('id', '=', 1)->value('accoountId');
 
                 $request['petty_accountid']= $data['petty_accountid'];
@@ -946,7 +945,7 @@ try {
                 'expensenid'      => 'required|string',
                 ]);
 
-                DB::table('project_expenses')->where('id',$data['id'])->update([
+                DB::table('petty_expenses')->where('id',$data['id'])->update([
                     'particular' => $data['particular'] ,
                     'expensenid' => $data['accountid'] ,
                     ]);

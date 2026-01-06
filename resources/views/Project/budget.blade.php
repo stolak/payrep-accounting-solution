@@ -26,7 +26,7 @@
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-header">
-                            <h4 class="card-title">Create Budget</h4>
+                            <h4 class="card-title">Create Budget/Sub contractor</h4>
                         </div>
                         <div class="card-body">
                             <form method="post">
@@ -34,17 +34,7 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label>Budget Name <span class="text-danger">*</span></label>
-                                            <?php if ($name == '') {
-                                                $name = old('name');
-                                            } ?>
-                                            <input type="text" class="form-control" value="{{ $name }}" required
-                                                name="name">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Category <span class="text-danger">*</span></label>
+                                            <label>Classification <span class="text-danger">*</span></label>
                                             <?php if ($categoryId == '') {
                                                 $categoryId = old('categoryId');
                                             } ?>
@@ -58,11 +48,22 @@
                                             </select>
                                         </div>
                                     </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Budget/Sub contractor Name <span class="text-danger">*</span></label>
+                                            <?php if ($name == '') {
+                                                $name = old('name');
+                                            } ?>
+                                            <input type="text" class="form-control" value="{{ $name }}" required
+                                                name="name">
+                                        </div>
+                                    </div>
+
                                 </div>
                                 <div class="row">
                                     <div class="col-md-12">
                                         <div class="form-group">
-                                            <label>Description</label>
+                                            <label>Description/Scope of Work</label>
                                             <?php if ($description == '') {
                                                 $description = old('description');
                                             } ?>
@@ -179,8 +180,7 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label>Description</label>
-                                        <textarea class="form-control" rows="3" id="description"
-                                            name="description"></textarea>
+                                        <textarea class="form-control" rows="3" id="description" name="description"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -219,7 +219,6 @@
         <!-- /Delete Modal -->
 
     </div>
-
 @endsection
 @section('styles')
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
@@ -254,5 +253,3 @@
     </script>
 @endsection
 <!-- /Page Wrapper -->
-
-

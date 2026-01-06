@@ -23,9 +23,7 @@ use App\Http\Traits\AccountTrait;
 
 class AccountController extends Controller
 {
-    public function subaccount(Request $request)
-    {
-        //dd("jsjsjs");
+    public function subaccount(Request $request){
 
     if(!(URL::previous()==URL::current() )){
         $request->session()->forget('category');

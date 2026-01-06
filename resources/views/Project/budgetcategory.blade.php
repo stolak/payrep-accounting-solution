@@ -26,7 +26,7 @@
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-header">
-                            <h4 class="card-title">Create Budget Classification</h4>
+                            <h4 class="card-title"> Classification</h4>
                         </div>
                         <div class="card-body">
                             <form method="post">
