@@ -221,20 +221,20 @@ class ProjectController extends Basefunction {
     {
         $data['name'] = $request->input('name');
         $data['description'] = $request->input('description');
-        $data['categoryId'] = $request->input('categoryId');
+        $data['classificationId'] = $request->input('classificationId');
         $data['id'] = $request->input('id');
         
         if (isset($_POST['addnew'])) {
             $this->validate($request, [
                 'name' => 'required|string|unique:budgets,name',
                 'description' => 'nullable|string',
-                'categoryId' => 'required|integer',
+                'classificationId' => 'required|integer',
             ]);
 
             DB::table('budgets')->insert([
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
-                'categoryId' => $data['categoryId'],
+                'classificationId' => $data['classificationId'],
             ]);
             return back()->with('message', 'New record successfully added.');
         }
@@ -243,14 +243,14 @@ class ProjectController extends Basefunction {
             $this->validate($request, [
                 'name' => 'required|string|unique:budgets,name,' . $request->input('id'),
                 'description' => 'nullable|string',
-                'categoryId' => 'required|integer',
+                'classificationId' => 'required|integer',
                 'id' => 'required|integer',
             ]);
 
             DB::table('budgets')->where('id', $data['id'])->update([
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
-                'categoryId' => $data['categoryId'],
+                'classificationId' => $data['classificationId'],
             ]);
             return back()->with('message', 'Record successfully updated.');
         }
@@ -266,10 +266,10 @@ class ProjectController extends Basefunction {
             return back()->with('message', 'Record successfully deleted.');
         }
         
-        // Fetch budgets list with category
+        // Fetch budgets list with classification
         $data['budgets'] = DB::table('budgets')
-            ->leftJoin('budget_classifications', 'budgets.categoryId', '=', 'budget_classifications.id')
-            ->select('budgets.id', 'budgets.name', 'budgets.description', 'budgets.categoryId', 'budget_classifications.category as categoryName')
+            ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
+            ->select('budgets.id', 'budgets.name', 'budgets.description', 'budgets.classificationId', 'budget_classifications.category as categoryName')
             ->orderBy('budgets.name', 'asc')
             ->get();
         
@@ -433,10 +433,10 @@ class ProjectController extends Basefunction {
         
         // Fetch budgets list
         $data['budgets'] = DB::table('budgets')
-            ->leftJoin('budget_classifications', 'budgets.categoryId', '=', 'budget_classifications.id')
+            ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
             ->select(
                 'budgets.id',
-                'budgets.categoryId', 
+                'budgets.classificationId', 
                 'budgets.name as budgetName', 
                 'budget_classifications.category as budgetCategoryName', 
                 DB::raw('COALESCE(budget_classifications.isMeasure, 0) as isMeasure'),
@@ -453,7 +453,7 @@ class ProjectController extends Basefunction {
         if (!empty($data['projectId'])) {
             $data['projectBudgets'] = DB::table('project_budget')
                 ->leftJoin('budgets', 'project_budget.budgetId', '=', 'budgets.id')
-                ->leftJoin('budget_classifications', 'budgets.categoryId', '=', 'budget_classifications.id')
+                ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
                 ->where('project_budget.projectId', $data['projectId'])
                 ->select('project_budget.id', 'project_budget.projectId', 'project_budget.budgetId', 'project_budget.unit', 'project_budget.unitCost', 'project_budget.amount', 'budgets.name as budgetName', 'budget_classifications.category as budgetCategoryName')
                 ->orderBy('budget_classifications.category', 'asc')
@@ -511,7 +511,7 @@ class ProjectController extends Basefunction {
             $del = $request->input('deleteid');
             // Check if classification has related records before deletion
             // Add your related table checks here if needed
-            if (DB::table('budgets')->where('categoryId', $del)->first()) {
+            if (DB::table('budgets')->where('classificationId', $del)->first()) {
                 return back()->with('error_message', 'Classification has related budgets. Hence, record cannot be deleted!');
             }
             DB::table('budget_classifications')->where('id', $del)->delete();
@@ -555,7 +555,7 @@ class ProjectController extends Basefunction {
         if (!empty($data['projectId'])) {
             $data['budgetSummary'] = DB::table('project_budget')
                 ->leftJoin('budgets', 'project_budget.budgetId', '=', 'budgets.id')
-                ->leftJoin('budget_classifications', 'budgets.categoryId', '=', 'budget_classifications.id')
+                ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
                 ->where('project_budget.projectId', $data['projectId'])
                 ->select(
                     'budget_classifications.id as categoryId',

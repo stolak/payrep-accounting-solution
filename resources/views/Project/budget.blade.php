@@ -35,14 +35,14 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label>Classification <span class="text-danger">*</span></label>
-                                            <?php if ($categoryId == '') {
-                                                $categoryId = old('categoryId');
+                                            <?php if ($classificationId == '') {
+                                                $classificationId = old('classificationId');
                                             } ?>
-                                            <select class="form-control" name="categoryId" required>
+                                            <select class="form-control" name="classificationId" required>
                                                 <option value="">--Select Category--</option>
                                                 @foreach ($budgetCategories as $cat)
                                                     <option value="{{ $cat->id }}"
-                                                        {{ $categoryId == $cat->id ? 'selected' : '' }}>
+                                                        {{ $classificationId == $cat->id ? 'selected' : '' }}>
                                                         {{ $cat->category }}</option>
                                                 @endforeach
                                             </select>
@@ -122,7 +122,7 @@
                                                 </td>
                                                 <td>
                                                     <a class="btn btn-sm bg-success-light"
-                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->name }}','{{ addslashes($list->description ?? '') }}','{{ $list->categoryId }}')">
+                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->name }}','{{ addslashes($list->description ?? '') }}','{{ $list->classificationId }}')">
                                                         <i class="fe fe-pencil"></i>
                                                     </a>
                                                     <a class="btn btn-sm bg-danger-light"
@@ -167,7 +167,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Category <span class="text-danger">*</span></label>
-                                        <select class="form-control" id="categoryId" name="categoryId" required>
+                                        <select class="form-control" id="classificationId" name="classificationId" required>
                                             <option value="">--Select Category--</option>
                                             @foreach ($budgetCategories as $cat)
                                                 <option value="{{ $cat->id }}">{{ $cat->category }}</option>
@@ -236,11 +236,11 @@
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
     <script>
-        function editfunc(id, name, description, categoryId) {
+        function editfunc(id, name, description, classificationId) {
             document.getElementById('id').value = id;
             document.getElementById('name').value = name;
             document.getElementById('description').value = description || '';
-            document.getElementById('categoryId').value = categoryId || '';
+            document.getElementById('classificationId').value = classificationId || '';
 
             $("#edit_details").modal('show')
         }

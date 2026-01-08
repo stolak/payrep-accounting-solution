@@ -86,9 +86,10 @@
                                                     $percentage = old('percentage');
                                                 } ?>
                                                 <input type="number" class="form-control" value="{{ $percentage }}"
-                                                    name="percentage" id="percentage" step="0.01" min="0" max="100"
-                                                    required oninput="validatePercentage()">
-                                                <small class="text-muted">Remaining: <span id="remainingPercentage">{{ 100 - ($totalPercentage ?? 0) }}</span>%</small>
+                                                    name="percentage" id="percentage" step="0.01" min="0"
+                                                    max="100" required oninput="validatePercentage()">
+                                                <small class="text-muted">Remaining: <span
+                                                        id="remainingPercentage">{{ 100 - ($totalPercentage ?? 0) }}</span>%</small>
                                             </div>
                                         </div>
                                         <div class="col-md-4">
@@ -121,7 +122,8 @@
                                 <h4 class="card-title">Payment Milestones</h4>
                                 @if (!empty($totalPercentage))
                                     <div class="mt-2">
-                                        <span class="badge {{ $totalPercentage > 100 ? 'bg-danger' : ($totalPercentage == 100 ? 'bg-success' : 'bg-warning') }}">
+                                        <span
+                                            class="badge {{ $totalPercentage > 100 ? 'bg-danger' : ($totalPercentage == 100 ? 'bg-success' : 'bg-warning') }}">
                                             Total Percentage: {{ number_format($totalPercentage, 2) }}%
                                         </span>
                                     </div>
@@ -173,7 +175,8 @@
                                                 @endforeach
                                             @else
                                                 <tr>
-                                                    <td colspan="5" class="text-center">No payment milestones added for this project yet.</td>
+                                                    <td colspan="5" class="text-center">No payment milestones added for
+                                                        this project yet.</td>
                                                 </tr>
                                             @endif
                                         </tbody>
@@ -189,7 +192,8 @@
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-body">
-                                <p class="text-center text-muted">Please select a project to view and manage its payment milestones.</p>
+                                <p class="text-center text-muted">Please select a project to view and manage its payment
+                                    milestones.</p>
                             </div>
                         </div>
                     </div>
@@ -213,17 +217,21 @@
                         <div class="modal-body">
                             <div class="form-group">
                                 <label>Milestone <span class="text-danger">*</span></label>
-                                <input type="text" id="edit_milestone" name="milestone" class="form-control" required>
+                                <input type="text" id="edit_milestone" name="milestone" class="form-control"
+                                    required>
                             </div>
                             <div class="form-group">
                                 <label>Percentage (%) <span class="text-danger">*</span></label>
                                 <input type="number" id="edit_percentage" name="percentage" class="form-control"
-                                    step="0.01" min="0" max="100" required oninput="validateEditPercentage()">
-                                <small class="text-muted">Remaining: <span id="edit_remainingPercentage">{{ 100 - ($totalPercentage ?? 0) }}</span>%</small>
+                                    step="0.01" min="0" max="100" required
+                                    oninput="validateEditPercentage()">
+                                <small class="text-muted">Remaining: <span
+                                        id="edit_remainingPercentage">{{ 100 - ($totalPercentage ?? 0) }}</span>%</small>
                             </div>
                             <div class="form-group">
                                 <label>Rank <span class="text-danger">*</span></label>
-                                <input type="number" id="edit_rank" name="rank" class="form-control" min="1" required>
+                                <input type="number" id="edit_rank" name="rank" class="form-control" min="1"
+                                    required>
                                 <small class="text-muted">Order of milestone execution</small>
                             </div>
                             <input type="hidden" id="edit_id" name="id">
@@ -290,10 +298,10 @@
             var totalPercentage = {{ $totalPercentage ?? 0 }};
             var remaining = 100 - totalPercentage;
             var remainingSpan = document.getElementById('remainingPercentage');
-            
+
             if (remainingSpan) {
                 remainingSpan.textContent = (remaining - percentage).toFixed(2);
-                
+
                 if (percentage > remaining) {
                     remainingSpan.style.color = 'red';
                     remainingSpan.parentElement.classList.add('text-danger');
@@ -308,7 +316,7 @@
             var percentage = parseFloat(document.getElementById('edit_percentage').value) || 0;
             var editId = document.getElementById('edit_id').value;
             var totalPercentage = {{ $totalPercentage ?? 0 }};
-            
+
             // Get current milestone percentage if editing
             var currentMilestonePercentage = 0;
             @if (!empty($paymentMilestones))
@@ -318,13 +326,13 @@
                     }
                 @endforeach
             @endif
-            
+
             var remaining = 100 - (totalPercentage - currentMilestonePercentage);
             var remainingSpan = document.getElementById('edit_remainingPercentage');
-            
+
             if (remainingSpan) {
                 remainingSpan.textContent = (remaining - percentage).toFixed(2);
-                
+
                 if (percentage > remaining) {
                     remainingSpan.style.color = 'red';
                     remainingSpan.parentElement.classList.add('text-danger');
@@ -340,10 +348,10 @@
             document.getElementById('edit_milestone').value = milestone;
             document.getElementById('edit_percentage').value = percentage;
             document.getElementById('edit_rank').value = rank;
-            
+
             // Trigger validation
             validateEditPercentage();
-            
+
             $("#edit_modal").modal('show')
         }
 
@@ -357,7 +365,7 @@
             var percentage = parseFloat(document.getElementById('percentage').value) || 0;
             var totalPercentage = {{ $totalPercentage ?? 0 }};
             var remaining = 100 - totalPercentage;
-            
+
             if (percentage > remaining) {
                 e.preventDefault();
                 alert('Percentage cannot exceed remaining ' + remaining.toFixed(2) + '%');
@@ -369,7 +377,7 @@
             var percentage = parseFloat(document.getElementById('edit_percentage').value) || 0;
             var editId = document.getElementById('edit_id').value;
             var totalPercentage = {{ $totalPercentage ?? 0 }};
-            
+
             // Get current milestone percentage if editing
             var currentMilestonePercentage = 0;
             @if (!empty($paymentMilestones))
@@ -379,9 +387,9 @@
                     }
                 @endforeach
             @endif
-            
+
             var remaining = 100 - (totalPercentage - currentMilestonePercentage);
-            
+
             if (percentage > remaining) {
                 e.preventDefault();
                 alert('Percentage cannot exceed remaining ' + remaining.toFixed(2) + '%');
@@ -391,4 +399,3 @@
     </script>
 @endsection
 <!-- /Page Wrapper -->
-
