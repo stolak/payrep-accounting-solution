@@ -1175,6 +1175,110 @@ class ProjectController extends Basefunction {
         
         return view('Project.budgetutilizationreport', $data);
     }
+
+    public function projectBudgetMilestoneReport(Request $request)
+    {
+        $data['projectId'] = $request->input('projectId');
+        
+        // Handle project selection - reload page with selected project
+        if ($request->has('select_project')) {
+            $data['projectId'] = $request->input('projectId');
+            Session(['selected_project_budget_milestone_project_id' => $data['projectId']]);
+        }
+        
+        // Get selected project from session if not in request
+        if (empty($data['projectId'])) {
+            $data['projectId'] = Session::get('selected_project_budget_milestone_project_id');
+        }
+        
+        // Fetch projects list
+        $data['projects'] = DB::table('projects')
+            ->select('id', 'name')
+            ->orderBy('name', 'asc')
+            ->get();
+        
+        $data['projectBudgets'] = collect();
+        $data['milestones'] = collect();
+        $data['totalBudgeted'] = 0;
+        $data['totalActualExpense'] = 0;
+        
+        if (!empty($data['projectId'])) {
+            // Fetch milestones for the selected project, ordered by rank
+            $data['milestones'] = DB::table('payment_milestone')
+                ->where('projectId', $data['projectId'])
+                ->select('id', 'milestone', 'percentage', 'rank', 'projectId')
+                ->orderBy('rank', 'asc')
+                ->get();
+            
+            // Fetch project budgets where classification isMilestone = 1
+            $budgets = DB::table('project_budget')
+                ->leftJoin('budgets', 'project_budget.budgetId', '=', 'budgets.id')
+                ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
+                ->where('project_budget.projectId', $data['projectId'])
+                ->where('budget_classifications.isMilestone', 1)
+                ->select(
+                    'project_budget.id',
+                    'project_budget.budgetId',
+                    'project_budget.unit',
+                    'project_budget.unitCost',
+                    'project_budget.amount',
+                    'budgets.name as budgetName'
+                )
+                ->orderBy('budgets.name', 'asc')
+                ->get();
+            
+            // Fetch all approved expenses for this project, grouped by budget and milestone
+            $expenses = DB::table('project_expense')
+                ->where('project_expense.projectId', $data['projectId'])
+                ->where('project_expense.status', 'Approved')
+                ->select(
+                    'project_expense.budgetId',
+                    'project_expense.paymentMilestoneId',
+                    DB::raw('SUM(project_expense.debit) as totalExpense')
+                )
+                ->groupBy('project_expense.budgetId', 'project_expense.paymentMilestoneId')
+                ->get();
+            
+            // Create a keyed collection for quick lookup: budgetId_milestoneId => expense
+            $expenseMap = [];
+            foreach ($expenses as $expense) {
+                $key = $expense->budgetId . '_' . $expense->paymentMilestoneId;
+                $expenseMap[$key] = $expense->totalExpense;
+            }
+            
+            // Process each budget
+            $data['projectBudgets'] = $budgets->map(function($budget) use ($data, $expenseMap) {
+                $budget->milestoneAmounts = [];
+                $budget->milestoneExpenses = [];
+                $budget->totalActualExpense = 0;
+                
+                // Calculate milestone amounts and fetch actual expenses
+                foreach ($data['milestones'] as $milestone) {
+                    // Calculate milestone amount (percentage of budget amount)
+                    $milestoneAmount = ($budget->amount * $milestone->percentage) / 100;
+                    $budget->milestoneAmounts[$milestone->id] = [
+                        'amount' => $milestoneAmount,
+                        'percentage' => $milestone->percentage,
+                        'milestone' => $milestone->milestone
+                    ];
+                    
+                    // Get actual expense for this budget and milestone
+                    $expenseKey = $budget->budgetId . '_' . $milestone->id;
+                    $actualExpense = isset($expenseMap[$expenseKey]) ? $expenseMap[$expenseKey] : 0;
+                    $budget->milestoneExpenses[$milestone->id] = $actualExpense;
+                    $budget->totalActualExpense += $actualExpense;
+                }
+                
+                return $budget;
+            });
+            
+            // Calculate totals after processing all budgets
+            $data['totalBudgeted'] = $data['projectBudgets']->sum('amount');
+            $data['totalActualExpense'] = $data['projectBudgets']->sum('totalActualExpense');
+        }
+        
+        return view('Project.projectbudgetmilestonereport', $data);
+    }
    
 
 
