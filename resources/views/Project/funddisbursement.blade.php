@@ -71,11 +71,12 @@
                                     <div class="row">
                                         <div class="col-md-4">
                                             <div class="form-group">
-                                                <label>Budget <span class="text-danger">*</span></label>
+                                                <label>Beneficiary <span class="text-danger">*</span></label>
                                                 <?php if ($budgetId == '') {
                                                     $budgetId = old('budgetId');
                                                 } ?>
-                                                <select class="select2 form-control" name="budgetId" id="budgetId" required>
+                                                <select class="select2 form-control" name="budgetId" id="budgetId"
+                                                    required>
                                                     <option value="">--Select Budget--</option>
                                                     @foreach ($budgets as $budget)
                                                         <option value="{{ $budget->id }}"
@@ -91,7 +92,8 @@
                                                 <?php if ($paymentMilestoneId == '') {
                                                     $paymentMilestoneId = old('paymentMilestoneId');
                                                 } ?>
-                                                <select class="select2 form-control" name="paymentMilestoneId" id="paymentMilestoneId" required>
+                                                <select class="select2 form-control" name="paymentMilestoneId"
+                                                    id="paymentMilestoneId" required>
                                                     <option value="">--Select Milestone--</option>
                                                     @foreach ($paymentMilestones as $milestone)
                                                         <option value="{{ $milestone->id }}"
@@ -125,7 +127,8 @@
                                     </div>
 
                                     <div class="text-right">
-                                        <button type="submit" class="btn btn-primary" name="addnew">Add Disbursement</button>
+                                        <button type="submit" class="btn btn-primary" name="addnew">Add
+                                            Disbursement</button>
                                     </div>
                                 </form>
                             </div>
@@ -245,9 +248,11 @@
                                                         <td></td>
                                                     </tr>
                                                 @endforeach
-                                                <tr style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
+                                                <tr
+                                                    style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
                                                     <td></td>
-                                                    <td colspan="2" class="text-right"><strong>Total Disbursed:</strong></td>
+                                                    <td colspan="2" class="text-right"><strong>Total
+                                                            Disbursed:</strong></td>
                                                     <td style="text-align: right;">
                                                         <strong>{{ number_format($totalDisbursed, 2, '.', ',') }}</strong>
                                                     </td>
@@ -257,7 +262,8 @@
                                                 </tr>
                                             @else
                                                 <tr>
-                                                    <td colspan="7" class="text-center">No fund disbursements recorded for this project yet.</td>
+                                                    <td colspan="7" class="text-center">No fund disbursements recorded
+                                                        for this project yet.</td>
                                                 </tr>
                                             @endif
                                         </tbody>
@@ -273,7 +279,8 @@
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-body">
-                                <p class="text-center text-muted">Please select a project to view and manage its fund disbursements.</p>
+                                <p class="text-center text-muted">Please select a project to view and manage its fund
+                                    disbursements.</p>
                             </div>
                         </div>
                     </div>
@@ -296,30 +303,35 @@
                         </div>
                         <div class="modal-body">
                             <div class="form-group">
-                                <label>Budget <span class="text-danger">*</span></label>
-                                <select class="select2 form-control" id="edit_budgetId" name="budgetId" required>
+                                <label>Beneficiary <span class="text-danger">*</span></label>
+                                <select class="form-control" id="edit_budgetId" name="budgetId" required>
                                     <option value="">--Select Budget--</option>
                                     @foreach ($budgets as $budget)
                                         <option value="{{ $budget->id }}">{{ $budget->budgetName }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="form-group">
+                            <div>
                                 <label>Payment Milestone <span class="text-danger">*</span></label>
-                                <select class="select2 form-control" id="edit_paymentMilestoneId" name="paymentMilestoneId" required>
+                                <select class="form-control" id="edit_paymentMilestoneId" name="paymentMilestoneId"
+                                    required>
                                     <option value="">--Select Milestone--</option>
                                     @foreach ($paymentMilestones as $milestone)
-                                        <option value="{{ $milestone->id }}">{{ $milestone->milestone }} ({{ $milestone->percentage }}%)</option>
+                                        <option value="{{ $milestone->id }}">{{ $milestone->milestone }}
+                                            ({{ $milestone->percentage }}%)
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label>Amount <span class="text-danger">*</span></label>
-                                <input type="number" id="edit_debit" name="debit" class="form-control" step="0.01" min="0" required>
+                                <input type="number" id="edit_debit" name="debit" class="form-control"
+                                    step="0.01" min="0" required>
                             </div>
                             <div class="form-group">
                                 <label>Transaction Date <span class="text-danger">*</span></label>
-                                <input type="date" id="edit_transactionDate" name="transactionDate" class="form-control" required>
+                                <input type="date" id="edit_transactionDate" name="transactionDate"
+                                    class="form-control" required>
                             </div>
                             <input type="hidden" id="edit_id" name="id">
                         </div>
@@ -407,7 +419,7 @@
             document.getElementById('edit_paymentMilestoneId').value = paymentMilestoneId;
             document.getElementById('edit_debit').value = debit;
             document.getElementById('edit_transactionDate').value = transactionDate;
-            
+
             $("#edit_modal").modal('show')
         }
 
@@ -423,4 +435,3 @@
     </script>
 @endsection
 <!-- /Page Wrapper -->
-

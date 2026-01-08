@@ -1100,6 +1100,81 @@ class ProjectController extends Basefunction {
         
         return view('Project.funddisbursement', $data);
     }
+
+    public function budgetUtilizationReport(Request $request)
+    {
+        $data['projectId'] = $request->input('projectId');
+        
+        // Handle project selection - reload page with selected project
+        if ($request->has('select_project')) {
+            $data['projectId'] = $request->input('projectId');
+            Session(['selected_budget_utilization_project_id' => $data['projectId']]);
+        }
+        
+        // Get selected project from session if not in request
+        if (empty($data['projectId'])) {
+            $data['projectId'] = Session::get('selected_budget_utilization_project_id');
+        }
+        
+        // Fetch projects list
+        $data['projects'] = DB::table('projects')
+            ->select('id', 'name')
+            ->orderBy('name', 'asc')
+            ->get();
+        
+        // Fetch budget utilization report by classification for selected project
+        $data['budgetUtilization'] = collect();
+        $data['totalBudgeted'] = 0;
+        $data['totalExpense'] = 0;
+        
+        if (!empty($data['projectId'])) {
+            // First, get budgeted amounts grouped by classification
+            $budgetedByClassification = DB::table('project_budget')
+                ->leftJoin('budgets', 'project_budget.budgetId', '=', 'budgets.id')
+                ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
+                ->where('project_budget.projectId', $data['projectId'])
+                ->select(
+                    'budget_classifications.id as classificationId',
+                    'budget_classifications.category as classificationName',
+                    DB::raw('SUM(project_budget.amount) as budgeted')
+                )
+                ->groupBy('budget_classifications.id', 'budget_classifications.category')
+                ->get();
+            
+            // Get expenses (approved only) grouped by classification
+            $expensesByClassification = DB::table('project_expense')
+                ->leftJoin('budgets', 'project_expense.budgetId', '=', 'budgets.id')
+                ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
+                ->where('project_expense.projectId', $data['projectId'])
+                ->where('project_expense.status', 'Approved')
+                ->select(
+                    'budget_classifications.id as classificationId',
+                    DB::raw('SUM(project_expense.debit) as expense')
+                )
+                ->groupBy('budget_classifications.id')
+                ->get()
+                ->keyBy('classificationId');
+            
+            // Combine the data
+            $data['budgetUtilization'] = $budgetedByClassification->map(function($item) use ($expensesByClassification) {
+                $expense = $expensesByClassification->get($item->classificationId);
+                $item->expense = $expense ? $expense->expense : 0;
+                $item->percentageUtilized = $item->budgeted > 0 
+                    ? round(($item->expense / $item->budgeted) * 100, 2) 
+                    : 0;
+                return $item;
+            });
+            
+            // Calculate totals
+            $data['totalBudgeted'] = $data['budgetUtilization']->sum('budgeted');
+            $data['totalExpense'] = $data['budgetUtilization']->sum('expense');
+            $data['totalPercentageUtilized'] = $data['totalBudgeted'] > 0 
+                ? round(($data['totalExpense'] / $data['totalBudgeted']) * 100, 2) 
+                : 0;
+        }
+        
+        return view('Project.budgetutilizationreport', $data);
+    }
    
 
 

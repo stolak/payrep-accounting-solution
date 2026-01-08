@@ -113,6 +113,7 @@ Route::middleware('auth')->group(function () {
         Route::any('/client-setup',      	[ProjectController::class, 'client']);
         Route::any('/payment-milestone',  [ProjectController::class, 'paymentMilestone']);
         Route::any('/fund-disbursement',  [ProjectController::class, 'fundDisbursement']);
+        Route::any('/budget-utilization-report',  [ProjectController::class, 'budgetUtilizationReport']);
         //
         Route::any('/staff-registration',      	[HR::class, 'StaffRreg']);
         Route::any('/staff-modification',      	[HR::class, 'StaffRecordUpdate']);
