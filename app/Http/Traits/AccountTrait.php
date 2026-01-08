@@ -241,7 +241,7 @@ trait AccountTrait
                 *,
                 (SELECT CONCAT(accountdescription, '(', accountno, ')') FROM account_charts WHERE account_charts.id = expensenid) as AccountName
             FROM
-                project_expenses"
+                petty_expenses"
         ));
     }
 
@@ -261,7 +261,7 @@ trait AccountTrait
             "SELECT
                 pettyhandling_transactions.*,
                 (SELECT CONCAT(accountdescription, '(', accountno, ')') FROM account_charts WHERE account_charts.id = accountid) as AccountName,
-                (SELECT particular FROM project_expenses WHERE project_expenses.id = projectid) as Particular,
+                (SELECT particular FROM petty_expenses WHERE petty_expenses.id = projectid) as Particular,
                 (SELECT name FROM users WHERE users.id = postby) as Postedby,
                 branches.branch as Branch,
                 users.name as FPost
