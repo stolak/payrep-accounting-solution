@@ -956,6 +956,150 @@ class ProjectController extends Basefunction {
         
         return view('Project.paymentmilestone', $data);
     }
+
+    public function fundDisbursement(Request $request)
+    {
+        $data['projectId'] = $request->input('projectId');
+        $data['budgetId'] = $request->input('budgetId');
+        $data['paymentMilestoneId'] = $request->input('paymentMilestoneId');
+        $data['debit'] = $request->input('debit');
+        $data['transactionDate'] = $request->input('transactionDate');
+        $data['id'] = $request->input('id');
+        
+        // Handle project selection - reload page with selected project
+        if ($request->has('select_project')) {
+            $data['projectId'] = $request->input('projectId');
+            Session(['selected_fund_disbursement_project_id' => $data['projectId']]);
+        }
+        
+        // Get selected project from session if not in request
+        if (empty($data['projectId'])) {
+            $data['projectId'] = Session::get('selected_fund_disbursement_project_id');
+        }
+        
+        if (isset($_POST['addnew'])) {
+            $this->validate($request, [
+                'projectId' => 'required|integer',
+                'budgetId' => 'required|integer',
+                'paymentMilestoneId' => 'required|integer',
+                'debit' => 'required|numeric|min:0',
+                'transactionDate' => 'required|date',
+            ]);
+
+            DB::table('project_expense')->insert([
+                'projectId' => $data['projectId'],
+                'budgetId' => $data['budgetId'],
+                'paymentMilestoneId' => $data['paymentMilestoneId'],
+                'debit' => $data['debit'],
+                'credit' => 0,
+                'transactionDate' => $data['transactionDate'],
+                'status' => 'Pending',
+                'createdBy' => Auth::user()->id,
+                'createdAt' => now(),
+                'updatedAt' => now(),
+            ]);
+            return back()->with('message', 'New fund disbursement successfully added.');
+        }
+        
+        if (isset($_POST['update'])) {
+            $this->validate($request, [
+                'projectId' => 'required|integer',
+                'budgetId' => 'required|integer',
+                'paymentMilestoneId' => 'required|integer',
+                'debit' => 'required|numeric|min:0',
+                'transactionDate' => 'required|date',
+                'id' => 'required|integer',
+            ]);
+
+            DB::table('project_expense')->where('id', $data['id'])->update([
+                'budgetId' => $data['budgetId'],
+                'paymentMilestoneId' => $data['paymentMilestoneId'],
+                'debit' => $data['debit'],
+                'transactionDate' => $data['transactionDate'],
+                'updatedAt' => now(),
+            ]);
+            return back()->with('message', 'Fund disbursement successfully updated.');
+        }
+        
+        if (isset($_POST['approve'])) {
+            $approveId = $request->input('approveid');
+            DB::table('project_expense')->where('id', $approveId)->update([
+                'status' => 'Approved',
+                'approvedBy' => Auth::user()->id,
+                'approvedAt' => now(),
+                'updatedAt' => now(),
+            ]);
+            return back()->with('message', 'Fund disbursement successfully approved.');
+        }
+        
+        if (isset($_POST['del'])) {
+            $del = $request->input('deleteid');
+            DB::table('project_expense')->where('id', $del)->delete();
+            return back()->with('message', 'Fund disbursement successfully deleted.');
+        }
+        
+        // Fetch projects list
+        $data['projects'] = DB::table('projects')
+            ->select('id', 'name')
+            ->orderBy('name', 'asc')
+            ->get();
+        
+        // Fetch budgets associated with projectId where classification isMilestone = 1
+        $data['budgets'] = collect();
+        if (!empty($data['projectId'])) {
+            $data['budgets'] = DB::table('project_budget')
+                ->leftJoin('budgets', 'project_budget.budgetId', '=', 'budgets.id')
+                ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
+                ->where('project_budget.projectId', $data['projectId'])
+                ->where('budget_classifications.isMilestone', 1)
+                ->select('budgets.id', 'budgets.name as budgetName', 'budget_classifications.category as budgetCategoryName')
+                ->orderBy('budget_classifications.category', 'asc')
+                ->orderBy('budgets.name', 'asc')
+                ->get();
+        }
+        
+        // Fetch payment milestones for selected project
+        $data['paymentMilestones'] = collect();
+        if (!empty($data['projectId'])) {
+            $data['paymentMilestones'] = DB::table('payment_milestone')
+                ->where('projectId', $data['projectId'])
+                ->select('id', 'milestone', 'percentage', 'rank', 'projectId')
+                ->orderBy('rank', 'asc')
+                ->get();
+        }
+        
+        // Fetch fund disbursements for selected project
+        $data['fundDisbursements'] = collect();
+        $data['totalDisbursed'] = 0;
+        if (!empty($data['projectId'])) {
+            $data['fundDisbursements'] = DB::table('project_expense')
+                ->leftJoin('budgets', 'project_expense.budgetId', '=', 'budgets.id')
+                ->leftJoin('payment_milestone', 'project_expense.paymentMilestoneId', '=', 'payment_milestone.id')
+                ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
+                ->where('project_expense.projectId', $data['projectId'])
+                ->select(
+                    'project_expense.id',
+                    'project_expense.budgetId',
+                    'project_expense.paymentMilestoneId',
+                    'project_expense.debit',
+                    'project_expense.status',
+                    'project_expense.transactionDate',
+                    'project_expense.createdAt',
+                    'project_expense.approvedAt',
+                    'budgets.name as budgetName',
+                    'budget_classifications.category as budgetCategoryName',
+                    'payment_milestone.milestone',
+                    'payment_milestone.rank as milestoneRank'
+                )
+                ->orderBy('budgets.name', 'asc')
+                ->orderBy('payment_milestone.rank', 'asc')
+                ->get();
+            
+            $data['totalDisbursed'] = $data['fundDisbursements']->sum('debit');
+        }
+        
+        return view('Project.funddisbursement', $data);
+    }
    
 
 
