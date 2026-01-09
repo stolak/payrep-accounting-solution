@@ -1279,6 +1279,88 @@ class ProjectController extends Basefunction {
         
         return view('Project.projectbudgetmilestonereport', $data);
     }
+
+    public function vendor(Request $request)
+    {
+        $data['name'] = $request->input('name');
+        $data['description'] = $request->input('description');
+        $data['accountId'] = $request->input('accountId');
+        $data['status'] = $request->input('status');
+        $data['id'] = $request->input('id');
+        
+        if (isset($_POST['addnew'])) {
+            $this->validate($request, [
+                'name' => 'required|string|unique:budgets,name',
+                'description' => 'nullable|string',
+                'accountId' => 'nullable|integer',
+                'status' => 'nullable|string',
+            ]);
+
+            DB::table('budgets')->insert([
+                'name' => $data['name'],
+                'description' => $data['description'] ?? null,
+                'classificationId' => 1,
+                'isVendor' => 1,
+                'accountId' => $data['accountId'] ?? null,
+                'status' => $data['status'] ?? 'Active',
+                'createdAt' => now(),
+                'updatedAt' => now(),
+            ]);
+            return back()->with('message', 'New vendor successfully added.');
+        }
+        
+        if (isset($_POST['update'])) {
+            $this->validate($request, [
+                'name' => 'required|string|unique:budgets,name,' . $request->input('id'),
+                'description' => 'nullable|string',
+                'accountId' => 'nullable|integer',
+                'status' => 'nullable|string',
+                'id' => 'required|integer',
+            ]);
+
+            DB::table('budgets')->where('id', $data['id'])->update([
+                'name' => $data['name'],
+                'description' => $data['description'] ?? null,
+                'accountId' => $data['accountId'] ?? null,
+                'status' => $data['status'] ?? 'Active',
+                'updatedAt' => now(),
+            ]);
+            return back()->with('message', 'Vendor successfully updated.');
+        }
+        
+        if (isset($_POST['del'])) {
+            $del = $request->input('deleteid');
+            // Check if vendor has related records before deletion
+            // Add your related table checks here if needed
+            // if (DB::table('related_table')->where('vendorId', $del)->first()) {
+            //     return back()->with('error_message', 'Vendor has related records. Hence, record cannot be deleted!');
+            // }
+            DB::table('budgets')->where('id', $del)->delete();
+            return back()->with('message', 'Vendor successfully deleted.');
+        }
+        
+        // Fetch vendors list (classificationId = 1 and isVendor = 1)
+        $data['vendors'] = DB::table('budgets')
+            ->leftJoin('account_charts', 'budgets.accountId', '=', 'account_charts.id')
+            ->where('budgets.classificationId', 1)
+            ->where('budgets.isVendor', 1)
+            ->select(
+                'budgets.id',
+                'budgets.name',
+                'budgets.description',
+                'budgets.accountId',
+                'budgets.status',
+                'account_charts.accountdescription as accountName',
+                'account_charts.accountno as accountNo'
+            )
+            ->orderBy('budgets.name', 'asc')
+            ->get();
+        
+        // Fetch account charts for dropdown
+        $data['accountLookUp'] = $this->AccountLookUpByHeadId(6);
+        
+        return view('Project.vendor', $data);
+    }
    
 
 
