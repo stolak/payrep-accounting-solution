@@ -69,7 +69,25 @@
                                     {{ csrf_field() }}
                                     <input type="hidden" name="projectId" value="{{ $projectId }}">
                                     <div class="row">
-                                        <div class="col-md-5">
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>Classification <span class="text-danger">*</span></label>
+                                                <?php if ($classificationId == '') {
+                                                    $classificationId = old('classificationId');
+                                                } ?>
+                                                <select class="select2 form-control" name="classificationId"
+                                                    id="classificationId" required onchange="selectClassification()">
+                                                    <option value="">--Select Classification--</option>
+                                                    @foreach ($budgetCategories as $category)
+                                                        <option value="{{ $category->id }}"
+                                                            {{ $classificationId == $category->id ? 'selected' : '' }}>
+                                                            {{ $category->category }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
                                             <div class="form-group">
                                                 <label>Budget/sub contractor <span class="text-danger">*</span></label>
                                                 <?php if ($budgetId == '') {
@@ -80,6 +98,7 @@
                                                     <option value="">--Select Budget--</option>
                                                     @foreach ($budgets as $budget)
                                                         <option value="{{ $budget->id }}"
+                                                            data-classificationid="{{ $budget->classificationId }}"
                                                             data-ismeasure="{{ $budget->isMeasure ?? 0 }}"
                                                             {{ $budgetId == $budget->id ? 'selected' : '' }}>
                                                             {{ $budget->budgetName }} - {{ $budget->budgetCategoryName }}
@@ -199,7 +218,7 @@
                                                             </td>
                                                             <td>
                                                                 <a class="btn btn-sm bg-success-light"
-                                                                    href="javascript: editfunc('{{ $list->id }}','{{ $list->budgetId }}','{{ $list->amount }}','{{ $list->unit ?? '' }}','{{ $list->unitCost ?? '' }}')">
+                                                                    href="javascript: editfunc('{{ $list->id }}','{{ $list->budgetId }}','{{ $list->classificationId }}','{{ $list->amount }}','{{ $list->unit ?? '' }}','{{ $list->unitCost ?? '' }}')">
                                                                     <i class="fe fe-pencil"></i>
                                                                 </a>
                                                                 <a class="btn btn-sm bg-danger-light"
@@ -277,14 +296,26 @@
                         </div>
                         <div class="modal-body">
                             <div class="form-group">
+                                <label>Classification</label>
+                                <select class="select2 form-control" id="edit_classificationId" name="classificationId"
+                                    onchange="handleEditClassificationChange()">
+                                    <option value="">--Select Classification--</option>
+                                    @foreach ($budgetCategories as $category)
+                                        <option value="{{ $category->id }}">{{ $category->category }}</option>
+                                    @endforeach
+                                </select>
+                                <small class="text-muted">Select to filter budgets</small>
+                            </div>
+                            <div class="form-group">
                                 <label>Budget <span class="text-danger">*</span></label>
                                 <select class="select2 form-control" id="edit_budgetId" name="budgetId" required
                                     onchange="handleEditBudgetChange()">
                                     <option value="">--Select Budget--</option>
                                     @foreach ($budgets as $budget)
                                         <option value="{{ $budget->id }}"
+                                            data-classificationid="{{ $budget->classificationId }}"
                                             data-ismeasure="{{ $budget->isMeasure ?? 0 }}">
-                                            {{ $budget->budgetName }}</option>
+                                            {{ $budget->budgetName }} - {{ $budget->budgetCategoryName }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -370,6 +401,90 @@
             if (projectId) {
                 document.getElementById('projectSelectForm').submit();
             }
+        }
+
+        function selectClassification() {
+            var classificationId = document.getElementById('classificationId').value;
+            // Get projectId from hidden input in the form
+            var projectIdInput = document.querySelector('input[name="projectId"]');
+            var projectId = projectIdInput ? projectIdInput.value : '{{ $projectId ?? '' }}';
+
+            // Create a form to submit with classificationId and projectId
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = window.location.pathname;
+
+            // Add CSRF token
+            var csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = '{{ csrf_token() }}';
+            form.appendChild(csrfInput);
+
+            // Add projectId
+            var projectInput = document.createElement('input');
+            projectInput.type = 'hidden';
+            projectInput.name = 'projectId';
+            projectInput.value = projectId;
+            form.appendChild(projectInput);
+
+            // Add classificationId (even if empty, to clear filter)
+            var classificationInput = document.createElement('input');
+            classificationInput.type = 'hidden';
+            classificationInput.name = 'classificationId';
+            classificationInput.value = classificationId || '';
+            form.appendChild(classificationInput);
+
+            // Add select_project flag to maintain project selection
+            var selectProjectInput = document.createElement('input');
+            selectProjectInput.type = 'hidden';
+            selectProjectInput.name = 'select_project';
+            selectProjectInput.value = '1';
+            form.appendChild(selectProjectInput);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function handleEditClassificationChange() {
+            var classificationId = document.getElementById('edit_classificationId').value;
+            var budgetSelect = document.getElementById('edit_budgetId');
+
+            // Check if Select2 is initialized and destroy it
+            var isSelect2 = $(budgetSelect).hasClass('select2-hidden-accessible');
+            if (isSelect2) {
+                $(budgetSelect).select2('destroy');
+            }
+
+            // Clear current selection
+            budgetSelect.value = '';
+
+            // Show/hide budget options based on classification
+            for (var i = 0; i < budgetSelect.options.length; i++) {
+                var option = budgetSelect.options[i];
+                if (option.value === '') {
+                    // Keep the default "--Select Budget--" option visible
+                    option.hidden = false;
+                } else {
+                    var optionClassificationId = option.getAttribute('data-classificationid');
+                    if (classificationId === '' || optionClassificationId === classificationId) {
+                        option.hidden = false;
+                    } else {
+                        option.hidden = true;
+                    }
+                }
+            }
+
+            // Reinitialize Select2 if it was initialized before
+            if (isSelect2) {
+                $(budgetSelect).select2();
+            }
+
+            // Clear unit, unitCost, and amount when classification changes
+            document.getElementById('edit_unit').value = '';
+            document.getElementById('edit_unitCost').value = '';
+            document.getElementById('edit_amount').value = '';
+            handleEditBudgetChange();
         }
 
         function handleBudgetChange() {
@@ -530,12 +645,22 @@
             return true;
         }
 
-        function editfunc(id, budgetId, amount, unit, unitCost) {
+        function editfunc(id, budgetId, classificationId, amount, unit, unitCost) {
             document.getElementById('edit_id').value = id;
+            document.getElementById('edit_classificationId').value = classificationId || '';
             document.getElementById('edit_budgetId').value = budgetId;
             document.getElementById('edit_unit').value = unit || '';
             document.getElementById('edit_unitCost').value = unitCost || '';
             document.getElementById('edit_amount').value = amount || '';
+
+            // Filter budgets based on classification
+            handleEditClassificationChange();
+
+            // Set the budget after filtering
+            document.getElementById('edit_budgetId').value = budgetId;
+            if (document.getElementById('edit_budgetId').classList.contains('select2-hidden-accessible')) {
+                $('#edit_budgetId').trigger('change');
+            }
 
             // Handle visibility based on selected budget's isMeasure
             handleEditBudgetChange();
@@ -565,7 +690,6 @@
                 if (unitContainer && unitCostContainer && amountContainer) {
                     unitContainer.style.display = 'none';
                     unitCostContainer.style.display = 'none';
-
                 }
             }
         });

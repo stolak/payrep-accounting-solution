@@ -286,6 +286,7 @@ class ProjectController extends Basefunction {
     {
         $data['projectId'] = $request->input('projectId');
         $data['budgetId'] = $request->input('budgetId');
+        $data['classificationId'] = $request->input('classificationId');
         $data['unit'] = $request->input('unit');
         $data['unitCost'] = $request->input('unitCost');
         $data['amount'] = $request->input('amount');
@@ -294,12 +295,19 @@ class ProjectController extends Basefunction {
         // Handle project selection - reload page with selected project
         if ($request->has('select_project')) {
             $data['projectId'] = $request->input('projectId');
+            $data['classificationId'] = $request->input('classificationId');
             Session(['selected_project_id' => $data['projectId']]);
+            Session(['selected_classification_id' => $data['classificationId']]);
         }
         
         // Get selected project from session if not in request
         if (empty($data['projectId'])) {
             $data['projectId'] = Session::get('selected_project_id');
+        }
+        
+        // Get selected classification from session if not in request
+        if (empty($data['classificationId'])) {
+            $data['classificationId'] = Session::get('selected_classification_id');
         }
         
         if (isset($_POST['addnew'])) {
@@ -431,8 +439,14 @@ class ProjectController extends Basefunction {
             ->orderBy('name', 'asc')
             ->get();
         
-        // Fetch budgets list
-        $data['budgets'] = DB::table('budgets')
+        // Fetch budget classifications for dropdown
+        $data['budgetCategories'] = DB::table('budget_classifications')
+            ->select('id', 'category')
+            ->orderBy('category', 'asc')
+            ->get();
+        
+        // Fetch budgets list - filter by classificationId if selected
+        $budgetsQuery = DB::table('budgets')
             ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
             ->select(
                 'budgets.id',
@@ -442,7 +456,14 @@ class ProjectController extends Basefunction {
                 DB::raw('COALESCE(budget_classifications.isMeasure, 0) as isMeasure'),
                 'budget_classifications.isMilestone', 
                 'budget_classifications.isSubContrator'
-            )   
+            );
+        
+        // Filter by classificationId if provided
+        if (!empty($data['classificationId'])) {
+            $budgetsQuery->where('budgets.classificationId', $data['classificationId']);
+        }
+        
+        $data['budgets'] = $budgetsQuery
             ->orderBy('budget_classifications.category', 'asc')
             ->orderBy('budgets.name', 'asc')
             ->get();
@@ -455,7 +476,7 @@ class ProjectController extends Basefunction {
                 ->leftJoin('budgets', 'project_budget.budgetId', '=', 'budgets.id')
                 ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
                 ->where('project_budget.projectId', $data['projectId'])
-                ->select('project_budget.id', 'project_budget.projectId', 'project_budget.budgetId', 'project_budget.unit', 'project_budget.unitCost', 'project_budget.amount', 'budgets.name as budgetName', 'budget_classifications.category as budgetCategoryName')
+                ->select('project_budget.id', 'project_budget.projectId', 'project_budget.budgetId', 'project_budget.unit', 'project_budget.unitCost', 'project_budget.amount', 'budgets.name as budgetName', 'budgets.classificationId', 'budget_classifications.category as budgetCategoryName')
                 ->orderBy('budget_classifications.category', 'asc')
                 ->orderBy('budgets.name', 'asc')
                 ->get();
