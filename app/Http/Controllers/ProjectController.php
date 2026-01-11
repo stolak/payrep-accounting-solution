@@ -1382,6 +1382,118 @@ class ProjectController extends Basefunction {
         
         return view('Project.vendor', $data);
     }
+
+    public function projectCategoryPaymentMilestone(Request $request)
+    {
+        $data['projectCategoryId'] = $request->input('projectCategoryId');
+        $data['milestone'] = $request->input('milestone');
+        $data['percentage'] = $request->input('percentage');
+        $data['rank'] = $request->input('rank');
+        $data['id'] = $request->input('id');
+        
+        // Handle project category selection - reload page with selected category
+        if ($request->has('select_category')) {
+            $data['projectCategoryId'] = $request->input('projectCategoryId');
+            Session(['selected_project_category_payment_milestone_id' => $data['projectCategoryId']]);
+        }
+        
+        // Get selected project category from session if not in request
+        if (empty($data['projectCategoryId'])) {
+            $data['projectCategoryId'] = Session::get('selected_project_category_payment_milestone_id');
+        }
+        
+        if (isset($_POST['addnew'])) {
+            $this->validate($request, [
+                'projectCategoryId' => 'required|integer',
+                'milestone' => 'required|string',
+                'percentage' => 'required|numeric|min:0|max:100',
+                'rank' => 'required|integer|min:1',
+            ]);
+
+            // Check total percentage for this project category
+            $existingMilestones = DB::table('project_category_payment_milestone')
+                ->where('projectCategoryId', $data['projectCategoryId'])
+                ->sum('percentage');
+            
+            $totalPercentage = $existingMilestones + $data['percentage'];
+            
+            if ($totalPercentage > 100) {
+                return back()->with('error_message', 'Total percentage cannot exceed 100%. Current total: ' . $existingMilestones . '%, Adding: ' . $data['percentage'] . '% = ' . $totalPercentage . '%');
+            }
+
+            DB::table('project_category_payment_milestone')->insert([
+                'projectCategoryId' => $data['projectCategoryId'],
+                'milestone' => $data['milestone'],
+                'percentage' => $data['percentage'],
+                'rank' => $data['rank'],
+                'createdAt' => now(),
+                'updatedAt' => now(),
+            ]);
+            return back()->with('message', 'New payment milestone successfully added.');
+        }
+        
+        if (isset($_POST['update'])) {
+            $this->validate($request, [
+                'projectCategoryId' => 'required|integer',
+                'milestone' => 'required|string',
+                'percentage' => 'required|numeric|min:0|max:100',
+                'rank' => 'required|integer|min:1',
+                'id' => 'required|integer',
+            ]);
+
+            // Get current milestone percentage
+            $currentMilestone = DB::table('project_category_payment_milestone')
+                ->where('id', $data['id'])
+                ->first();
+            
+            // Check total percentage for this project category (excluding current record)
+            $existingMilestones = DB::table('project_category_payment_milestone')
+                ->where('projectCategoryId', $data['projectCategoryId'])
+                ->where('id', '!=', $data['id'])
+                ->sum('percentage');
+            
+            $totalPercentage = $existingMilestones + $data['percentage'];
+            
+            if ($totalPercentage > 100) {
+                return back()->with('error_message', 'Total percentage cannot exceed 100%. Current total (excluding this milestone): ' . $existingMilestones . '%, New percentage: ' . $data['percentage'] . '% = ' . $totalPercentage . '%');
+            }
+
+            DB::table('project_category_payment_milestone')->where('id', $data['id'])->update([
+                'milestone' => $data['milestone'],
+                'percentage' => $data['percentage'],
+                'rank' => $data['rank'],
+                'updatedAt' => now(),
+            ]);
+            return back()->with('message', 'Payment milestone successfully updated.');
+        }
+        
+        if (isset($_POST['del'])) {
+            $del = $request->input('deleteid');
+            DB::table('project_category_payment_milestone')->where('id', $del)->delete();
+            return back()->with('message', 'Payment milestone successfully deleted.');
+        }
+        
+        // Fetch project categories list
+        $data['projectCategories'] = DB::table('project_categories')
+            ->select('id', 'category')
+            ->orderBy('category', 'asc')
+            ->get();
+        
+        // Fetch payment milestones for selected project category
+        $data['paymentMilestones'] = collect();
+        $data['totalPercentage'] = 0;
+        if (!empty($data['projectCategoryId'])) {
+            $data['paymentMilestones'] = DB::table('project_category_payment_milestone')
+                ->where('projectCategoryId', $data['projectCategoryId'])
+                ->select('id', 'milestone', 'percentage', 'rank', 'projectCategoryId')
+                ->orderBy('rank', 'asc')
+                ->get();
+            
+            $data['totalPercentage'] = $data['paymentMilestones']->sum('percentage');
+        }
+        
+        return view('Project.projectcategorypaymentmilestone', $data);
+    }
    
 
 

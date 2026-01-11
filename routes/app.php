@@ -112,6 +112,7 @@ Route::middleware('auth')->group(function () {
         Route::any('/uom-setup',      	[ProjectController::class, 'uom']);
         Route::any('/client-setup',      	[ProjectController::class, 'client']);
         Route::any('/payment-milestone',  [ProjectController::class, 'paymentMilestone']);
+        Route::any('/project-category-payment-milestone',  [ProjectController::class, 'projectCategoryPaymentMilestone']);
         Route::any('/fund-disbursement',  [ProjectController::class, 'fundDisbursement']);
         Route::any('/budget-utilization-report',  [ProjectController::class, 'budgetUtilizationReport']);
         Route::any('/project-budget-milestone-report',  [ProjectController::class, 'projectBudgetMilestoneReport']);
