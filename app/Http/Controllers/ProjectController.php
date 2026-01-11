@@ -455,7 +455,7 @@ class ProjectController extends Basefunction {
         
         // Fetch projects list
         $data['projects'] = DB::table('projects')
-            ->select('id', 'name')
+            ->select('id', 'name', 'projectCode')
             ->orderBy('name', 'asc')
             ->get();
         
@@ -585,7 +585,7 @@ class ProjectController extends Basefunction {
         
         // Fetch projects list
         $data['projects'] = DB::table('projects')
-            ->select('id', 'name')
+            ->select('id', 'name', 'projectCode')
             ->orderBy('name', 'asc')
             ->get();
         
@@ -611,6 +611,7 @@ class ProjectController extends Basefunction {
             $data['totalAmount'] = $data['budgetSummary']->sum('totalAmount');
         }
         
+        // dd($data['projects']);
         return view('Project.projectbudgetsummary', $data);
     }
 
@@ -789,7 +790,7 @@ class ProjectController extends Basefunction {
         
         // Fetch projects list
         $data['projects'] = DB::table('projects')
-            ->select('id', 'name')
+            ->select('id', 'name', 'projectCode')
             ->orderBy('name', 'asc')
             ->get();
         
@@ -978,7 +979,7 @@ class ProjectController extends Basefunction {
         
         // Fetch projects list
         $data['projects'] = DB::table('projects')
-            ->select('id', 'name')
+            ->select('id', 'name', 'projectCode')
             ->orderBy('name', 'asc')
             ->get();
         
@@ -1081,7 +1082,7 @@ class ProjectController extends Basefunction {
         
         // Fetch projects list
         $data['projects'] = DB::table('projects')
-            ->select('id', 'name')
+            ->select('id', 'name', 'projectCode')
             ->orderBy('name', 'asc')
             ->get();
         
@@ -1159,7 +1160,7 @@ class ProjectController extends Basefunction {
         
         // Fetch projects list
         $data['projects'] = DB::table('projects')
-            ->select('id', 'name')
+            ->select('id', 'name', 'projectCode')
             ->orderBy('name', 'asc')
             ->get();
         
@@ -1234,7 +1235,7 @@ class ProjectController extends Basefunction {
         
         // Fetch projects list
         $data['projects'] = DB::table('projects')
-            ->select('id', 'name')
+            ->select('id', 'name', 'projectCode')
             ->orderBy('name', 'asc')
             ->get();
         

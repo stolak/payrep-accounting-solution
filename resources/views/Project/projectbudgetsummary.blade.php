@@ -38,13 +38,13 @@
                                             <?php if ($projectId == '') {
                                                 $projectId = old('projectId');
                                             } ?>
-                                            <select class="form-control" name="projectId" id="projectId" required
+                                            <select class="form-control select2" name="projectId" id="projectId" required
                                                 onchange="selectProject()">
                                                 <option value="">--Select Project--</option>
                                                 @foreach ($projects as $project)
                                                     <option value="{{ $project->id }}"
                                                         {{ $projectId == $project->id ? 'selected' : '' }}>
-                                                        {{ $project->name }}</option>
+                                                        {{ $project->projectCode }} - {{ $project->name }} </option>
                                                 @endforeach
                                             </select>
                                         </div>
