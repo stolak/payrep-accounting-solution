@@ -1515,6 +1515,148 @@ class ProjectController extends Basefunction {
         
         return view('Project.projectcategorypaymentmilestone', $data);
     }
+
+    public function projectInvoice(Request $request)
+    {
+        $data['projectId'] = $request->input('projectId');
+        $data['InvoiceNumber'] = $request->input('InvoiceNumber');
+        $data['amount'] = $request->input('amount');
+        $data['vat'] = $request->input('vat');
+        $data['wht'] = $request->input('wht');
+        $data['expectedAmount'] = $request->input('expectedAmount');
+        $data['dueDate'] = $request->input('dueDate');
+        $data['status'] = $request->input('status');
+        $data['id'] = $request->input('id');
+        
+        // Handle project selection - reload page with selected project
+        if ($request->has('select_project')) {
+            $data['projectId'] = $request->input('projectId');
+            Session(['selected_project_invoice_id' => $data['projectId']]);
+        }
+        
+        // Get selected project from session if not in request
+        if (empty($data['projectId'])) {
+            $data['projectId'] = Session::get('selected_project_invoice_id');
+        }
+        
+        if (isset($_POST['addnew'])) {
+            $this->validate($request, [
+                'projectId' => 'required|integer',
+                'InvoiceNumber' => 'required|string|unique:project_invoice,InvoiceNumber',
+                'amount' => 'required|numeric|min:0',
+                'vat' => 'nullable|numeric|min:0|max:100',
+                'wht' => 'nullable|numeric|min:0|max:100',
+                'dueDate' => 'required|date',
+                'status' => 'nullable|string',
+            ]);
+
+            // Calculate expected amount: amount + vat - wht
+            $amount = $data['amount'];
+            $vatAmount = ($amount * ($data['vat'] ?? 0)) / 100;
+            $whtAmount = ($amount * ($data['wht'] ?? 0)) / 100;
+            $calculatedExpectedAmount = $amount + $vatAmount - $whtAmount;
+
+            DB::table('project_invoice')->insert([
+                'projectId' => $data['projectId'],
+                'InvoiceNumber' => $data['InvoiceNumber'],
+                'amount' => $amount,
+                'vat' => $data['vat'] ?? 0,
+                'wht' => $data['wht'] ?? 0,
+                'expectedAmount' => $calculatedExpectedAmount,
+                'dueDate' => $data['dueDate'],
+                'status' => $data['status'] ?? 'Pending',
+                'createdBy' => Auth::user()->id,
+                'createdAt' => now(),
+                'updateAt' => now(),
+            ]);
+            return back()->with('message', 'New invoice successfully added.');
+        }
+        
+        if (isset($_POST['update'])) {
+            $this->validate($request, [
+                'projectId' => 'required|integer',
+                'InvoiceNumber' => 'required|string|unique:project_invoice,InvoiceNumber,' . $request->input('id'),
+                'amount' => 'required|numeric|min:0',
+                'vat' => 'nullable|numeric|min:0|max:100',
+                'wht' => 'nullable|numeric|min:0|max:100',
+                'dueDate' => 'required|date',
+                'status' => 'nullable|string',
+                'id' => 'required|integer',
+            ]);
+
+            // Calculate expected amount: amount + vat - wht
+            $amount = $data['amount'];
+            $vatAmount = ($amount * ($data['vat'] ?? 0)) / 100;
+            $whtAmount = ($amount * ($data['wht'] ?? 0)) / 100;
+            $calculatedExpectedAmount = $amount + $vatAmount - $whtAmount;
+
+            $updateData = [
+                'projectId' => $data['projectId'],
+                'InvoiceNumber' => $data['InvoiceNumber'],
+                'amount' => $amount,
+                'vat' => $data['vat'] ?? 0,
+                'wht' => $data['wht'] ?? 0,
+                'expectedAmount' => $calculatedExpectedAmount,
+                'dueDate' => $data['dueDate'],
+                'status' => $data['status'] ?? 'Pending',
+                'updateAt' => now(),
+            ];
+
+            // If status is being changed to Validated/Approved, set validatedBy and validatedAt
+            $currentInvoice = DB::table('project_invoice')->where('id', $data['id'])->first();
+            if ($currentInvoice && ($currentInvoice->status != 'Validated' && $currentInvoice->status != 'Approved') && 
+                ($data['status'] == 'Validated' || $data['status'] == 'Approved')) {
+                $updateData['validatedBy'] = Auth::user()->id;
+                $updateData['validatedAt'] = now();
+            }
+
+            DB::table('project_invoice')->where('id', $data['id'])->update($updateData);
+            return back()->with('message', 'Invoice successfully updated.');
+        }
+        
+        if (isset($_POST['del'])) {
+            $del = $request->input('deleteid');
+            DB::table('project_invoice')->where('id', $del)->delete();
+            return back()->with('message', 'Invoice successfully deleted.');
+        }
+        
+        // Fetch projects list
+        $data['projects'] = DB::table('projects')
+            ->select('id', 'name', 'projectCode')
+            ->orderBy('name', 'asc')
+            ->get();
+        
+        // Fetch invoices for selected project
+        $data['invoices'] = collect();
+        if (!empty($data['projectId'])) {
+            $data['invoices'] = DB::table('project_invoice')
+                ->leftJoin('projects', 'project_invoice.projectId', '=', 'projects.id')
+                ->leftJoin('users as creator', 'project_invoice.createdBy', '=', 'creator.id')
+                ->leftJoin('users as validator', 'project_invoice.validatedBy', '=', 'validator.id')
+                ->where('project_invoice.projectId', $data['projectId'])
+                ->select(
+                    'project_invoice.id',
+                    'project_invoice.InvoiceNumber',
+                    'project_invoice.projectId',
+                    'project_invoice.amount',
+                    'project_invoice.vat',
+                    'project_invoice.wht',
+                    'project_invoice.expectedAmount',
+                    'project_invoice.dueDate',
+                    'project_invoice.status',
+                    'project_invoice.createdAt',
+                    'project_invoice.validatedAt',
+                    'projects.name as projectName',
+                    'projects.projectCode',
+                    'creator.name as createdByName',
+                    'validator.name as validatedByName'
+                )
+                ->orderBy('project_invoice.createdAt', 'desc')
+                ->get();
+        }
+        
+        return view('Project.projectinvoice', $data);
+    }
    
 
 
