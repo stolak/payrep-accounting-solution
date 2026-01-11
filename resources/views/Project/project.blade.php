@@ -196,7 +196,7 @@
                                                     <div class="row">
                                                         <div class="col-md-4">
                                                             <div class="form-group">
-                                                                <label>Sub Cost</label>
+                                                                <label>Purchase value</label>
                                                                 <input type="number" class="form-control po-subcost"
                                                                     readonly style="background-color: #f0f0f0;">
                                                             </div>
@@ -210,7 +210,7 @@
                                                         </div>
                                                         <div class="col-md-4">
                                                             <div class="form-group">
-                                                                <label>Sub Net</label>
+                                                                <label> Total PO value</label>
                                                                 <input type="number" class="form-control po-subnet"
                                                                     readonly style="background-color: #f0f0f0;">
                                                             </div>

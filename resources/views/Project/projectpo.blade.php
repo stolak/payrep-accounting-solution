@@ -136,15 +136,15 @@
                                                     $vat = old('vat');
                                                 } ?>
                                                 <input type="number" class="form-control" value="{{ $vat }}"
-                                                    name="vat" id="vat" step="0.01" min="0" max="100"
-                                                    oninput="calculatePoAmounts()">
+                                                    name="vat" id="vat" step="0.01" min="0"
+                                                    max="100" oninput="calculatePoAmounts()">
                                             </div>
                                         </div>
                                     </div>
                                     <div class="row">
                                         <div class="col-md-4">
                                             <div class="form-group">
-                                                <label>Sub Cost</label>
+                                                <label>Purchase value</label>
                                                 <input type="number" class="form-control" id="subcost" readonly
                                                     style="background-color: #f0f0f0;">
                                             </div>
@@ -158,7 +158,7 @@
                                         </div>
                                         <div class="col-md-4">
                                             <div class="form-group">
-                                                <label>Sub Net</label>
+                                                <label>Total PO value</label>
                                                 <input type="number" class="form-control" id="subnet" readonly
                                                     style="background-color: #f0f0f0;">
                                             </div>
@@ -192,10 +192,10 @@
                                                 <th rowspan="1">UOM</th>
                                                 <th rowspan="1">Qty</th>
                                                 <th rowspan="1">Unit Cost</th>
-                                                <th rowspan="1">Sub Cost</th>
+                                                <th rowspan="1">Purchase value</th>
                                                 <th rowspan="1">VAT %</th>
                                                 <th rowspan="1">VAT Amount</th>
-                                                <th rowspan="1">Sub Net</th>
+                                                <th rowspan="1">Total PO value</th>
                                                 <th rowspan="1">Status</th>
                                                 <th rowspan="1">Created By</th>
                                                 <th rowspan="1">Approved By</th>
@@ -275,7 +275,8 @@
                                                         </td>
                                                     </tr>
                                                 @endforeach
-                                                <tr style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
+                                                <tr
+                                                    style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
                                                     <td></td>
                                                     <td></td>
                                                     <td colspan="9" class="text-right"><strong>Grand Total:</strong>
@@ -335,7 +336,8 @@
                             </div>
                             <div class="form-group">
                                 <label>Description <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="edit_description" name="description" required>
+                                <input type="text" class="form-control" id="edit_description" name="description"
+                                    required>
                             </div>
                             <div class="row">
                                 <div class="col-md-3">
@@ -352,8 +354,8 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label>Quantity <span class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" id="edit_qty" name="qty" step="0.01"
-                                            min="0" required oninput="calculateEditPoAmounts()">
+                                        <input type="number" class="form-control" id="edit_qty" name="qty"
+                                            step="0.01" min="0" required oninput="calculateEditPoAmounts()">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
@@ -366,15 +368,16 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label>VAT %</label>
-                                        <input type="number" class="form-control" id="edit_vat" name="vat" step="0.01"
-                                            min="0" max="100" oninput="calculateEditPoAmounts()">
+                                        <input type="number" class="form-control" id="edit_vat" name="vat"
+                                            step="0.01" min="0" max="100"
+                                            oninput="calculateEditPoAmounts()">
                                     </div>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label>Sub Cost</label>
+                                        <label>Purchase value</label>
                                         <input type="number" class="form-control" id="edit_subcost" readonly
                                             style="background-color: #f0f0f0;">
                                     </div>
@@ -388,7 +391,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label>Sub Net</label>
+                                        <label>Total PO value</label>
                                         <input type="number" class="form-control" id="edit_subnet" readonly
                                             style="background-color: #f0f0f0;">
                                     </div>
@@ -526,6 +529,3 @@
     </script>
 @endsection
 <!-- /Page Wrapper -->
-
-
-
