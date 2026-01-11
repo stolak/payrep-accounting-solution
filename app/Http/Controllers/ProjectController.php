@@ -60,6 +60,26 @@ class ProjectController extends Basefunction {
                 'createdBy' => Auth::user()->id,
             ]);
 
+            // Automatically create payment milestones based on project category
+            if (!empty($data['categoryId'])) {
+                $categoryMilestones = DB::table('project_category_payment_milestone')
+                    ->where('projectCategoryId', $data['categoryId'])
+                    ->select('milestone', 'percentage', 'rank')
+                    ->orderBy('rank', 'asc')
+                    ->get();
+                
+                foreach ($categoryMilestones as $categoryMilestone) {
+                    DB::table('payment_milestone')->insert([
+                        'projectId' => $projectId,
+                        'milestone' => $categoryMilestone->milestone,
+                        'percentage' => $categoryMilestone->percentage,
+                        'rank' => $categoryMilestone->rank,
+                        'createdAt' => now(),
+                        'updatedAt' => now(),
+                    ]);
+                }
+            }
+
             // Create POs for the project
             $poPoNumbers = $request->input('po_poNumber', []);
             $poDescriptions = $request->input('po_description', []);
@@ -865,7 +885,7 @@ class ProjectController extends Basefunction {
         
         return view('Project.uom', $data);
     }
-
+   
     public function paymentMilestone(Request $request)
     {
         $data['projectId'] = $request->input('projectId');
