@@ -153,26 +153,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Status</label>
-                                                <?php if ($status == '') {
-                                                    $status = old('status', 'Pending');
-                                                } ?>
-                                                <select class="form-control" name="status" id="status">
-                                                    <option value="Pending" {{ $status == 'Pending' ? 'selected' : '' }}>
-                                                        Pending</option>
-                                                    <option value="Validated"
-                                                        {{ $status == 'Validated' ? 'selected' : '' }}>Validated</option>
-                                                    <option value="Approved"
-                                                        {{ $status == 'Approved' ? 'selected' : '' }}>Approved</option>
-                                                    <option value="Rejected"
-                                                        {{ $status == 'Rejected' ? 'selected' : '' }}>Rejected</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
+
 
                                     <div class="text-right">
                                         <button type="submit" class="btn btn-primary" name="addnew">Add
