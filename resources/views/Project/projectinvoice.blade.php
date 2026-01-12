@@ -97,10 +97,17 @@
                                         </div>
                                     </div>
                                     <div class="row">
-
-                                        <div class="col-md-4">
+                                        <div class="col-md-6">
                                             <div class="form-group">
-                                                <label>Amount <span class="text-danger">*</span></label>
+
+                                                <div class="form-group">
+                                                    <label> Amount <span class="text-danger">*</span>
+                                                        <input type="checkbox" name="vatInclude" id="vatInclude"
+                                                            value="1" onchange="calculateExpectedAmount()"
+                                                            {{ old('vatInclude', true) ? 'checked' : '' }}>
+                                                        VAT Inclusive
+                                                    </label>
+                                                </div>
                                                 <?php if ($amount == '') {
                                                     $amount = old('amount');
                                                 } ?>
@@ -109,7 +116,71 @@
                                                     oninput="calculateExpectedAmount()">
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
+
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+
+                                            <div class="form-group">
+                                                <label>VAT</label>
+                                                <div class="d-flex align-items-center">
+                                                    <select name="vatType" id="vatType" class="form-control"
+                                                        style="width: auto; margin-right: 10px;"
+                                                        onchange="calculateExpectedAmount()">
+                                                        <?php
+                                                        if ($vat == '') {
+                                                            $vat = old('vat');
+                                                        }
+                                                        $selectedVat = $vat == '10' ? '10' : '7.5';
+                                                        ?>
+                                                        <option value="7.5"
+                                                            {{ $selectedVat == '7.5' ? 'selected' : '' }}>7.5%</option>
+                                                        <option value="10"
+                                                            {{ $selectedVat == '10' ? 'selected' : '' }}>10%</option>
+                                                    </select>
+                                                    <input type="hidden" name="vat" id="vat_percentage"
+                                                        value="{{ $vat }}">
+                                                    <input type="number" class="form-control" value="0"
+                                                        id="vat_amount" step="0.01" readonly
+                                                        style="flex: 1; background-color: #f0f0f0;">
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>WHT</label>
+                                                <div class="d-flex align-items-center">
+                                                    <select name="whtType" id="whtType" class="form-control"
+                                                        style="width: auto; margin-right: 10px;"
+                                                        onchange="calculateExpectedAmount()">
+                                                        <?php
+                                                        if ($wht == '') {
+                                                            $wht = old('wht');
+                                                        }
+                                                        $selectedWht = $wht == '10' ? '10' : '7.5';
+                                                        ?>
+                                                        <option value="7.5"
+                                                            {{ $selectedWht == '7.5' ? 'selected' : '' }}>7.5%</option>
+                                                        <option value="10"
+                                                            {{ $selectedWht == '10' ? 'selected' : '' }}>10%</option>
+                                                    </select>
+                                                    <input type="hidden" name="wht" id="wht_percentage"
+                                                        value="{{ $wht }}">
+                                                    <input type="number" class="form-control" value="0"
+                                                        id="wht_amount" step="0.01" min="0" readonly
+                                                        style="flex: 1; background-color: #f0f0f0;">
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Receivable Amount</label>
+                                                <input type="number" class="form-control" value="{{ $expectedAmount }}"
+                                                    name="expectedAmount" id="expectedAmount" step="0.01" readonly
+                                                    style="background-color: #f0f0f0;">
+                                                <small class="text-muted">Calculated based on VAT Include option</small>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
                                             <div class="form-group">
                                                 <label>Due Date <span class="text-danger">*</span></label>
                                                 <?php if ($dueDate == '') {
@@ -121,35 +192,10 @@
                                         </div>
                                     </div>
                                     <div class="row">
-                                        <div class="col-md-4">
+                                        <div class="col-md-6">
                                             <div class="form-group">
-                                                <label>VAT (%)</label>
-                                                <?php if ($vat == '') {
-                                                    $vat = old('vat');
-                                                } ?>
-                                                <input type="number" class="form-control" value="{{ $vat }}"
-                                                    name="vat" id="vat" step="0.01" min="0"
-                                                    max="100" oninput="calculateExpectedAmount()">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>WHT (%)</label>
-                                                <?php if ($wht == '') {
-                                                    $wht = old('wht');
-                                                } ?>
-                                                <input type="number" class="form-control" value="{{ $wht }}"
-                                                    name="wht" id="wht" step="0.01" min="0"
-                                                    max="100" oninput="calculateExpectedAmount()">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Expected Amount</label>
-                                                <input type="number" class="form-control" value="{{ $expectedAmount }}"
-                                                    name="expectedAmount" id="expectedAmount" step="0.01" readonly
-                                                    style="background-color: #f0f0f0;">
-                                                <small class="text-muted">Calculated: Amount + VAT - WHT</small>
+                                                <label>Notes</label>
+                                                <textarea class="form-control" name="notes" id="notes" rows="3" placeholder="Additional notes...">{{ old('notes') }}</textarea>
                                             </div>
                                         </div>
                                     </div>
@@ -242,7 +288,7 @@
                                                         </td>
                                                         <td>
                                                             <a class="btn btn-sm bg-success-light"
-                                                                href="javascript: editfunc('{{ $invoice->id }}','{{ $invoice->InvoiceNumber }}','{{ $invoice->amount }}','{{ $invoice->vat }}','{{ $invoice->wht }}','{{ $invoice->dueDate }}','{{ $invoice->status }}')">
+                                                                href="javascript: editfunc('{{ $invoice->id }}','{{ $invoice->InvoiceNumber }}','{{ $invoice->amount }}','{{ $invoice->vat }}','{{ $invoice->wht }}','{{ $invoice->isVatInclusive ?? 0 }}','{{ $invoice->dueDate }}','{{ $invoice->status }}')">
                                                                 <i class="fe fe-pencil"></i>
                                                             </a>
                                                             <a class="btn btn-sm bg-danger-light"
@@ -314,29 +360,30 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" name="vatInclude" id="edit_vatInclude" value="1"
+                                                onchange="calculateEditExpectedAmount()">
+                                            VAT Include
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
                                         <label>VAT (%)</label>
                                         <input type="number" id="edit_vat" name="vat" class="form-control"
                                             step="0.01" min="0" max="100"
                                             oninput="calculateEditExpectedAmount()">
                                     </div>
-                                </div>
-                                <div class="col-md-6">
                                     <div class="form-group">
                                         <label>WHT (%)</label>
                                         <input type="number" id="edit_wht" name="wht" class="form-control"
                                             step="0.01" min="0" max="100"
                                             oninput="calculateEditExpectedAmount()">
                                     </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>Expected Amount</label>
+                                        <label>Payable</label>
                                         <input type="number" id="edit_expectedAmount" name="expectedAmount"
                                             class="form-control" step="0.01" readonly
                                             style="background-color: #f0f0f0;">
-                                        <small class="text-muted">Calculated: Amount + VAT - WHT</small>
+                                        <small class="text-muted">Calculated based on VAT Include option</small>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -344,6 +391,10 @@
                                         <label>Due Date <span class="text-danger">*</span></label>
                                         <input type="date" id="edit_dueDate" name="dueDate" class="form-control"
                                             required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Notes</label>
+                                        <textarea class="form-control" name="notes" id="edit_notes" rows="3" placeholder="Additional notes..."></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -421,13 +472,37 @@
 
         function calculateExpectedAmount() {
             var amount = parseFloat(document.getElementById('amount').value) || 0;
-            var vat = parseFloat(document.getElementById('vat').value) || 0;
-            var wht = parseFloat(document.getElementById('wht').value) || 0;
+            var vatType = parseFloat(document.getElementById('vatType').value) || 0;
+            var whtType = parseFloat(document.getElementById('whtType').value) || 0;
+            var vatInclude = document.getElementById('vatInclude').checked;
 
-            var vatAmount = (amount * vat) / 100;
-            var whtAmount = (amount * wht) / 100;
-            var expectedAmount = amount + vatAmount - whtAmount;
+            // Store percentages in hidden fields for form submission
+            document.getElementById('vat_percentage').value = vatType;
+            document.getElementById('wht_percentage').value = whtType;
 
+            var vat = vatType;
+            var wht = whtType;
+            var vatAmount, whtAmount, expectedAmount, baseAmount;
+
+            if (vatInclude) {
+                // VAT is already included in the amount
+                // Extract base amount: amount = base + (base * vat/100)
+                // base = amount / (1 + vat/100)
+                baseAmount = amount / (1 + (vat / 100));
+                vatAmount = amount - baseAmount;
+                whtAmount = (baseAmount * wht) / 100;
+                expectedAmount = amount - whtAmount - vatAmount;
+            } else {
+                // VAT is added to the amount
+                baseAmount = amount;
+                vatAmount = (amount * vat) / 100;
+                whtAmount = (amount * wht) / 100;
+                expectedAmount = amount - vatAmount - whtAmount;
+            }
+
+            // Display calculated amounts in VAT and WHT fields
+            document.getElementById('vat_amount').value = vatAmount.toFixed(2);
+            document.getElementById('wht_amount').value = whtAmount.toFixed(2);
             document.getElementById('expectedAmount').value = expectedAmount.toFixed(2);
         }
 
@@ -435,20 +510,35 @@
             var amount = parseFloat(document.getElementById('edit_amount').value) || 0;
             var vat = parseFloat(document.getElementById('edit_vat').value) || 0;
             var wht = parseFloat(document.getElementById('edit_wht').value) || 0;
+            var vatInclude = document.getElementById('edit_vatInclude').checked;
 
-            var vatAmount = (amount * vat) / 100;
-            var whtAmount = (amount * wht) / 100;
-            var expectedAmount = amount + vatAmount - whtAmount;
+            var vatAmount, whtAmount, expectedAmount;
+
+            if (vatInclude) {
+                // VAT is already included in the amount
+                // Extract base amount: amount = base + (base * vat/100)
+                // base = amount / (1 + vat/100)
+                var baseAmount = amount / (1 + (vat / 100));
+                vatAmount = amount - baseAmount;
+                whtAmount = (baseAmount * wht) / 100;
+                expectedAmount = amount - whtAmount - vatAmount;
+            } else {
+                // VAT is added to the amount
+                vatAmount = (amount * vat) / 100;
+                whtAmount = (amount * wht) / 100;
+                expectedAmount = amount - vatAmount - whtAmount;
+            }
 
             document.getElementById('edit_expectedAmount').value = expectedAmount.toFixed(2);
         }
 
-        function editfunc(id, invoiceNumber, amount, vat, wht, dueDate, status) {
+        function editfunc(id, invoiceNumber, amount, vat, wht, isVatInclusive, dueDate, status) {
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_InvoiceNumber').value = invoiceNumber;
             document.getElementById('edit_amount').value = amount;
             document.getElementById('edit_vat').value = vat || '';
             document.getElementById('edit_wht').value = wht || '';
+            document.getElementById('edit_vatInclude').checked = (isVatInclusive == 1 || isVatInclusive == '1');
             document.getElementById('edit_dueDate').value = dueDate;
             document.getElementById('edit_status').value = status || 'Pending';
 
@@ -465,8 +555,21 @@
 
         // Initialize calculation on page load if form is filled
         document.addEventListener('DOMContentLoaded', function() {
+            // Ensure VAT Include checkbox is checked by default if not already set
+            var vatIncludeCheckbox = document.getElementById('vatInclude');
+            if (vatIncludeCheckbox && !vatIncludeCheckbox.checked && !vatIncludeCheckbox.hasAttribute(
+                    'data-initialized')) {
+                vatIncludeCheckbox.checked = true;
+                vatIncludeCheckbox.setAttribute('data-initialized', 'true');
+            }
+
+            // Calculate if amount is present
             if (document.getElementById('amount').value) {
                 calculateExpectedAmount();
+            } else {
+                // Initialize with zero values
+                document.getElementById('vat_amount').value = '0.00';
+                document.getElementById('wht_amount').value = '0.00';
             }
         });
     </script>

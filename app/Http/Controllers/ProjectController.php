@@ -1523,6 +1523,7 @@ class ProjectController extends Basefunction {
         $data['amount'] = $request->input('amount');
         $data['vat'] = $request->input('vat');
         $data['wht'] = $request->input('wht');
+        $data['vatInclude'] = $request->input('vatInclude');
         $data['expectedAmount'] = $request->input('expectedAmount');
         $data['dueDate'] = $request->input('dueDate');
         $data['status'] = $request->input('status');
@@ -1547,24 +1548,47 @@ class ProjectController extends Basefunction {
                 'vat' => 'nullable|numeric|min:0|max:100',
                 'wht' => 'nullable|numeric|min:0|max:100',
                 'dueDate' => 'required|date',
-                'status' => 'nullable|string',
             ]);
 
-            // Calculate expected amount: amount + vat - wht
+            // Get form values
             $amount = $data['amount'];
-            $vatAmount = ($amount * ($data['vat'] ?? 0)) / 100;
-            $whtAmount = ($amount * ($data['wht'] ?? 0)) / 100;
-            $calculatedExpectedAmount = $amount + $vatAmount - $whtAmount;
+            $vat = $data['vat'] ?? 0;
+            $wht = $data['wht'] ?? 0;
+            $isVatInclusive = $data['vatInclude'] ? 1 : 0;
+            
+            // Calculate VAT amount, WHT amount, and expected amount based on VAT inclusive flag
+            $vatAmount = 0;
+            $whtAmount = 0;
+            $expectedAmount = 0;
+            
+            if ($isVatInclusive) {
+                // VAT is already included in the amount
+                // Extract base amount: amount = base + (base * vat/100)
+                // base = amount / (1 + vat/100)
+                $baseAmount = $amount / (1 + ($vat / 100));
+                $vatAmount = $amount - $baseAmount;
+                $whtAmount = ($baseAmount * $wht) / 100;
+                $expectedAmount = $amount - $whtAmount - $vatAmount;
+            } else {
+                // VAT is added to the amount
+                $baseAmount = $amount;
+                $vatAmount = ($amount * $vat) / 100;
+                $whtAmount = ($amount * $wht) / 100;
+                $expectedAmount = $amount - $vatAmount - $whtAmount;
+            }
 
             DB::table('project_invoice')->insert([
                 'projectId' => $data['projectId'],
                 'InvoiceNumber' => $data['InvoiceNumber'],
                 'amount' => $amount,
-                'vat' => $data['vat'] ?? 0,
-                'wht' => $data['wht'] ?? 0,
-                'expectedAmount' => $calculatedExpectedAmount,
+                'vat' => $vat,
+                'wht' => $wht,
+                'vatAmount' => round($vatAmount, 2),
+                'whtAmount' => round($whtAmount, 2),
+                'isVatInclusive' => $isVatInclusive,
+                'expectedAmount' => round($expectedAmount, 2),
                 'dueDate' => $data['dueDate'],
-                'status' => $data['status'] ?? 'Pending',
+                'status' => 'Pending', // Default status, not editable during creation
                 'createdBy' => Auth::user()->id,
                 'createdAt' => now(),
                 'updateAt' => now(),
@@ -1584,19 +1608,43 @@ class ProjectController extends Basefunction {
                 'id' => 'required|integer',
             ]);
 
-            // Calculate expected amount: amount + vat - wht
+            // Get form values
             $amount = $data['amount'];
-            $vatAmount = ($amount * ($data['vat'] ?? 0)) / 100;
-            $whtAmount = ($amount * ($data['wht'] ?? 0)) / 100;
-            $calculatedExpectedAmount = $amount + $vatAmount - $whtAmount;
+            $vat = $data['vat'] ?? 0;
+            $wht = $data['wht'] ?? 0;
+            $isVatInclusive = $data['vatInclude'] ? 1 : 0;
+            
+            // Calculate VAT amount, WHT amount, and expected amount based on VAT inclusive flag
+            $vatAmount = 0;
+            $whtAmount = 0;
+            $expectedAmount = 0;
+            
+            if ($isVatInclusive) {
+                // VAT is already included in the amount
+                // Extract base amount: amount = base + (base * vat/100)
+                // base = amount / (1 + vat/100)
+                $baseAmount = $amount / (1 + ($vat / 100));
+                $vatAmount = $amount - $baseAmount;
+                $whtAmount = ($baseAmount * $wht) / 100;
+                $expectedAmount = $amount - $whtAmount - $vatAmount;
+            } else {
+                // VAT is added to the amount
+                $baseAmount = $amount;
+                $vatAmount = ($amount * $vat) / 100;
+                $whtAmount = ($amount * $wht) / 100;
+                $expectedAmount = $amount - $vatAmount - $whtAmount;
+            }
 
             $updateData = [
                 'projectId' => $data['projectId'],
                 'InvoiceNumber' => $data['InvoiceNumber'],
                 'amount' => $amount,
-                'vat' => $data['vat'] ?? 0,
-                'wht' => $data['wht'] ?? 0,
-                'expectedAmount' => $calculatedExpectedAmount,
+                'vat' => $vat,
+                'wht' => $wht,
+                'vatAmount' => round($vatAmount, 2),
+                'whtAmount' => round($whtAmount, 2),
+                'isVatInclusive' => $isVatInclusive,
+                'expectedAmount' => round($expectedAmount, 2),
                 'dueDate' => $data['dueDate'],
                 'status' => $data['status'] ?? 'Pending',
                 'updateAt' => now(),
@@ -1660,6 +1708,9 @@ class ProjectController extends Basefunction {
                     'project_invoice.amount',
                     'project_invoice.vat',
                     'project_invoice.wht',
+                    'project_invoice.vatAmount',
+                    'project_invoice.whtAmount',
+                    'project_invoice.isVatInclusive',
                     'project_invoice.expectedAmount',
                     'project_invoice.dueDate',
                     'project_invoice.status',
