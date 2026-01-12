@@ -81,6 +81,25 @@
                                         </div>
                                         <div class="col-md-4">
                                             <div class="form-group">
+                                                <label>Project Name <span class="text-danger">*</span></label>
+
+                                                <input type="text" class="form-control" value="{{ $projectName ?? '' }}"
+                                                    readonly>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Client Name <span class="text-danger">*</span></label>
+
+                                                <input type="text" class="form-control" value="{{ $clientName ?? '' }}"
+                                                    readonly>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+
+                                        <div class="col-md-4">
+                                            <div class="form-group">
                                                 <label>Amount <span class="text-danger">*</span></label>
                                                 <?php if ($amount == '') {
                                                     $amount = old('amount');
@@ -109,8 +128,8 @@
                                                     $vat = old('vat');
                                                 } ?>
                                                 <input type="number" class="form-control" value="{{ $vat }}"
-                                                    name="vat" id="vat" step="0.01" min="0" max="100"
-                                                    oninput="calculateExpectedAmount()">
+                                                    name="vat" id="vat" step="0.01" min="0"
+                                                    max="100" oninput="calculateExpectedAmount()">
                                             </div>
                                         </div>
                                         <div class="col-md-4">
@@ -120,8 +139,8 @@
                                                     $wht = old('wht');
                                                 } ?>
                                                 <input type="number" class="form-control" value="{{ $wht }}"
-                                                    name="wht" id="wht" step="0.01" min="0" max="100"
-                                                    oninput="calculateExpectedAmount()">
+                                                    name="wht" id="wht" step="0.01" min="0"
+                                                    max="100" oninput="calculateExpectedAmount()">
                                             </div>
                                         </div>
                                         <div class="col-md-4">
@@ -142,17 +161,22 @@
                                                     $status = old('status', 'Pending');
                                                 } ?>
                                                 <select class="form-control" name="status" id="status">
-                                                    <option value="Pending" {{ $status == 'Pending' ? 'selected' : '' }}>Pending</option>
-                                                    <option value="Validated" {{ $status == 'Validated' ? 'selected' : '' }}>Validated</option>
-                                                    <option value="Approved" {{ $status == 'Approved' ? 'selected' : '' }}>Approved</option>
-                                                    <option value="Rejected" {{ $status == 'Rejected' ? 'selected' : '' }}>Rejected</option>
+                                                    <option value="Pending" {{ $status == 'Pending' ? 'selected' : '' }}>
+                                                        Pending</option>
+                                                    <option value="Validated"
+                                                        {{ $status == 'Validated' ? 'selected' : '' }}>Validated</option>
+                                                    <option value="Approved"
+                                                        {{ $status == 'Approved' ? 'selected' : '' }}>Approved</option>
+                                                    <option value="Rejected"
+                                                        {{ $status == 'Rejected' ? 'selected' : '' }}>Rejected</option>
                                                 </select>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div class="text-right">
-                                        <button type="submit" class="btn btn-primary" name="addnew">Add Invoice</button>
+                                        <button type="submit" class="btn btn-primary" name="addnew">Add
+                                            Invoice</button>
                                     </div>
                                 </form>
                             </div>
@@ -231,7 +255,8 @@
                                                         <td>
                                                             {{ $invoice->validatedByName ?? '-' }}
                                                             @if ($invoice->validatedAt)
-                                                                <br><small class="text-muted">{{ date('Y-m-d', strtotime($invoice->validatedAt)) }}</small>
+                                                                <br><small
+                                                                    class="text-muted">{{ date('Y-m-d', strtotime($invoice->validatedAt)) }}</small>
                                                             @endif
                                                         </td>
                                                         <td>
@@ -248,7 +273,8 @@
                                                 @endforeach
                                             @else
                                                 <tr>
-                                                    <td colspan="11" class="text-center">No invoices added for this project yet.</td>
+                                                    <td colspan="11" class="text-center">No invoices added for this
+                                                        project yet.</td>
                                                 </tr>
                                             @endif
                                         </tbody>
@@ -264,7 +290,8 @@
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-body">
-                                <p class="text-center text-muted">Please select a project to view and manage its invoices.</p>
+                                <p class="text-center text-muted">Please select a project to view and manage its invoices.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -290,15 +317,16 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Invoice Number <span class="text-danger">*</span></label>
-                                        <input type="text" id="edit_InvoiceNumber" name="InvoiceNumber" class="form-control"
-                                            required>
+                                        <input type="text" id="edit_InvoiceNumber" name="InvoiceNumber"
+                                            class="form-control" required>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Amount <span class="text-danger">*</span></label>
                                         <input type="number" id="edit_amount" name="amount" class="form-control"
-                                            step="0.01" min="0" required oninput="calculateEditExpectedAmount()">
+                                            step="0.01" min="0" required
+                                            oninput="calculateEditExpectedAmount()">
                                     </div>
                                 </div>
                             </div>
@@ -307,14 +335,16 @@
                                     <div class="form-group">
                                         <label>VAT (%)</label>
                                         <input type="number" id="edit_vat" name="vat" class="form-control"
-                                            step="0.01" min="0" max="100" oninput="calculateEditExpectedAmount()">
+                                            step="0.01" min="0" max="100"
+                                            oninput="calculateEditExpectedAmount()">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>WHT (%)</label>
                                         <input type="number" id="edit_wht" name="wht" class="form-control"
-                                            step="0.01" min="0" max="100" oninput="calculateEditExpectedAmount()">
+                                            step="0.01" min="0" max="100"
+                                            oninput="calculateEditExpectedAmount()">
                                     </div>
                                 </div>
                             </div>
@@ -322,8 +352,9 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Expected Amount</label>
-                                        <input type="number" id="edit_expectedAmount" name="expectedAmount" class="form-control"
-                                            step="0.01" readonly style="background-color: #f0f0f0;">
+                                        <input type="number" id="edit_expectedAmount" name="expectedAmount"
+                                            class="form-control" step="0.01" readonly
+                                            style="background-color: #f0f0f0;">
                                         <small class="text-muted">Calculated: Amount + VAT - WHT</small>
                                     </div>
                                 </div>
@@ -411,11 +442,11 @@
             var amount = parseFloat(document.getElementById('amount').value) || 0;
             var vat = parseFloat(document.getElementById('vat').value) || 0;
             var wht = parseFloat(document.getElementById('wht').value) || 0;
-            
+
             var vatAmount = (amount * vat) / 100;
             var whtAmount = (amount * wht) / 100;
             var expectedAmount = amount + vatAmount - whtAmount;
-            
+
             document.getElementById('expectedAmount').value = expectedAmount.toFixed(2);
         }
 
@@ -423,11 +454,11 @@
             var amount = parseFloat(document.getElementById('edit_amount').value) || 0;
             var vat = parseFloat(document.getElementById('edit_vat').value) || 0;
             var wht = parseFloat(document.getElementById('edit_wht').value) || 0;
-            
+
             var vatAmount = (amount * vat) / 100;
             var whtAmount = (amount * wht) / 100;
             var expectedAmount = amount + vatAmount - whtAmount;
-            
+
             document.getElementById('edit_expectedAmount').value = expectedAmount.toFixed(2);
         }
 
@@ -439,7 +470,7 @@
             document.getElementById('edit_wht').value = wht || '';
             document.getElementById('edit_dueDate').value = dueDate;
             document.getElementById('edit_status').value = status || 'Pending';
-            
+
             // Calculate expected amount
             calculateEditExpectedAmount();
 
@@ -460,6 +491,3 @@
     </script>
 @endsection
 <!-- /Page Wrapper -->
-
-
-

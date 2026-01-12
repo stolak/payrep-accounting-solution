@@ -1626,6 +1626,25 @@ class ProjectController extends Basefunction {
             ->orderBy('name', 'asc')
             ->get();
         
+        // Fetch project name and client name for selected project
+        $data['projectName'] = '';
+        $data['clientName'] = '';
+        if (!empty($data['projectId'])) {
+            $projectInfo = DB::table('projects')
+                ->leftJoin('clients', 'projects.clientId', '=', 'clients.id')
+                ->where('projects.id', $data['projectId'])
+                ->select(
+                    'projects.name as projectName',
+                    'clients.name as clientName'
+                )
+                ->first();
+            
+            if ($projectInfo) {
+                $data['projectName'] = $projectInfo->projectName ?? '';
+                $data['clientName'] = $projectInfo->clientName ?? '';
+            }
+        }
+        
         // Fetch invoices for selected project
         $data['invoices'] = collect();
         if (!empty($data['projectId'])) {
