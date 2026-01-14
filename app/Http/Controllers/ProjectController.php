@@ -1727,6 +1727,255 @@ class ProjectController extends Basefunction {
         
         return view('Project.projectinvoice', $data);
     }
+
+    public function vendorProject(Request $request)
+    {
+        $data['projectId'] = $request->input('projectId');
+        $data['vendorId'] = $request->input('vendorId');
+        $data['quantity'] = $request->input('quantity');
+        $data['unitCost'] = $request->input('unitCost');
+        $data['amount'] = $request->input('amount');
+        $data['status'] = $request->input('status');
+        $data['id'] = $request->input('id');
+        
+        // Handle project selection - reload page with selected project
+        if ($request->has('select_project')) {
+            $data['projectId'] = $request->input('projectId');
+            Session(['selected_vendor_project_id' => $data['projectId']]);
+        }
+        
+        // Get selected project from session if not in request
+        if (empty($data['projectId'])) {
+            $data['projectId'] = Session::get('selected_vendor_project_id');
+        }
+        
+        if (isset($_POST['addnew'])) {
+            $this->validate($request, [
+                'projectId' => 'required|integer',
+                'vendorId' => 'required|integer',
+                'quantity' => 'required|numeric|min:0',
+                'unitCost' => 'required|numeric|min:0',
+                'status' => 'nullable|string',
+            ]);
+
+            // Calculate amount
+            $quantity = $data['quantity'];
+            $unitCost = $data['unitCost'];
+            $calculatedAmount = $quantity * $unitCost;
+
+            DB::table('vendor_projects')->insert([
+                'projectId' => $data['projectId'],
+                'vendorId' => $data['vendorId'],
+                'quantity' => $quantity,
+                'unitCost' => $unitCost,
+                'amount' => $calculatedAmount,
+                'status' => 'Pending', // Always set to Pending on creation
+                'createdBy' => Auth::user()->id,
+                'createdAt' => now(),
+                'updateAt' => now(),
+            ]);
+            return back()->with('message', 'New vendor project successfully added.');
+        }
+        
+        if (isset($_POST['update'])) {
+            $this->validate($request, [
+                'projectId' => 'required|integer',
+                'vendorId' => 'required|integer',
+                'quantity' => 'required|numeric|min:0',
+                'unitCost' => 'required|numeric|min:0',
+                'status' => 'nullable|string',
+                'id' => 'required|integer',
+            ]);
+
+            // Calculate amount
+            $quantity = $data['quantity'];
+            $unitCost = $data['unitCost'];
+            $calculatedAmount = $quantity * $unitCost;
+
+            DB::table('vendor_projects')->where('id', $data['id'])->update([
+                'vendorId' => $data['vendorId'],
+                'quantity' => $quantity,
+                'unitCost' => $unitCost,
+                'amount' => $calculatedAmount,
+                'status' => $data['status'] ?? 'Pending',
+                'updateAt' => now(),
+            ]);
+            return back()->with('message', 'Vendor project successfully updated.');
+        }
+        
+        if (isset($_POST['approve'])) {
+            $approveId = $request->input('approveid');
+            DB::table('vendor_projects')->where('id', $approveId)->update([
+                'status' => 'Approved',
+                'approvedBy' => Auth::user()->id,
+                'updateAt' => now(),
+            ]);
+            return back()->with('message', 'Vendor project successfully approved.');
+        }
+        
+        if (isset($_POST['del'])) {
+            $del = $request->input('deleteid');
+            
+            // Check if status is Approved - cannot delete if approved
+            $vendorProject = DB::table('vendor_projects')->where('id', $del)->first();
+            if ($vendorProject && $vendorProject->status == 'Approved') {
+                return back()->with('error_message', 'Cannot delete vendor project with Approved status.');
+            }
+            
+            DB::table('vendor_projects')->where('id', $del)->delete();
+            return back()->with('message', 'Vendor project successfully deleted.');
+        }
+        
+        // Fetch projects list
+        $data['projects'] = DB::table('projects')
+            ->select('id', 'name', 'projectCode')
+            ->orderBy('name', 'asc')
+            ->get();
+        
+        // Fetch vendors list (where isVendor = 1)
+        $data['vendors'] = DB::table('budgets')
+            ->where('isVendor', 1)
+            ->select('id', 'name', 'description')
+            ->orderBy('name', 'asc')
+            ->get();
+        
+        // Fetch vendor projects for selected project
+        $data['vendorProjects'] = collect();
+        if (!empty($data['projectId'])) {
+            $data['vendorProjects'] = DB::table('vendor_projects')
+                ->leftJoin('projects', 'vendor_projects.projectId', '=', 'projects.id')
+                ->leftJoin('budgets as vendor', 'vendor_projects.vendorId', '=', 'vendor.id')
+                ->leftJoin('users as creator', 'vendor_projects.createdBy', '=', 'creator.id')
+                ->leftJoin('users as approver', 'vendor_projects.approvedBy', '=', 'approver.id')
+                ->where('vendor_projects.projectId', $data['projectId'])
+                ->select(
+                    'vendor_projects.id',
+                    'vendor_projects.projectId',
+                    'vendor_projects.vendorId',
+                    'vendor_projects.quantity',
+                    'vendor_projects.unitCost',
+                    'vendor_projects.amount',
+                    'vendor_projects.status',
+                    'vendor_projects.createdAt',
+                    'vendor_projects.updateAt',
+                    'projects.name as projectName',
+                    'projects.projectCode',
+                    'vendor.name as vendorName',
+                    'creator.name as createdByName',
+                    'approver.name as approvedByName'
+                )
+                ->orderBy('vendor_projects.createdAt', 'desc')
+                ->get();
+        }
+        
+        return view('Project.vendorproject', $data);
+    }
+
+    public function vendorProjectReport(Request $request)
+    {
+        $data['vendorId'] = $request->input('vendorId');
+        $data['projectId'] = $request->input('projectId');
+        $data['status'] = $request->input('status');
+        $data['startDate'] = $request->input('startDate');
+        $data['endDate'] = $request->input('endDate');
+        
+        // Handle filter form submission
+        if ($request->has('select_vendor') && $request->input('select_vendor') == '1') {
+            $data['vendorId'] = $request->input('vendorId');
+            $data['projectId'] = $request->input('projectId');
+            if (!empty($data['vendorId']) && $data['vendorId'] != 'all') {
+                Session(['selected_vendor_report_id' => $data['vendorId']]);
+            } else {
+                Session::forget('selected_vendor_report_id');
+            }
+            if (!empty($data['projectId']) && $data['projectId'] != 'all') {
+                Session(['selected_project_report_id' => $data['projectId']]);
+            } else {
+                Session::forget('selected_project_report_id');
+            }
+        }
+        
+        // Get selected vendor from session if not in request (default to 'all')
+        if (empty($data['vendorId']) || $data['vendorId'] == '') {
+            $data['vendorId'] = Session::get('selected_vendor_report_id', 'all');
+        }
+        
+        // Get selected project from session if not in request (default to 'all')
+        if (empty($data['projectId']) || $data['projectId'] == '') {
+            $data['projectId'] = Session::get('selected_project_report_id', 'all');
+        }
+        
+        // Fetch vendors list (where isVendor = 1)
+        $data['vendors'] = DB::table('budgets')
+            ->where('isVendor', 1)
+            ->select('id', 'name', 'description')
+            ->orderBy('name', 'asc')
+            ->get();
+        
+        // Fetch projects list
+        $data['projects'] = DB::table('projects')
+            ->select('id', 'name', 'projectCode')
+            ->orderBy('name', 'asc')
+            ->get();
+        
+        // Fetch vendor projects with optional filters
+        $data['vendorProjects'] = collect();
+        $data['totalAmount'] = 0;
+        
+        // Build query - always fetch data (no requirement for vendor/project selection)
+        $query = DB::table('vendor_projects')
+            ->leftJoin('projects', 'vendor_projects.projectId', '=', 'projects.id')
+            ->leftJoin('budgets as vendor', 'vendor_projects.vendorId', '=', 'vendor.id')
+            ->leftJoin('users as creator', 'vendor_projects.createdBy', '=', 'creator.id')
+            ->leftJoin('users as approver', 'vendor_projects.approvedBy', '=', 'approver.id');
+        
+        // Apply vendor filter if not "all"
+        if (!empty($data['vendorId']) && $data['vendorId'] != 'all') {
+            $query->where('vendor_projects.vendorId', $data['vendorId']);
+        }
+        
+        // Apply project filter if not "all"
+        if (!empty($data['projectId']) && $data['projectId'] != 'all') {
+            $query->where('vendor_projects.projectId', $data['projectId']);
+        }
+        
+        // Apply status filter if provided
+        if (!empty($data['status'])) {
+            $query->where('vendor_projects.status', $data['status']);
+        }
+        
+        // Apply date filters if provided
+        if (!empty($data['startDate'])) {
+            $query->whereDate('vendor_projects.createdAt', '>=', $data['startDate']);
+        }
+        if (!empty($data['endDate'])) {
+            $query->whereDate('vendor_projects.createdAt', '<=', $data['endDate']);
+        }
+        
+        $data['vendorProjects'] = $query
+            ->select(
+                'vendor_projects.id',
+                'vendor_projects.projectId',
+                'vendor_projects.vendorId',
+                'vendor_projects.quantity',
+                'vendor_projects.unitCost',
+                'vendor_projects.amount',
+                'vendor_projects.status',
+                'vendor_projects.createdAt',
+                'vendor_projects.updateAt',
+                'projects.name as projectName',
+                'projects.projectCode',
+                'vendor.name as vendorName',
+                'creator.name as createdByName',
+                'approver.name as approvedByName'
+            )
+            ->orderBy('vendor_projects.createdAt', 'desc')
+            ->get();
+        
+        $data['totalAmount'] = $data['vendorProjects']->sum('amount');
+        
+        return view('Project.vendorprojectreport', $data);
+    }
    
 
 
