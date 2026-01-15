@@ -141,7 +141,17 @@
                                             </div>
                                         </div>
                                     </div>
-
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <label>Note</label>
+                                                <?php if ($note == '') {
+                                                    $note = old('note');
+                                                } ?>
+                                                <textarea class="form-control" name="note" id="note" rows="3" placeholder="Additional notes...">{{ $note }}</textarea>
+                                            </div>
+                                        </div>
+                                    </div>
 
                                     <div class="text-right">
                                         <button type="submit" class="btn btn-primary" name="addnew">Add Budget</button>
@@ -170,6 +180,7 @@
                                                 <th rowspan="1">Unit</th>
                                                 <th rowspan="1">Unit Cost</th>
                                                 <th rowspan="1">Amount</th>
+                                                <th rowspan="1">Note</th>
                                                 <th rowspan="1">Action</th>
                                             </tr>
                                         </thead>
@@ -217,8 +228,19 @@
                                                                 {{ number_format($list->amount, 2, '.', ',') }}
                                                             </td>
                                                             <td>
+                                                                @if (!empty($list->note))
+                                                                    <span title="{{ $list->note }}"
+                                                                        data-toggle="tooltip" data-placement="top">
+                                                                        {{ Str::limit($list->note, 30) }}
+                                                                    </span>
+                                                                @else
+                                                                    <span class="text-muted">-</span>
+                                                                @endif
+                                                            </td>
+                                                            <td>
                                                                 <a class="btn btn-sm bg-success-light"
-                                                                    href="javascript: editfunc('{{ $list->id }}','{{ $list->budgetId }}','{{ $list->classificationId }}','{{ $list->amount }}','{{ $list->unit ?? '' }}','{{ $list->unitCost ?? '' }}')">
+                                                                    href="javascript:void(0)"
+                                                                    onclick="editfunc('{{ $list->id }}','{{ $list->budgetId }}','{{ $list->classificationId }}','{{ $list->amount }}','{{ $list->unit ?? '' }}','{{ $list->unitCost ?? '' }}',{{ json_encode($list->note ?? '') }})">
                                                                     <i class="fe fe-pencil"></i>
                                                                 </a>
                                                                 <a class="btn btn-sm bg-danger-light"
@@ -236,6 +258,7 @@
 
                                                         <td></td>
                                                         <td></td>
+                                                        <td></td>
                                                         <td style="text-align: right;">
                                                             <strong>{{ number_format($categorySubtotal, 2, '.', ',') }}</strong>
                                                         </td>
@@ -245,7 +268,7 @@
                                                 <tr
                                                     style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
 
-                                                    <td colspan="4" class="text-right"><strong>Grand Total:</strong>
+                                                    <td colspan="5" class="text-right"><strong>Grand Total:</strong>
                                                     </td>
                                                     <td style="text-align: right;">
                                                         <strong>{{ number_format($totalAmount, 2, '.', ',') }}</strong>
@@ -254,7 +277,7 @@
                                                 </tr>
                                             @else
                                                 <tr>
-                                                    <td colspan="7" class="text-center">No budgets assigned to this
+                                                    <td colspan="8" class="text-center">No budgets assigned to this
                                                         project
                                                         yet.</td>
                                                 </tr>
@@ -343,6 +366,10 @@
                                             step="0.01" min="0" oninput="validateEditAmount()">
                                     </div>
                                 </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Note</label>
+                                <textarea class="form-control" id="edit_note" name="note" rows="3" placeholder="Additional notes..."></textarea>
                             </div>
                             <input type="hidden" id="edit_id" name="id">
                         </div>
@@ -645,13 +672,14 @@
             return true;
         }
 
-        function editfunc(id, budgetId, classificationId, amount, unit, unitCost) {
+        function editfunc(id, budgetId, classificationId, amount, unit, unitCost, note) {
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_classificationId').value = classificationId || '';
             document.getElementById('edit_budgetId').value = budgetId;
             document.getElementById('edit_unit').value = unit || '';
             document.getElementById('edit_unitCost').value = unitCost || '';
             document.getElementById('edit_amount').value = amount || '';
+            document.getElementById('edit_note').value = note || '';
 
             // Filter budgets based on classification
             handleEditClassificationChange();
@@ -678,6 +706,11 @@
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Bootstrap tooltips for note field
+            if (typeof $ !== 'undefined' && $.fn.tooltip) {
+                $('[data-toggle="tooltip"]').tooltip();
+            }
+
             // Check if budget is already selected and handle visibility
             var budgetSelect = document.getElementById('budgetId');
             if (budgetSelect && budgetSelect.value) {

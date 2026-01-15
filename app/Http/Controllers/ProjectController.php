@@ -310,6 +310,7 @@ class ProjectController extends Basefunction {
         $data['unit'] = $request->input('unit');
         $data['unitCost'] = $request->input('unitCost');
         $data['amount'] = $request->input('amount');
+        $data['note'] = $request->input('note');
         $data['id'] = $request->input('id');
         
         // Handle project selection - reload page with selected project
@@ -382,6 +383,7 @@ class ProjectController extends Basefunction {
                 'unit' => $unit ?? null,
                 'unitCost' => $unitCost ?? null,
                 'amount' => $calculatedAmount,
+                'note' => $data['note'] ?? null,
                 'createdBy' => Auth::user()->id,
                 'createdAt' => now(),
                 'updatedAt' => now(),
@@ -442,6 +444,7 @@ class ProjectController extends Basefunction {
                 'unit' => $unit ?? null,
                 'unitCost' => $unitCost ?? null,
                 'amount' => $calculatedAmount,
+                'note' => $data['note'] ?? null,
                 'updatedAt' => now(),
             ]);
             return back()->with('message', 'Record successfully updated.');
@@ -496,7 +499,7 @@ class ProjectController extends Basefunction {
                 ->leftJoin('budgets', 'project_budget.budgetId', '=', 'budgets.id')
                 ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
                 ->where('project_budget.projectId', $data['projectId'])
-                ->select('project_budget.id', 'project_budget.projectId', 'project_budget.budgetId', 'project_budget.unit', 'project_budget.unitCost', 'project_budget.amount', 'budgets.name as budgetName', 'budgets.classificationId', 'budget_classifications.category as budgetCategoryName')
+                ->select('project_budget.id', 'project_budget.projectId', 'project_budget.budgetId', 'project_budget.unit', 'project_budget.unitCost', 'project_budget.amount', 'project_budget.note', 'budgets.name as budgetName', 'budgets.classificationId', 'budget_classifications.category as budgetCategoryName')
                 ->orderBy('budget_classifications.category', 'asc')
                 ->orderBy('budgets.name', 'asc')
                 ->get();
