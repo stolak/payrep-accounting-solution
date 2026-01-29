@@ -1058,7 +1058,7 @@ Public function BankList() {
 	       $sumallvariable .="+`$v->ref_code`"; 
 	    }
 	    $sumallvariable .= " as Net";
-	    $qdata= DB::Select("SELECT tblpayroll_payment.*,$sumallvariable,tblbanklist.bank
+	    $qdata= DB::Select("SELECT tblpayroll_payment.*,$sumallvariable, tblbanklist.bank, tblbanklist.bankCode
 	    FROM `tblpayroll_payment` 
 	    left join tblbanklist on tblbanklist.bankID=tblpayroll_payment.bankid
 	    WHERE `year`='$year' and `month`='$month'");

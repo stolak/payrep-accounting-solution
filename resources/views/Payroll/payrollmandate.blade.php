@@ -95,6 +95,7 @@
                                             <th rowspan="1">Beneficiary</th>
                                             <th rowspan="1">Amount</th>
                                             <th rowspan="1">Bank</th>
+                                            <th rowspan="1">Bank Code</th>
                                             <th rowspan="1">Account Number</th>
                                             <th rowspan="1">Payment description</th>
                                         </tr>
@@ -116,14 +117,23 @@
                                                 <td>{{ $list2->fullname }}</td>
                                                 <td>{{ number_format(abs($list2->Net), 2, '.', ',') }}</td>
                                                 <td>{{ $list2->bank }}</td>
+                                                <td>{{ $list2->bankCode }}</td>
                                                 <td>{{ $list2->account_no }}</td>
-                                                <td>Salary payment of {{ $list2->fullname }} for the {{ $monthName }},
-                                                    {{ $year }}</td>
+                                                <td>
+                                                    @if ($list2->mandateMessage != '')
+                                                        {{ $list2->mandateMessage }}
+                                                    @else
+                                                        Salary payment of {{ $list2->fullname }} for the
+                                                        {{ $monthName }},
+                                                        {{ $year }}
+                                                    @endif
+                                                </td>
                                             </tr>
                                             @php $net+=$list2->Net; @endphp
                                         @endforeach
                                         <tr>
-                                            <td colspan=2>Total</td>
+                                            <td colspan=>Total</td>
+                                            <td colspan></td>
                                             <td>
                                                 @if ($net < 0)
                                                     ({{ number_format(abs($net), 2, '.', ',') }})

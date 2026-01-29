@@ -32,21 +32,28 @@
                             <form method="post" name="mainform" id="mainform">
                                 {{ csrf_field() }}
                                 <div class="row">
-                                    <div class="col-md-5">
+                                    <div class="col-md-2">
                                         <div class="form-group">
                                             <label>Current Active year</label>
                                             <input type="text" class="form-control" value="{{ $cyear }}" readonly>
                                         </div>
                                     </div>
-                                    <div class="col-md-5">
+                                    <div class="col-md-2">
                                         <div class="form-group">
                                             <label>Current Active Month</label>
                                             <input type="text" class="form-control" value="{{ $cmonth }}" readonly>
                                         </div>
                                     </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Mandate Message</label>
+                                            <input type="text" class="form-control"
+                                                value="{{ $active_period->mandateMessage }}" readonly>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-5">
+                                    <div class="col-md-2">
                                         <div class="form-group">
                                             <label>New Active year</label>
                                             <select class="form-control" name="year">
@@ -60,7 +67,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-5">
+                                    <div class="col-md-2">
                                         <div class="form-group">
                                             <label>New Active Month</label>
                                             <select class="form-control" name="month">
@@ -71,6 +78,20 @@
                                                         {{ $list->month }}</option>
                                                 @endforeach
                                             </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>
+                                                Mandate Message
+                                                <a href="javascript:void(0)" onclick="insertTemplateMessage()"
+                                                    class="ml-2" title="Insert template message"
+                                                    style="color: #007bff; text-decoration: none; cursor: pointer;">
+                                                    <i class="fas fa-copy"></i>
+                                                </a>
+                                            </label>
+                                            <input type="text" class="form-control" name="mandateMessage"
+                                                id="mandateMessage" value='{{ $mandateMessage }}'>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
@@ -106,6 +127,32 @@
     <script>
         function Reload() {
             document.forms["mainform"].submit();
+        }
+
+        function insertTemplateMessage() {
+            // Get selected year and month
+            var yearSelect = document.querySelector('select[name="year"]');
+            var monthSelect = document.querySelector('select[name="month"]');
+            var mandateMessageInput = document.getElementById('mandateMessage');
+
+            var year = yearSelect ? yearSelect.value : '';
+            var monthId = monthSelect ? monthSelect.value : '';
+
+            // Get month name from selected option
+            var monthName = '';
+            if (monthSelect && monthId) {
+                var selectedOption = monthSelect.options[monthSelect.selectedIndex];
+                monthName = selectedOption ? selectedOption.text : '';
+            }
+
+            // Build template message
+            var templateMessage = 'Salary for ' + (year || '[Year]') + ' ' + (monthName || '[month]');
+
+            // Insert into input field
+            if (mandateMessageInput) {
+                mandateMessageInput.value = templateMessage;
+                mandateMessageInput.focus();
+            }
         }
     </script>
 @endsection

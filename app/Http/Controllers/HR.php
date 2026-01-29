@@ -36,8 +36,8 @@ class HR extends Basefunction
               'fname'      => 'required|string',
               'lname'      => 'required|string',
               'grade'      => 'required|string',
-              'grade'      => 'required|string',
-              'phoneno'      => 'required|string',
+              // 'bank'      => 'required|string',
+              // 'phoneno'      => 'required|string',
             ]);
             
            $data['id']= DB::table('tblstaff')->insertGetId([
@@ -83,6 +83,7 @@ class HR extends Basefunction
      }
     if ( isset( $_POST['del'] ) ) {
         $del=$request->input('deleteid');
+        dd($del);
         if( DB::table('tblaccountchart')->where('subheadid',$del)->first())return back()->with('error_message','Brand exist with product. Hence, record cannot be deleted!'  );
         DB::delete("DELETE FROM `tblaccountsubhead` WHERE `id`='$del'");
         return back()->with('message',' Record successfully trashed.'  );

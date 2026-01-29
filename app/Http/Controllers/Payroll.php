@@ -22,18 +22,20 @@ class Payroll extends Basefunction
     // });
   //Die("kdkdk");
     $active_period=$this->Payroll_Active_period();
+    $data['active_period'] = $active_period;
     $data['cyear'] = $active_period->year;
     $data['cmonth'] = $active_period->monthtx;
     $data['year']=$request->input('year');
    	$data['month']=$request->input('month');
    	$data['id']=$request->input('id');
    	$data['Months']=$this->Months();
+    $data['mandateMessage'] = $request->input('mandateMessage');
    	if ( isset( $_POST['update'] ) ) {
    	    $this->validate($request, [
               'year'      => 'required|string',
               'month'      => 'required|string',
             ]);
-   	     DB::table('tblpayroll_active_period')->update( [ 'year' =>$data['year'],'month' =>$data['month'] ]);
+   	     DB::table('tblpayroll_active_period')->update( [ 'year' =>$data['year'],'month' =>$data['month'], 'mandateMessage' =>$data['mandateMessage'] ]);
     	   return back()->with('message','Successfully updated.'  );
          }
 	return view('Payroll.activesetup', $data);
@@ -44,6 +46,7 @@ class Payroll extends Basefunction
     $active_period=$this->Payroll_Active_period();
     $year=$active_period->year;//'2019';
     $month =$active_period->month;//'1';
+    $mandateMessage = $active_period->mandateMessage;
     $data['year'] = $active_period->year;;
     $data['month'] = $active_period->monthtx;
    	$data['id']=$request->input('id');
@@ -58,6 +61,8 @@ class Payroll extends Basefunction
     			'variableid'    	=> $curv->id,
                 'year'    	=> $year,
     			'month'	    	=> $month,
+          
+          
     			'variable_type'    	    => $curv->variable_type,	
     			'variable'            => $curv->variable,
     			'status'      => $curv->status,
@@ -75,6 +80,7 @@ class Payroll extends Basefunction
                 'grade' =>$v->grade ,
                 'year' => $year ,
                 'month' => $month ,
+                'mandateMessage' => $mandateMessage,
                 'bankid' => $v->bankid ,
                 'account_no' => $v->account_no ,
     	        ]);  
@@ -182,13 +188,59 @@ class Payroll extends Basefunction
     	        return back()->with('message','record successfully updated.'  );
          }
         if ( isset( $_POST['del'] ) ) {
-        $del=$request->input('deleteid');
-        $ref_code=DB::table('tblpayroll_variable')->where('id', $del)->value('ref_code');
-        if(DB::Select("SELECT sum($ref_code) as sumT FROM `tblpayroll_payment`")[0]->sumT > 0)return back()->with('error_message','This Variable have computed value in Payroll Report. Hence, record cannot be deleted!'  );
-        if(DB::Select("SELECT sum($ref_code) as sumT FROM `tblpayroll_salary_new_chart`")[0]->sumT > 0)return back()->with('error_message','This Variable have value in Salary Chart. Hence, record cannot be deleted!'  );
-        DB::delete("DELETE FROM `tblpayroll_variable` WHERE `id`='$del'");
-        $this->DropVariable( $ref_code);
-         return back()->with('message',' Record successfully trashed.'  );
+        $del = $request->input('deleteid');
+
+        // Get ref_code
+        $ref_code = DB::table('tblpayroll_variable')
+            ->where('id', $del)
+            ->value('ref_code');
+
+        if (!$ref_code) {
+            return back()->with('error_message', 'Invalid record selected.');
+        }
+
+        // Check Payroll Payment
+        $payrollSum = DB::table('tblpayroll_payment')
+            ->sum($ref_code);
+
+        if ($payrollSum > 0) {
+            return back()->with(
+                'error_message',
+                'This Variable has computed value in Payroll Report. Hence, record cannot be deleted!'
+            );
+        }
+
+        // Check Salary Chart
+        $salaryChartSum = DB::table('tblpayroll_salary_new_chart')
+            ->sum($ref_code);
+// dd($salaryChartSum);
+        if ($salaryChartSum > 0) {
+            return back()->with(
+                'error_message',
+                'This Variable has value in Salary Chart. Hence, record cannot be deleted!'
+            );
+        }
+
+        // Check Staff Control Variable
+        $staffCvSum = DB::table('tblstaff_cv')
+            ->where('ref_code', $ref_code)
+            ->sum('amount_monthly');
+
+        if ($staffCvSum > 0) {
+            return back()->with(
+                'error_message',
+                'This Variable has value in Staff Control Variable. Hence, record cannot be deleted!'
+            );
+        }
+        // Delete record
+        DB::table('tblpayroll_variable')
+            ->where('id', $del)
+            ->delete();
+
+        // Drop column or related variable
+        $this->DropVariable($ref_code);
+
+        return back()->with('message', 'Record successfully trashed.');
     }
     
    $data['PayrollVariable'] = $this->AllPayrollVariable($data['variabletype']);
@@ -283,6 +335,7 @@ class Payroll extends Basefunction
    	if($data['month']==''){$data['month']=$active_period->month;}
     $data['Months'] = $this->Months();
     $data['NetpaySummary']=$this->NetpaySummary($data['year'],$data['month']);
+    // dd($data['NetpaySummary']);
 	return view('Payroll.payrollmandate', $data);
    }
    public function PayrollParticularReport(Request $request)
