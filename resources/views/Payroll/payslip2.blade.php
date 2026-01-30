@@ -87,13 +87,18 @@
                 </div>
             </div>
 
-            <div class="row">
+            <div class="row" id="payslip-row">
                 <div class="col-md-12">
 
                     <!-- Payroll Report -->
-                    <div class="card card-table">
+                    <div class="card card-table" id="payslip-card">
                         <div class="card-header">
                             <h4 class="card-title">Payslip</h4>
+                            @if ($Payroll)
+                                <button type="button" class="btn btn-primary btn-sm float-right" onclick="printPayslip()">
+                                    <i class="fe fe-printer"></i> Print
+                                </button>
+                            @endif
                         </div>
                         <div class="card-body">
                             @if ($Payroll)
@@ -206,7 +211,7 @@
                                         border-left: none;
                                     }
                                 </style>
-                                <div class="salary-slip">
+                                <div id="payslip-content" class="salary-slip">
                                     <table class="empDetail">
                                         <tr height="100px">
                                             <td class="no-border-right">
@@ -214,7 +219,7 @@
                                             </td>
                                             <td colspan="2" class="no-border-left"></td>
                                             <td colspan='3' class="companyName">
-                                                {{ env('Coy_Name', 'ACCOUNTING SOLUTIONS') }}</td>
+                                                {{ env('Coy_Name', 'Payslip') }}</td>
                                         </tr>
                                         <tr>
                                             <th>Name</th>
@@ -304,6 +309,67 @@
         label {
             color: black text-shadow: 1px 1px 2px #fff;
         }
+
+        /* Print Styles */
+        @media print {
+            @page {
+                margin: 0.5cm;
+            }
+
+            /* Hide everything by default */
+            body * {
+                visibility: hidden;
+            }
+
+            /* Show only the payslip section */
+            #payslip-row,
+            #payslip-row *,
+            #payslip-card,
+            #payslip-card *,
+            #payslip-content,
+            #payslip-content * {
+                visibility: visible !important;
+            }
+
+            /* Position payslip at top */
+            #payslip-row {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+            }
+
+            /* Hide unwanted elements */
+            .sidebar,
+            .header,
+            .page-header,
+            .breadcrumb,
+            .card-header,
+            .btn,
+            form[name="mainform"],
+            .row:first-child {
+                display: none !important;
+                visibility: hidden !important;
+            }
+
+            /* Remove card styling */
+            #payslip-card,
+            .card-body {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: white !important;
+            }
+
+            /* Clean up wrapper elements */
+            .page-wrapper,
+            .content,
+            .container-fluid {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+        }
     </style>
 @endsection
 @section('scripts')
@@ -313,6 +379,10 @@
     <script>
         function Reload() {
             document.forms["mainform"].submit();
+        }
+
+        function printPayslip() {
+            window.print();
         }
     </script>
 @endsection

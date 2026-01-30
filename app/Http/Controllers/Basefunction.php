@@ -860,10 +860,10 @@ Public function RefBatch() {
 	    FROM `tblpayroll_variable` where $qt  order by variable_type, `rank` ");
 	}
 	Public function EarningVariable() {
-	    return DB::Select("SELECT * FROM `tblpayroll_variable` where `variable_type`='1' and status=1 ");
+	    return DB::Select("SELECT * FROM `tblpayroll_variable` where `variable_type`='1' and status=1 ORDER BY `rank` ");
 	}
 	Public function DeductionVariable() {
-	    return DB::Select("SELECT * FROM `tblpayroll_variable` where `variable_type`='2' and status=1 ");
+	    return DB::Select("SELECT * FROM `tblpayroll_variable` where `variable_type`='2' and status=1 ORDER BY `rank` ");
 	}
 
 	

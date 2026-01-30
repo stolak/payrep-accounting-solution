@@ -378,4 +378,84 @@ class Payroll extends Basefunction
     $data['MonthlyActiveVariable']=$this->MonthlyActiveVariable($data['year'],$data['month']);
 	return view('Payroll.payslip2', $data);
    }
+
+   public function PayrollLock(Request $request)
+   {
+   	$data['year']=$request->input('year');
+   	$data['month']=$request->input('month');
+   	$active_period=$this->Payroll_Active_period();
+   	if($data['year']==''){$data['year']=$active_period->year;}
+   	if($data['month']==''){$data['month']=$active_period->month;}
+   	$data['Months'] = $this->Months();
+
+   	// Get month name
+   	$monthName = '';
+   	foreach($data['Months'] as $m) {
+   	    if($m->id == $data['month']) {
+   	        $monthName = $m->month;
+   	        break;
+   	    }
+   	}
+
+   	// Lock payroll
+   	if ( isset( $_POST['lock'] ) ) {
+   	    $this->validate($request, [
+              'year'      => 'required|string',
+              'month'      => 'required|string',
+            ]);
+   	    $year = $data['year'];
+   	    $month = $data['month'];
+   	    
+   	    // Update all records matching year and month to isLocked=1
+   	    $updated = DB::table('tblpayroll_payment')
+   	        ->where('year', $year)
+   	        ->where('month', $month)
+   	        ->update(['isLocked' => 1]);
+   	    
+   	    return back()->with('message','Payroll successfully locked for ' . $year . ' - ' . $monthName . '. ' . $updated . ' record(s) updated.'  );
+   	}
+
+   	// Unlock payroll
+   	if ( isset( $_POST['unlock'] ) ) {
+   	    $this->validate($request, [
+              'year'      => 'required|string',
+              'month'      => 'required|string',
+            ]);
+   	    $year = $data['year'];
+   	    $month = $data['month'];
+   	    
+   	    // Update all records matching year and month to isLocked=0
+   	    $updated = DB::table('tblpayroll_payment')
+   	        ->where('year', $year)
+   	        ->where('month', $month)
+   	        ->update(['isLocked' => 0]);
+   	    
+   	    return back()->with('message','Payroll successfully unlocked for ' . $year . ' - ' . $monthName . '. ' . $updated . ' record(s) updated.'  );
+   	}
+
+   	// Get payroll records for selected year and month
+   	$data['PayrollRecords'] = [];
+   	$data['LockStatus'] = null;
+   	if($data['year'] != '' && $data['month'] != '') {
+   	    $data['PayrollRecords'] = DB::table('tblpayroll_payment')
+   	        ->where('year', $data['year'])
+   	        ->where('month', $data['month'])
+   	        ->orderBy('fullname', 'asc')
+   	        ->get();
+   	    
+   	    // Check if any record is locked (if all are locked, show locked status)
+   	    $lockedCount = DB::table('tblpayroll_payment')
+   	        ->where('year', $data['year'])
+   	        ->where('month', $data['month'])
+   	        ->where('isLocked', 1)
+   	        ->count();
+   	    
+   	    $totalCount = count($data['PayrollRecords']);
+   	    if($totalCount > 0) {
+   	        $data['LockStatus'] = ($lockedCount == $totalCount) ? 'locked' : (($lockedCount > 0) ? 'partial' : 'unlocked');
+   	    }
+   	}
+
+	return view('Payroll.payrolllock', $data);
+   }
 }
