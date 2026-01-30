@@ -9,13 +9,17 @@ use Session;
 use DB;
 use Auth;
 use App\Models\Module;
+use App\Models\ParentMenu;
 
 class ModuleController extends Controller
 {
 
    public function create()
     {
-        $data['modules'] = Module::all();
+        $data['modules'] = Module::leftJoin('parent_menu', 'modules.parentMenuId', '=', 'parent_menu.id')
+            ->select('modules.*', 'parent_menu.parentMenu')
+            ->get();
+        $data['parentMenus'] = ParentMenu::orderBy('rankOrder', 'asc')->get();
         return view('module.create', $data);
     }
 
@@ -27,6 +31,7 @@ class ModuleController extends Controller
         $addModule = Module::create([
             'module' => $request->input('moduleName'),
             'module_rank' => $request->input('rank'),
+            'parentMenuId' => $request->input('parentMenuId') ?: null,
         ]);
         if (!$addModule) {
             return redirect()
@@ -45,6 +50,7 @@ class ModuleController extends Controller
         $getUpdateModule        = Module::where('id', $request->input('moduleID'))->update([
             'module' => $request->input('name'),
             'module_rank' => $request->input('rank'),
+            'parentMenuId' => $request->input('parentMenuId') ?: null,
         ]);
         if ($getUpdateModule){
             return redirect()->route('CreateModule')->with('message','Module Successfully Updated');

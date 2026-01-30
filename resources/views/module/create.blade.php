@@ -42,6 +42,20 @@
           </div>
 
           <div class="form-group">
+            <label for="section" class="col-md-3 control-label">Parent Menu</label>
+            <div class="col-md-9">
+              <select id="parentMenuId" name="parentMenuId" class="form-control">
+                <option value="">--Select Parent Menu--</option>
+                @foreach($parentMenus as $parentMenu)
+                  <option value="{{ $parentMenu->id }}" {{ old('parentMenuId') == $parentMenu->id ? 'selected' : '' }}>
+                    {{ $parentMenu->parentMenu }}
+                  </option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
             <div class="col-sm-offset-3 col-sm-9">
               <button type="submit" class="btn btn-success btn-sm pull-right">Add Module</button>
             </div>
@@ -58,7 +72,7 @@
             <th>S/N</th>
             <th>MODULE NAME</th>
             <th>RANK</th>
-            
+            <th>PARENT MENU</th>
             <th></th>
           </tr>
         </thead>
@@ -70,7 +84,8 @@
           <td>{{$key ++}}</td>
           <td>{{strtoupper($list->module)}}</td>
           <td>{{strtoupper($list->module_rank)}}</td>
-          <td><a href="#" title="Edit" id="{{$list->id}}" class="btn btn-success fa fa-edit edits" onclick="Editmodule('{{$list->id}}','{{$list->module}}','{{$list->module_rank}}')"></a></td>
+          <td>{{$list->parentMenu ? strtoupper($list->parentMenu) : '-'}}</td>
+          <td><a href="#" title="Edit" id="{{$list->id}}" class="btn btn-success fa fa-edit edits" onclick="Editmodule('{{$list->id}}','{{$list->module}}','{{$list->module_rank}}','{{$list->parentMenuId ?? ''}}')"></a></td>
         </tr>
         @endforeach
         </tbody> 
@@ -109,6 +124,20 @@
                           
                         </div>
                       </div>
+                    </div>
+
+                    <div class="row">
+                     <div class="form-group">
+                       <label >Parent Menu</label>
+                        <div class="col-md-12">
+                          <select id="edit_parentMenuId" name="parentMenuId" class="form-control">
+                            <option value="">--Select Parent Menu--</option>
+                            @foreach($parentMenus as $parentMenu)
+                              <option value="{{ $parentMenu->id }}">{{ $parentMenu->parentMenu }}</option>
+                            @endforeach
+                          </select>
+                        </div>
+                      </div>
                     </div>    
 
 
@@ -128,11 +157,12 @@
 @section('scripts')
 <script>
 
-   function Editmodule(id,modulename,rank)
+   function Editmodule(id,modulename,rank,parentMenuId)
     {
     $('#module').val(modulename);
    $('#id').val(id);
    $('#ranks').val(rank);
+   $('#edit_parentMenuId').val(parentMenuId || '');
    $("#myModal").modal('show');
    }
    
