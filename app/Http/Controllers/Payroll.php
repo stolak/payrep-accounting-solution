@@ -14,13 +14,7 @@ class Payroll extends Basefunction
 {
   public function ActivePeriod(Request $request)
    {
-    //   Schema::create('cruds', function (Blueprint $table) {
-    //   $table->increments('id');
-    //   $table->text('name');
-    //   $table->text('color');
-    //   $table->timestamps();
-    // });
-  //Die("kdkdk");
+    
     $active_period=$this->Payroll_Active_period();
     $data['active_period'] = $active_period;
     $data['cyear'] = $active_period->year;
@@ -51,6 +45,10 @@ class Payroll extends Basefunction
     $data['month'] = $active_period->monthtx;
    	$data['id']=$request->input('id');
    	if ( isset( $_POST['compute'] ) ) {
+      // check if salary is lock
+      if(DB::table('tblpayroll_payment')->where('month',$month)->where('year',$year)->where('isLocked', 1)->first()){
+        return back()->with('error_message', 'This period is already locked salary cannot be computer for this period.'); 
+      }
    	    DB::delete("DELETE FROM `tblstaff_monthly_cv` WHERE `year`='$year' and `month`='$month'");
            $data['Staffs'] = $this->Staffs('','');
            DB::delete("DELETE FROM `tblpayroll_payment` WHERE `month`='$month' and `year`='$year'");
