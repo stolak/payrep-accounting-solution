@@ -14,7 +14,6 @@ class Payroll extends Basefunction
 {
   public function ActivePeriod(Request $request)
    {
-    
     $active_period=$this->Payroll_Active_period();
     $data['active_period'] = $active_period;
     $data['cyear'] = $active_period->year;
@@ -29,6 +28,46 @@ class Payroll extends Basefunction
               'year'      => 'required|string',
               'month'      => 'required|string',
             ]);
+   	    
+   	    $proposedYear = $data['year'];
+   	    $proposedMonth = $data['month'];
+   	    
+   	    // Check if there are any unlocked records (active period)
+   	    $unlockedRecords = DB::table('tblpayroll_payment')
+   	        ->where('isLocked', 0)
+   	        ->select('year', 'month')
+   	        ->distinct()
+   	        ->get();
+   	    
+   	    // If there are unlocked records, check if they match the proposed period
+   	    if($unlockedRecords->count() > 0) {
+   	        $existingYear = $unlockedRecords->first()->year;
+   	        $existingMonth = $unlockedRecords->first()->month;
+   	        
+   	        // Check if there are multiple different periods unlocked
+   	        $uniquePeriods = $unlockedRecords->unique(function ($item) {
+   	            return $item->year . '-' . $item->month;
+   	        });
+   	        
+   	        if($uniquePeriods->count() > 1) {
+   	            return back()->with('error_message', 'Multiple active periods detected. Please lock all payroll records before updating the active period.');
+   	        }
+   	        
+   	        // If the proposed period is different from existing active period, prevent update
+   	        if($existingYear != $proposedYear || $existingMonth != $proposedMonth) {
+   	            // Get month name for display
+   	            $monthName = '';
+   	            foreach($data['Months'] as $m) {
+   	                if($m->id == $existingMonth) {
+   	                    $monthName = $m->month;
+   	                    break;
+   	                }
+   	            }
+   	            return back()->with('error_message', 'Cannot update active period. There is an existing active period (' . $existingYear . ' - ' . $monthName . ') with unlocked records. Please lock all payroll records for that period before updating.');
+   	        }
+   	    }
+   	    
+   	    // Proceed with update if validation passes
    	     DB::table('tblpayroll_active_period')->update( [ 'year' =>$data['year'],'month' =>$data['month'], 'mandateMessage' =>$data['mandateMessage'] ]);
     	   return back()->with('message','Successfully updated.'  );
          }
@@ -381,19 +420,7 @@ class Payroll extends Basefunction
    {
    	$data['year']=$request->input('year');
    	$data['month']=$request->input('month');
-   	$active_period=$this->Payroll_Active_period();
-   	if($data['year']==''){$data['year']=$active_period->year;}
-   	if($data['month']==''){$data['month']=$active_period->month;}
    	$data['Months'] = $this->Months();
-
-   	// Get month name
-   	$monthName = '';
-   	foreach($data['Months'] as $m) {
-   	    if($m->id == $data['month']) {
-   	        $monthName = $m->month;
-   	        break;
-   	    }
-   	}
 
    	// Lock payroll
    	if ( isset( $_POST['lock'] ) ) {
@@ -403,6 +430,15 @@ class Payroll extends Basefunction
             ]);
    	    $year = $data['year'];
    	    $month = $data['month'];
+   	    
+   	    // Get month name
+   	    $monthName = '';
+   	    foreach($data['Months'] as $m) {
+   	        if($m->id == $month) {
+   	            $monthName = $m->month;
+   	            break;
+   	        }
+   	    }
    	    
    	    // Update all records matching year and month to isLocked=1
    	    $updated = DB::table('tblpayroll_payment')
@@ -422,6 +458,15 @@ class Payroll extends Basefunction
    	    $year = $data['year'];
    	    $month = $data['month'];
    	    
+   	    // Get month name
+   	    $monthName = '';
+   	    foreach($data['Months'] as $m) {
+   	        if($m->id == $month) {
+   	            $monthName = $m->month;
+   	            break;
+   	        }
+   	    }
+   	    
    	    // Update all records matching year and month to isLocked=0
    	    $updated = DB::table('tblpayroll_payment')
    	        ->where('year', $year)
@@ -431,27 +476,55 @@ class Payroll extends Basefunction
    	    return back()->with('message','Payroll successfully unlocked for ' . $year . ' - ' . $monthName . '. ' . $updated . ' record(s) updated.'  );
    	}
 
-   	// Get payroll records for selected year and month
-   	$data['PayrollRecords'] = [];
-   	$data['LockStatus'] = null;
-   	if($data['year'] != '' && $data['month'] != '') {
-   	    $data['PayrollRecords'] = DB::table('tblpayroll_payment')
-   	        ->where('year', $data['year'])
-   	        ->where('month', $data['month'])
-   	        ->orderBy('fullname', 'asc')
-   	        ->get();
+   	// Get all unique periods with their lock status
+   	$periods = DB::table('tblpayroll_payment')
+   	    ->select('year', 'month')
+   	    ->distinct()
+   	    ->orderBy('year', 'desc')
+   	    ->orderBy('month', 'desc')
+   	    ->get();
+   	
+   	$data['Periods'] = [];
+   	foreach($periods as $period) {
+   	    $totalCount = DB::table('tblpayroll_payment')
+   	        ->where('year', $period->year)
+   	        ->where('month', $period->month)
+   	        ->count();
    	    
-   	    // Check if any record is locked (if all are locked, show locked status)
    	    $lockedCount = DB::table('tblpayroll_payment')
-   	        ->where('year', $data['year'])
-   	        ->where('month', $data['month'])
+   	        ->where('year', $period->year)
+   	        ->where('month', $period->month)
    	        ->where('isLocked', 1)
    	        ->count();
    	    
-   	    $totalCount = count($data['PayrollRecords']);
-   	    if($totalCount > 0) {
-   	        $data['LockStatus'] = ($lockedCount == $totalCount) ? 'locked' : (($lockedCount > 0) ? 'partial' : 'unlocked');
+   	    $unlockedCount = $totalCount - $lockedCount;
+   	    
+   	    // Determine status
+   	    $status = 'unlocked';
+   	    if($lockedCount == $totalCount && $totalCount > 0) {
+   	        $status = 'locked';
+   	    } elseif($lockedCount > 0 && $unlockedCount > 0) {
+   	        $status = 'partial';
    	    }
+   	    
+   	    // Get month name
+   	    $monthName = '';
+   	    foreach($data['Months'] as $m) {
+   	        if($m->id == $period->month) {
+   	            $monthName = $m->month;
+   	            break;
+   	        }
+   	    }
+   	    
+   	    $data['Periods'][] = [
+   	        'year' => $period->year,
+   	        'month' => $period->month,
+   	        'monthName' => $monthName,
+   	        'totalCount' => $totalCount,
+   	        'lockedCount' => $lockedCount,
+   	        'unlockedCount' => $unlockedCount,
+   	        'status' => $status
+   	    ];
    	}
 
 	return view('Payroll.payrolllock', $data);
