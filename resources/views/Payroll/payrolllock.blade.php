@@ -86,6 +86,21 @@
                                                                 </button>
                                                             @endif
                                                         </form>
+                                                        @if ($period['status'] != 'locked')
+                                                            <form method="post"
+                                                                style="display: inline-block; margin-left: 5px;">
+                                                                {{ csrf_field() }}
+                                                                <input type="hidden" name="year"
+                                                                    value="{{ $period['year'] }}">
+                                                                <input type="hidden" name="month"
+                                                                    value="{{ $period['month'] }}">
+                                                                <button class="btn btn-sm btn-secondary" type="submit"
+                                                                    name="trash"
+                                                                    onclick="return confirm('Are you sure you want to delete all records for {{ $period['year'] }} - {{ $period['monthName'] }}? This action cannot be undone!');">
+                                                                    <i class="fe fe-trash-2"></i> Trash
+                                                                </button>
+                                                            </form>
+                                                        @endif
                                                     </td>
                                                 </tr>
                                             @endforeach

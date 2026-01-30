@@ -467,6 +467,28 @@ class Payroll extends Basefunction
    	        }
    	    }
    	    
+   	    // Check if there's already an unlocked period (excluding the current period being unlocked)
+   	    // Get all periods with unlocked records
+   	    $allUnlockedPeriods = DB::table('tblpayroll_payment')
+   	        ->where('isLocked', 0)
+   	        ->select('year', 'month')
+   	        ->distinct()
+   	        ->get();
+   	    
+   	    // Check if any period (other than the one being unlocked) has unlocked records
+   	    foreach($allUnlockedPeriods as $unlockedPeriod) {
+   	        if($unlockedPeriod->year != $year || $unlockedPeriod->month != $month) {
+   	            $existingMonthName = '';
+   	            foreach($data['Months'] as $m) {
+   	                if($m->id == $unlockedPeriod->month) {
+   	                    $existingMonthName = $m->month;
+   	                    break;
+   	                }
+   	            }
+   	            return back()->with('error_message', 'Cannot unlock this period. There is already an unlocked period (' . $unlockedPeriod->year . ' - ' . $existingMonthName . '). Please lock that period first before unlocking another one.');
+   	        }
+   	    }
+   	    
    	    // Update all records matching year and month to isLocked=0
    	    $updated = DB::table('tblpayroll_payment')
    	        ->where('year', $year)
@@ -474,6 +496,49 @@ class Payroll extends Basefunction
    	        ->update(['isLocked' => 0]);
    	    
    	    return back()->with('message','Payroll successfully unlocked for ' . $year . ' - ' . $monthName . '. ' . $updated . ' record(s) updated.'  );
+   	}
+
+   	// Trash/Delete payroll period
+   	if ( isset( $_POST['trash'] ) ) {
+   	    $this->validate($request, [
+              'year'      => 'required|string',
+              'month'      => 'required|string',
+            ]);
+   	    $year = $data['year'];
+   	    $month = $data['month'];
+   	    
+   	    // Get month name
+   	    $monthName = '';
+   	    foreach($data['Months'] as $m) {
+   	        if($m->id == $month) {
+   	            $monthName = $m->month;
+   	            break;
+   	        }
+   	    }
+   	    
+   	    // Check if period is locked
+   	    $lockedCount = DB::table('tblpayroll_payment')
+   	        ->where('year', $year)
+   	        ->where('month', $month)
+   	        ->where('isLocked', 1)
+   	        ->count();
+   	    
+   	    $totalCount = DB::table('tblpayroll_payment')
+   	        ->where('year', $year)
+   	        ->where('month', $month)
+   	        ->count();
+   	    
+   	    if($lockedCount > 0 || ($totalCount > 0 && $lockedCount == $totalCount)) {
+   	        return back()->with('error_message', 'Cannot delete this period. The period (' . $year . ' - ' . $monthName . ') is locked. Please unlock it first before deleting.');
+   	    }
+   	    
+   	    // Delete all records matching year and month
+   	    $deleted = DB::table('tblpayroll_payment')
+   	        ->where('year', $year)
+   	        ->where('month', $month)
+   	        ->delete();
+   	    
+   	    return back()->with('message','Payroll period (' . $year . ' - ' . $monthName . ') successfully deleted. ' . $deleted . ' record(s) removed.'  );
    	}
 
    	// Get all unique periods with their lock status
