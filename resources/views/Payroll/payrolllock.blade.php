@@ -38,8 +38,7 @@
                                             <th>Year</th>
                                             <th>Month</th>
                                             <th>Total Records</th>
-                                            <th>Locked</th>
-                                            <th>Unlocked</th>
+
                                             <th>Status</th>
                                             <th>Action</th>
                                         </tr>
@@ -54,15 +53,14 @@
                                                     <td>{{ $period['year'] }}</td>
                                                     <td>{{ $period['monthName'] }}</td>
                                                     <td>{{ $period['totalCount'] }}</td>
-                                                    <td>{{ $period['lockedCount'] }}</td>
-                                                    <td>{{ $period['unlockedCount'] }}</td>
+
                                                     <td>
                                                         @if ($period['status'] == 'locked')
                                                             <span class="badge badge-danger">Locked</span>
                                                         @elseif($period['status'] == 'partial')
                                                             <span class="badge badge-warning">Partial</span>
                                                         @else
-                                                            <span class="badge badge-success">Unlocked</span>
+                                                            <span class="badge badge-success">Open</span>
                                                         @endif
                                                     </td>
                                                     <td>
