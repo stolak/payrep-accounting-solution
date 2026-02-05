@@ -883,7 +883,7 @@ Public function RefBatch() {
 	    FROM `tblpayroll_salary_new_chart` where 1 order by `grade` ");
 	   return DB::table ('tblpayroll_salary_new_chart')->orderBy('grade')->get();
 	}
-    Public function VariableValue($year, $month, $variable, $staffid,$grade,$step=1) {
+    Public function VariableValue($year, $month, $variable, $staffid, $grade, $step=1) {
         $amount=0;
         
         $checkCV= DB::Select("SELECT * FROM `tblstaff_cv` WHERE `staffid`='$staffid' and `ref_code`='$variable' ");
@@ -903,9 +903,15 @@ Public function RefBatch() {
 		}
 		
         } else{
-        
-        $dat=DB::Select("SELECT `$variable` as amount FROM `tblpayroll_salary_new_chart` WHERE `grade`='$grade' and `step`='$step' ");
-        if($dat) $amount=$dat[0]->amount;
+           //check if the variable is a function control variable
+        //    $isFunction=DB::Select("SELECT `isFunction` FROM `tblpayroll_variable` WHERE `id`='$variable' and `isFunction`=1");
+        //    if($isFunction) $amount=$this->FunctionControlVariableValue($year, $month, $variable, $staffid, $grade, $step);
+        //    else{
+        //     $dat=DB::Select("SELECT `$variable` as amount FROM `tblpayroll_salary_new_chart` WHERE `grade`='$grade' and `step`='$step' ");
+        //     if($dat) $amount=$dat[0]->amount;
+        //    }
+        	$dat=DB::Select("SELECT `$variable` as amount FROM `tblpayroll_salary_new_chart` WHERE `grade`='$grade' and `step`='$step' ");
+        	if($dat) $amount=$dat[0]->amount;
         }
 	    return $amount;
         

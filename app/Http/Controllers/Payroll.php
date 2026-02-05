@@ -193,6 +193,7 @@ class Payroll extends Basefunction
    	$data['taxable']=$request->input('taxable');
    	$data['isPensionable']=$request->input('isPensionable');
    	$data['isFunction']=$request->input('isFunction');
+   	$data['percent']=$request->input('percent');
    	$data['rank']=$request->input('rank');
    	
    	if ( isset( $_POST['addnew'] ) ) {
@@ -207,8 +208,22 @@ class Payroll extends Basefunction
 	          'istaxable' => ($data['taxable']=='on')? 1:0 ,
 	          'isPensionable' => ($data['isPensionable']=='on')? 1:0 ,
 	          'isFunction' => ($data['isFunction']=='on')? 1:0 ,
+	          'percent' => $data['percent'] ? $data['percent'] : 0 ,
 	          'rank' => $data['rank'] ,
 	        ]);
+	        
+	        // Save function control variables if isFunction is true and variable_type is 2 (deduction)
+	        if(($data['isFunction']=='on') && $data['variabletype']==2 && $request->has('selected_earnings')) {
+	            $selectedEarnings = $request->input('selected_earnings');
+	            if(is_array($selectedEarnings)) {
+	                foreach($selectedEarnings as $earningId) {
+	                    DB::table('functions_control_variables')->insert([
+	                        'control_variabeId' => $id,
+	                        'added_control_variableId' => $earningId
+	                    ]);
+	                }
+	            }
+	        }
     	   $newfield=$data['variabletype']."_".$id;
     	   DB::table('tblpayroll_variable')->where('id',$id)->update([ 'ref_code' => $newfield ]);
     	   if(!Schema::hasColumn('tblpayroll_salary_new_chart', $newfield)) $this->NewVariable( $newfield);
@@ -225,9 +240,35 @@ class Payroll extends Basefunction
     	          'istaxable' => ($data['taxable']=='on')? 1:0 ,
     	          'isPensionable' => ($data['isPensionable']=='on')? 1:0 ,
     	          'isFunction' => ($data['isFunction']=='on')? 1:0 ,
+    	          'percent' => $data['percent'] ? $data['percent'] : 0 ,
     	          'status' => ($request->input('status')=='on')? 1:0 ,
     	          'rank' => $data['rank'] ,
     	        ]);
+    	        
+    	        // Update function control variables if isFunction is true and variable_type is 2 (deduction)
+    	        $variableId = $request->input('id');
+    	        $variableInfo = DB::table('tblpayroll_variable')->where('id', $variableId)->first();
+    	        if($variableInfo && ($data['isFunction']=='on') && $variableInfo->variable_type==2) {
+    	            // Delete existing selections
+    	            DB::table('functions_control_variables')->where('control_variabeId', $variableId)->delete();
+    	            
+    	            // Insert new selections
+    	            if($request->has('selected_earnings')) {
+    	                $selectedEarnings = $request->input('selected_earnings');
+    	                if(is_array($selectedEarnings)) {
+    	                    foreach($selectedEarnings as $earningId) {
+    	                        DB::table('functions_control_variables')->insert([
+    	                            'control_variabeId' => $variableId,
+    	                            'added_control_variableId' => $earningId
+    	                        ]);
+    	                    }
+    	                }
+    	            }
+    	        } else {
+    	            // If isFunction is false, delete all related records
+    	            DB::table('functions_control_variables')->where('control_variabeId', $variableId)->delete();
+    	        }
+    	        
     	        return back()->with('message','record successfully updated.'  );
          }
         if ( isset( $_POST['del'] ) ) {
@@ -288,9 +329,32 @@ class Payroll extends Basefunction
     
    $data['PayrollVariable'] = $this->AllPayrollVariable($data['variabletype']);
     $data['VariableType'] = $this->VariableType();
+    // Get statutory earnings for function control variables
+    $data['StatutoryEarnings'] = DB::table('tblpayroll_variable')
+        ->where('variable_type', 1)
+        ->where('statutory', 1)
+        ->where('status', 1)
+        ->orderBy('rank')
+        ->get();
 	return view('Payroll.variable_definition', $data);
 	    
    }
+   
+   public function GetFunctionControlVariables(Request $request)
+   {
+       $controlVariableId = $request->input('control_variable_id');
+       
+       $selectedEarnings = DB::table('functions_control_variables')
+           ->where('control_variabeId', $controlVariableId)
+           ->pluck('added_control_variableId')
+           ->toArray();
+       
+       return response()->json([
+           'success' => true,
+           'selectedEarnings' => $selectedEarnings
+       ]);
+   }
+   
    public function StaffControlVariable(Request $request)
    {
    	$data['variabletype']=$request->input('variabletype');

@@ -79,7 +79,7 @@
 												<label>Function?</label>
 												<br>
 												<label>
-													<input type="checkbox" data-toggle="toggle" data-on="Yes" data-off="No" name="isFunction">
+													<input type="checkbox" data-toggle="toggle" data-on="Yes" data-off="No" name="isFunction" id="isFunction" onchange="toggleFunctionCard()">
 												</label>
 											</div>
 											<div class="col-md-2">
@@ -91,6 +91,43 @@
 														<option value="{{ $i }}" {{ (old('rank') == $i ||($rank) == $i  ) ? 'selected':'' }}>{{$i}}</option>
 														@endfor
 													</select>
+												</div>
+											</div>
+										</div>
+										
+										<!-- Function Card - Shows when isFunction is true -->
+										<div id="function-card" style="display: none;" class="mt-3">
+											<div class="card">
+												<div class="card-header">
+													<h5 class="card-title">Function Settings</h5>
+												</div>
+												<div class="card-body">
+													<div class="row">
+														<div class="col-md-4">
+															<div class="form-group">
+																<label>Percentage (%)</label>
+																<input type="number" step="0.01" min="0" max="100" class="form-control" name="percent" id="percent" value="{{ old('percent', $percent ?? '') }}">
+															</div>
+														</div>
+													</div>
+													<!-- Statutory Earnings List - Only for Deductions -->
+													<div id="statutory-earnings-section" style="display: none;">
+														<div class="row">
+															<div class="col-md-12">
+																<label><strong>Select Statutory Earnings:</strong></label>
+																<div class="form-group" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+																	@foreach($StatutoryEarnings as $earning)
+																	<div class="form-check">
+																		<input class="form-check-input" type="checkbox" name="selected_earnings[]" value="{{ $earning->id }}" id="earning_{{ $earning->id }}">
+																		<label class="form-check-label" for="earning_{{ $earning->id }}">
+																			{{ $earning->variable }}
+																		</label>
+																	</div>
+																	@endforeach
+																</div>
+															</div>
+														</div>
+													</div>
 												</div>
 											</div>
 										</div>
@@ -147,7 +184,7 @@
 													<td>{{$list->rank}}</td>
 													<td>{{$list->variablestatus}}</td>
 													<td>
-														<a class="btn btn-sm bg-success-light" href="javascript: editfunc('{{$list->id}}','{{$list->variabletype}}','{{$list->variable}}','{{$list->statutory}}','{{$list->istaxable}}','{{$list->isPensionable}}','{{$list->isFunction}}','{{$list->status}}','{{$list->rank}}','{{$list->variable_type}}')">
+														<a class="btn btn-sm bg-success-light" href="javascript: editfunc('{{$list->id}}','{{$list->variabletype}}','{{$list->variable}}','{{$list->statutory}}','{{$list->istaxable}}','{{$list->isPensionable}}','{{$list->isFunction}}','{{$list->status}}','{{$list->rank}}','{{$list->variable_type}}','{{$list->percent ?? 0}}')">
 															<i class="fe fe-pencil"></i>
 														</a>
 														<a class="btn btn-sm bg-danger-light" href="javascript: deletefunc('{{$list->id}}','{{$list->variabletype}}')">
@@ -214,7 +251,7 @@
 											<label>Function?</label>
 											<br>
 											<label>
-												<input type="checkbox" data-toggle="toggle" data-on="Yes" data-off="No" name="isFunction" id="e_isFunction">
+												<input type="checkbox" data-toggle="toggle" data-on="Yes" data-off="No" name="isFunction" id="e_isFunction" onchange="toggleEditFunctionCard()">
 											</label>
 										</div>
 									</div>
@@ -238,6 +275,43 @@
 										</div>
 									</div>
 							    </div>
+							    
+							    <!-- Edit Function Card - Shows when isFunction is true -->
+							    <div id="e_function-card" style="display: none;" class="mt-3">
+									<div class="card">
+										<div class="card-header">
+											<h5 class="card-title">Function Settings</h5>
+										</div>
+										<div class="card-body">
+											<div class="row">
+												<div class="col-md-4">
+													<div class="form-group">
+														<label>Percentage (%)</label>
+														<input type="number" step="0.01" min="0" max="100" class="form-control" name="percent" id="e_percent">
+													</div>
+												</div>
+											</div>
+											<!-- Statutory Earnings List - Only for Deductions -->
+											<div id="e_statutory-earnings-section" style="display: none;">
+												<div class="row">
+													<div class="col-md-12">
+														<label><strong>Select Statutory Earnings:</strong></label>
+														<div class="form-group" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+															@foreach($StatutoryEarnings as $earning)
+															<div class="form-check">
+																<input class="form-check-input" type="checkbox" name="selected_earnings[]" value="{{ $earning->id }}" id="e_earning_{{ $earning->id }}">
+																<label class="form-check-label" for="e_earning_{{ $earning->id }}">
+																	{{ $earning->variable }}
+																</label>
+															</div>
+															@endforeach
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
 							   
 								<input type="hidden" id="e_id" name="id" >
 								<div class="form-content p-2">
@@ -302,11 +376,15 @@ label {
 <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
 <script>
 
-    function editfunc(id,vtype,variable,statutory,taxable,isPensionable,isFunction,status,rank,variable_type)
+    var currentVariableType = ''; // Store current variable_type for edit
+    
+    function editfunc(id,vtype,variable,statutory,taxable,isPensionable,isFunction,status,rank,variable_type,percent)
     {
         document.getElementById('e_id').value = id;
           document.getElementById('e_v_type').value = vtype;
           document.getElementById('e_variable').value = variable;
+          document.getElementById('e_percent').value = percent || 0;
+          currentVariableType = variable_type; // Store variable_type
           
           $('#e_statutory').bootstrapToggle('off');
           $('#e_isFunction').bootstrapToggle('off');
@@ -331,7 +409,71 @@ label {
             $('#e_isPensionable').bootstrapToggle('off');
             if(isPensionable==1)$('#e_isPensionable').bootstrapToggle('on');
             }
+            
+            // Load existing selected earnings
+            loadSelectedEarnings(id);
+            
+            // Toggle function card based on isFunction and variable_type
+            toggleEditFunctionCard();
+            
         $("#edit_details").modal('show')
+    }
+    
+    function loadSelectedEarnings(controlVariableId) {
+        // Clear all checkboxes first
+        $('input[name="selected_earnings[]"]').prop('checked', false);
+        
+        // Fetch selected earnings via AJAX
+        $.ajax({
+            url: '/get-function-control-variables',
+            method: 'GET',
+            data: { control_variable_id: controlVariableId },
+            success: function(response) {
+                if(response.success && response.selectedEarnings) {
+                    response.selectedEarnings.forEach(function(earningId) {
+                        $('#e_earning_' + earningId).prop('checked', true);
+                    });
+                }
+            },
+            error: function() {
+                console.log('Error loading selected earnings');
+            }
+        });
+    }
+    
+    function toggleFunctionCard() {
+        var isFunctionChecked = $('#isFunction').prop('checked');
+        var variableType = $('#variabletype').val();
+        
+        if(isFunctionChecked) {
+            $('#function-card').show();
+            // Show statutory earnings section only if it's a deduction (variable_type = 2)
+            if(variableType == 2) {
+                $('#statutory-earnings-section').show();
+            } else {
+                $('#statutory-earnings-section').hide();
+            }
+        } else {
+            $('#function-card').hide();
+            $('#statutory-earnings-section').hide();
+        }
+    }
+    
+    function toggleEditFunctionCard() {
+        var isFunctionChecked = $('#e_isFunction').prop('checked');
+        
+        if(isFunctionChecked) {
+            $('#e_function-card').show();
+            // Show statutory earnings section only if it's a deduction (variable_type = 2)
+            if(currentVariableType == 2) {
+                $('#e_statutory-earnings-section').show();
+            } else {
+                $('#e_statutory-earnings-section').hide();
+            }
+        } else {
+            $('#e_function-card').hide();
+            $('#e_statutory-earnings-section').hide();
+        }
     }
    function deletefunc(id,item)
     {
@@ -365,8 +507,24 @@ label {
         }else{
           document.getElementById('taxable-content').innerHTML='';  
         }
+        
+        // Update function card based on variable type
+        toggleFunctionCard();
        //document.forms["noform"].submit();
     }
+    
+    // Initialize on page load
+    $(document).ready(function() {
+        // Check if isFunction is checked on page load
+        if($('#isFunction').prop('checked')) {
+            toggleFunctionCard();
+        }
+        
+        // Listen to variable type changes
+        $('#variabletype').on('change', function() {
+            toggleFunctionCard();
+        });
+    });
              
 </script>
 @endsection
