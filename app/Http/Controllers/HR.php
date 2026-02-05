@@ -234,13 +234,25 @@ class HR extends Basefunction
    {
     
    	$data['grade']=$request->input('grade');
+   	$data['lower_salary']=$request->input('lower_salary');
+   	$data['upper_salary']=$request->input('upper_salary');
    	$data['id']=$request->input('id');
    	if ( isset( $_POST['addnew'] ) ) {
             $this->validate($request, [
               'grade'      => 'required|string|unique:tblstaff_grade_level,grade',
+              'lower_salary' => 'nullable|numeric|min:0',
+              'upper_salary' => 'nullable|numeric|min:0',
             ]);
+            
+            // Validate that upper_salary is greater than or equal to lower_salary
+            if($data['upper_salary'] && $data['lower_salary'] && $data['upper_salary'] < $data['lower_salary']) {
+                return back()->with('error_message', 'Upper salary must be greater than or equal to lower salary.')->withInput();
+            }
+            
             DB::table('tblstaff_grade_level')->insert([
     	          'grade' => $data['grade'] ,
+    	          'lower_salary' => $data['lower_salary'] ? $data['lower_salary'] : 0,
+    	          'upper_salary' => $data['upper_salary'] ? $data['upper_salary'] : 0,
     	        ]);
     	        return back()->with('message','New record successfully added.'  );
     	         //return back()->withInput();
@@ -248,10 +260,19 @@ class HR extends Basefunction
          if ( isset( $_POST['update'] ) ) {
             $this->validate($request, [
               'grade'      => 'required|string|unique:tblstaff_grade_level,grade,'.$request->input('id'),
+              'lower_salary' => 'nullable|numeric|min:0',
+              'upper_salary' => 'nullable|numeric|min:0',
             ]);
+            
+            // Validate that upper_salary is greater than or equal to lower_salary
+            if($data['upper_salary'] && $data['lower_salary'] && $data['upper_salary'] < $data['lower_salary']) {
+                return back()->with('error_message', 'Upper salary must be greater than or equal to lower salary.')->withInput();
+            }
 
              DB::table('tblstaff_grade_level')->where('id',$data['id'])->update([
     	          'grade' => $data['grade'] ,
+    	          'lower_salary' => $data['lower_salary'] ? $data['lower_salary'] : 0,
+    	          'upper_salary' => $data['upper_salary'] ? $data['upper_salary'] : 0,
     	        ]);
     	        return back()->with('message','record successfully updated.'  );
     	         return back()->withInput();
