@@ -833,6 +833,14 @@ Public function RefBatch() {
 	    left JOIN tblstaff_grade_level on tblstaff_grade_level.id =tblstaff.grade 
 	    where tblstaff.id<>0");
 	}
+
+	Public function StaffsForSalaryComputation($department,$grade) {
+	    return DB::Select("SELECT tblstaff.*,tbldepartment.department as departments,
+	    tblstaff_grade_level.grade as grades
+	    FROM `tblstaff` left JOIN tbldepartment on tbldepartment.id=tblstaff.department 
+	    left JOIN tblstaff_grade_level on tblstaff_grade_level.id =tblstaff.grade 
+	    where tblstaff.id<>0 and tblstaff.status='Active'");
+	}
 	Public function VariableType() {
 	    return DB::Select("SELECT * FROM `tblvariable_type`");
 	}

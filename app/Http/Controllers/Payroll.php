@@ -89,7 +89,7 @@ class Payroll extends Basefunction
         return back()->with('error_message', 'This period is already locked salary cannot be computer for this period.'); 
       }
    	    DB::delete("DELETE FROM `tblstaff_monthly_cv` WHERE `year`='$year' and `month`='$month'");
-           $data['Staffs'] = $this->Staffs('','');
+           $data['Staffs'] = $this->StaffsForSalaryComputation('','');
            DB::delete("DELETE FROM `tblpayroll_payment` WHERE `month`='$month' and `year`='$year'");
             DB::delete("DELETE FROM `tblpayroll_variable_monthly` WHERE `month`='$month' and `year`='$year'");
             $curVariable= DB::Select("SELECT * FROM `tblpayroll_variable` WHERE `status`=1 ");

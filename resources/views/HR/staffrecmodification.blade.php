@@ -39,7 +39,7 @@
                                     </div>
                                     <div class="col-md-3">
                                         <div class="form-group">
-                                            <select class="select2  name="staffid" form-control" id="staffid"
+                                            <select class="select2   form-control" id="staffid" name="staffid"
                                                 onchange="Reload()">
                                                 <option value="">--Select--</option>
                                                 @foreach ($Staffs as $list)
