@@ -66,7 +66,21 @@
 													<input type="checkbox" data-toggle="toggle" data-on="Yes" data-off="No" name="taxable" id="taxable" >
 												</label>
 											</div>
+											<div class="col-md-2">
+												<label>Pensionable?</label>
+												<br>
+												<label>
+													<input type="checkbox" data-toggle="toggle" data-on="Yes" data-off="No" name="isPensionable" id="isPensionable">
+												</label>
+											</div>
 											@endif
+											</div>
+											<div class="col-md-2">
+												<label>Function?</label>
+												<br>
+												<label>
+													<input type="checkbox" data-toggle="toggle" data-on="Yes" data-off="No" name="isFunction">
+												</label>
 											</div>
 											<div class="col-md-2">
 											    <div class="form-group">
@@ -108,6 +122,8 @@
 													<th rowspan="1">Payroll Variable</th>
 													<th rowspan="1">Statutory</th>
 													<th rowspan="1">Is Taxable</th>
+													<th rowspan="1">Pensionable</th>
+													<th rowspan="1">Function</th>
 													<th rowspan="1">Ordering Rank</th>
 													<th rowspan="1">Status</th>
 													<th rowspan="1">Action</th>
@@ -126,10 +142,12 @@
 													<td>{{$list->variable}}</td>
 													<td>{{$list->statutorys}}</td>
 													<td>{{$list->istaxables}}</td>
+													<td>{{$list->isPensionables ?? ($list->isPensionable == 1 ? 'Yes' : 'No')}}</td>
+													<td>{{$list->isFunctions ?? ($list->isFunction == 1 ? 'Yes' : 'No')}}</td>
 													<td>{{$list->rank}}</td>
 													<td>{{$list->variablestatus}}</td>
 													<td>
-														<a class="btn btn-sm bg-success-light" href="javascript: editfunc('{{$list->id}}','{{$list->variabletype}}','{{$list->variable}}','{{$list->statutory}}','{{$list->istaxable}}','{{$list->status}}','{{$list->rank}}','{{$list->variable_type}}')">
+														<a class="btn btn-sm bg-success-light" href="javascript: editfunc('{{$list->id}}','{{$list->variabletype}}','{{$list->variable}}','{{$list->statutory}}','{{$list->istaxable}}','{{$list->isPensionable}}','{{$list->isFunction}}','{{$list->status}}','{{$list->rank}}','{{$list->variable_type}}')">
 															<i class="fe fe-pencil"></i>
 														</a>
 														<a class="btn btn-sm bg-danger-light" href="javascript: deletefunc('{{$list->id}}','{{$list->variabletype}}')">
@@ -191,7 +209,16 @@
 									</div>
 									<div id="e_content">
 									</div>
-									<div class="col-12 col-sm-4">
+									<div class="col-12 col-sm-3">
+										<div class="form-group">
+											<label>Function?</label>
+											<br>
+											<label>
+												<input type="checkbox" data-toggle="toggle" data-on="Yes" data-off="No" name="isFunction" id="e_isFunction">
+											</label>
+										</div>
+									</div>
+									<div class="col-12 col-sm-3">
 										<div class="form-group">
 											<label>Status</label>
 											<br>
@@ -275,26 +302,34 @@ label {
 <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
 <script>
 
-    function editfunc(id,vtype,variable,statutory,taxable,status,rank,variable_type)
+    function editfunc(id,vtype,variable,statutory,taxable,isPensionable,isFunction,status,rank,variable_type)
     {
         document.getElementById('e_id').value = id;
           document.getElementById('e_v_type').value = vtype;
           document.getElementById('e_variable').value = variable;
           
           $('#e_statutory').bootstrapToggle('off');
+          $('#e_isFunction').bootstrapToggle('off');
           $('#e_status').bootstrapToggle('off');
           if(statutory==1)$('#e_statutory').bootstrapToggle('on');
+          if(isFunction==1)$('#e_isFunction').bootstrapToggle('on');
           if(status==1)$('#e_status').bootstrapToggle('on');
             document.getElementById('e_rank').value = rank;
             document.getElementById('e_content').innerHTML ='';
             if(variable_type==1){
-            document.getElementById('e_content').innerHTML ='<div class="col-12 col-sm-3"><div class="form-group"><label>Taxable?</label><br><label><input type="checkbox" data-toggle="toggle" data-on="Yes" data-off="No" name="taxable" id="e_taxable"></label></div></div>';
+            document.getElementById('e_content').innerHTML ='<div class="col-12 col-sm-3"><div class="form-group"><label>Taxable?</label><br><label><input type="checkbox" data-toggle="toggle" data-on="Yes" data-off="No" name="taxable" id="e_taxable"></label></div></div><div class="col-12 col-sm-3"><div class="form-group"><label>Pensionable?</label><br><label><input type="checkbox" data-toggle="toggle" data-on="Yes" data-off="No" name="isPensionable" id="e_isPensionable"></label></div></div>';
             $('#e_taxable').bootstrapToggle({
               on: 'Yes',
               off: 'No'
             });
             $('#e_taxable').bootstrapToggle('off');
             if(taxable==1)$('#e_taxable').bootstrapToggle('on');
+            $('#e_isPensionable').bootstrapToggle({
+              on: 'Yes',
+              off: 'No'
+            });
+            $('#e_isPensionable').bootstrapToggle('off');
+            if(isPensionable==1)$('#e_isPensionable').bootstrapToggle('on');
             }
         $("#edit_details").modal('show')
     }
@@ -318,8 +353,12 @@ label {
     {
         //alert("jejej");
         if(document.getElementById('variabletype').value==1){
-          document.getElementById('taxable-content').innerHTML = '<div class="col-md-2"><label>Taxable?</label><br><label><input type="checkbox" data-toggle="toggle" data-on="Yes" data-off="No" name="taxable" id="taxable" ></label></div>';   
+          document.getElementById('taxable-content').innerHTML = '<div class="col-md-2"><label>Taxable?</label><br><label><input type="checkbox" data-toggle="toggle" data-on="Yes" data-off="No" name="taxable" id="taxable" ></label></div><div class="col-md-2"><label>Pensionable?</label><br><label><input type="checkbox" data-toggle="toggle" data-on="Yes" data-off="No" name="isPensionable" id="isPensionable"></label></div>';   
             $('#taxable').bootstrapToggle({
+              on: 'Yes',
+              off: 'No'
+            });
+            $('#isPensionable').bootstrapToggle({
               on: 'Yes',
               off: 'No'
             });

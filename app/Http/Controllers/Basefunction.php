@@ -865,6 +865,8 @@ Public function RefBatch() {
 	    ,(SELECT `status` FROM `tblstatus` WHERE `tblstatus`.`id`= tblpayroll_variable.status) as variablestatus
 	    ,(SELECT `yn` FROM `tblyesno` WHERE `tblyesno`.`id`= tblpayroll_variable.istaxable) as istaxables
 	    ,(SELECT `yn` FROM `tblyesno` WHERE `tblyesno`.`id`= tblpayroll_variable.statutory) as statutorys
+	    ,(SELECT `yn` FROM `tblyesno` WHERE `tblyesno`.`id`= tblpayroll_variable.isPensionable) as isPensionables
+	    ,(SELECT `yn` FROM `tblyesno` WHERE `tblyesno`.`id`= tblpayroll_variable.isFunction) as isFunctions
 	    FROM `tblpayroll_variable` where $qt  order by variable_type, `rank` ");
 	}
 	Public function EarningVariable() {

@@ -191,6 +191,8 @@ class Payroll extends Basefunction
    	$data['variable']=$request->input('variable');
    	$data['statutory']=$request->input('statutory');
    	$data['taxable']=$request->input('taxable');
+   	$data['isPensionable']=$request->input('isPensionable');
+   	$data['isFunction']=$request->input('isFunction');
    	$data['rank']=$request->input('rank');
    	
    	if ( isset( $_POST['addnew'] ) ) {
@@ -203,6 +205,8 @@ class Payroll extends Basefunction
 	          'variable' => $data['variable'] ,
 	          'statutory' => ($data['statutory']=='on')? 1:0 ,
 	          'istaxable' => ($data['taxable']=='on')? 1:0 ,
+	          'isPensionable' => ($data['isPensionable']=='on')? 1:0 ,
+	          'isFunction' => ($data['isFunction']=='on')? 1:0 ,
 	          'rank' => $data['rank'] ,
 	        ]);
     	   $newfield=$data['variabletype']."_".$id;
@@ -219,6 +223,8 @@ class Payroll extends Basefunction
     	          'variable' => $data['variable'] ,
     	          'statutory' => ($data['statutory']=='on')? 1:0 ,
     	          'istaxable' => ($data['taxable']=='on')? 1:0 ,
+    	          'isPensionable' => ($data['isPensionable']=='on')? 1:0 ,
+    	          'isFunction' => ($data['isFunction']=='on')? 1:0 ,
     	          'status' => ($request->input('status')=='on')? 1:0 ,
     	          'rank' => $data['rank'] ,
     	        ]);
