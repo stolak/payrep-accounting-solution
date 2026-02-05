@@ -134,12 +134,29 @@
                                             <div class="col-md-3">
                                                 <div class="form-group">
                                                     <label>Grade</label>
-                                                    <select class="form-control" name="grade" id="grade">
+                                                    <select class="form-control" name="grade" id="grade" onchange="updateSalaryRange()">
+                                                        <option value="">-select-</option>
                                                         @foreach ($Grade as $list)
-                                                            <option value="{{ $list->id }}">{{ $list->grade }}
+                                                            <option value="{{ $list->id }}" 
+                                                                data-lower-salary="{{ $list->lower_salary ?? 0 }}"
+                                                                data-upper-salary="{{ $list->upper_salary ?? 0 }}">
+                                                                {{ $list->grade }}
                                                             </option>
                                                         @endforeach
                                                     </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label>Offer Amount</label>
+                                                    <input type="number" step="0.01" class="form-control" 
+                                                        value="{{ old('offer_amount') }}" 
+                                                        name="offer_amount" 
+                                                        id="offer_amount"
+                                                        min="0"
+                                                        onchange="validateOfferAmount()">
+                                                    <small class="text-muted" id="salary_range_hint" style="display: none;"></small>
+                                                    <small class="text-danger" id="offer_amount_error" style="display: none;"></small>
                                                 </div>
                                             </div>
                                         </div>
@@ -232,6 +249,79 @@
             }
             reader.readAsDataURL(event.target.files[0]);
         }
+
+        function updateSalaryRange() {
+            var gradeSelect = document.getElementById('grade');
+            var selectedOption = gradeSelect.options[gradeSelect.selectedIndex];
+            var lowerSalary = parseFloat(selectedOption.getAttribute('data-lower-salary')) || 0;
+            var upperSalary = parseFloat(selectedOption.getAttribute('data-upper-salary')) || 0;
+            var hintElement = document.getElementById('salary_range_hint');
+            var errorElement = document.getElementById('offer_amount_error');
+            
+            if (gradeSelect.value && upperSalary > 0) {
+                hintElement.textContent = 'Salary range: ' + formatCurrency(lowerSalary) + ' - ' + formatCurrency(upperSalary);
+                hintElement.style.display = 'block';
+                errorElement.style.display = 'none';
+            } else {
+                hintElement.style.display = 'none';
+            }
+            
+            // Validate current offer amount if it exists
+            validateOfferAmount();
+        }
+
+        function validateOfferAmount() {
+            var gradeSelect = document.getElementById('grade');
+            var offerAmountInput = document.getElementById('offer_amount');
+            var errorElement = document.getElementById('offer_amount_error');
+            var hintElement = document.getElementById('salary_range_hint');
+            
+            if (!gradeSelect.value) {
+                errorElement.style.display = 'none';
+                return;
+            }
+            
+            var selectedOption = gradeSelect.options[gradeSelect.selectedIndex];
+            var lowerSalary = parseFloat(selectedOption.getAttribute('data-lower-salary')) || 0;
+            var upperSalary = parseFloat(selectedOption.getAttribute('data-upper-salary')) || 0;
+            var offerAmount = parseFloat(offerAmountInput.value) || 0;
+            
+            if (offerAmount > 0 && upperSalary > 0) {
+                if (offerAmount < lowerSalary || offerAmount > upperSalary) {
+                    errorElement.textContent = 'Offer amount must be between ' + formatCurrency(lowerSalary) + ' and ' + formatCurrency(upperSalary);
+                    errorElement.style.display = 'block';
+                    offerAmountInput.setCustomValidity('Offer amount must be within the grade salary range');
+                } else {
+                    errorElement.style.display = 'none';
+                    offerAmountInput.setCustomValidity('');
+                }
+            } else {
+                errorElement.style.display = 'none';
+                offerAmountInput.setCustomValidity('');
+            }
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        // Validate on form submit
+        document.addEventListener('DOMContentLoaded', function() {
+            var form = document.querySelector('form[method="post"]');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    validateOfferAmount();
+                    var errorElement = document.getElementById('offer_amount_error');
+                    if (errorElement.style.display === 'block') {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+            }
+        });
     </script>
 @endsection
 <!-- /Page Wrapper -->

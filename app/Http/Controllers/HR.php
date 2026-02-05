@@ -26,6 +26,7 @@ class HR extends Basefunction
    	$data['address']=$request->input('address');
    	$data['department']=$request->input('department');
    	$data['grade']=$request->input('grade');
+   	$data['offer_amount']=$request->input('offer_amount');
    	$data['bank']=$request->input('bank');
    	$data['accountno']=$request->input('accountno');
 
@@ -36,9 +37,26 @@ class HR extends Basefunction
               'fname'      => 'required|string',
               'lname'      => 'required|string',
               'grade'      => 'required|string',
+              'offer_amount' => 'nullable|numeric|min:0',
               // 'bank'      => 'required|string',
               // 'phoneno'      => 'required|string',
             ]);
+            
+            // Validate offer_amount against grade's salary range
+            if($data['offer_amount']) {
+                $gradeInfo = DB::table('tblstaff_grade_level')
+                    ->where('id', $data['grade'])
+                    ->first();
+                
+                if($gradeInfo) {
+                    $lowerSalary = $gradeInfo->lower_salary ?? 0;
+                    $upperSalary = $gradeInfo->upper_salary ?? 0;
+                    
+                    if($upperSalary > 0 && ($data['offer_amount'] < $lowerSalary || $data['offer_amount'] > $upperSalary)) {
+                        return back()->with('error_message', 'Offer amount must be between ' . number_format($lowerSalary, 2) . ' and ' . number_format($upperSalary, 2) . ' for the selected grade.')->withInput();
+                    }
+                }
+            }
             
            $data['id']= DB::table('tblstaff')->insertGetId([
     	          'staff_no' => $data['staffno'] ,
@@ -52,6 +70,7 @@ class HR extends Basefunction
     	          'bankid' => $data['bank'] ,
     	          'account_no' => $data['accountno'] ,
     	          'department' => $data['department']!=''? $data['department']:0 ,
+    	          'offer_amount' => $data['offer_amount'] ? $data['offer_amount'] : 0,
     	        ]);
     	        
     	        if($request->hasFIle('passport')){
