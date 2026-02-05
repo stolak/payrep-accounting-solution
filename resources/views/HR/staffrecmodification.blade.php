@@ -39,8 +39,8 @@
                                     </div>
                                     <div class="col-md-3">
                                         <div class="form-group">
-                                            <select class="select_picker form-control" id="staffid"
-                                                data-live-search="true" name="staffid" onchange="Reload();">
+                                            <select class="select2  name="staffid" form-control" id="staffid"
+                                                onchange="Reload()">
                                                 <option value="">--Select--</option>
                                                 @foreach ($Staffs as $list)
                                                     <option value="{{ $list->id }}"
@@ -241,12 +241,65 @@
                                                             $grade = $StaffProfile->grade;
                                                         }
                                                     @endphp
-                                                    <select class="form-control" name="grade" id="grade">
+                                                    <select class="form-control" name="grade" id="grade"
+                                                        onchange="updateSalaryRange()">
                                                         @foreach ($Grade as $list)
                                                             <option value="{{ $list->id }}"
+                                                                data-lower-salary="{{ $list->lower_salary ?? 0 }}"
+                                                                data-upper-salary="{{ $list->upper_salary ?? 0 }}"
                                                                 {{ $grade == $list->id ? 'selected' : '' }}>
                                                                 {{ $list->grade }}</option>
                                                         @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label>Offer Amount</label>
+                                                    @php
+                                                        if ($offer_amount == '') {
+                                                            $offer_amount = old('offer_amount');
+                                                        }
+                                                    @endphp
+                                                    @php
+                                                        if ($offer_amount == '') {
+                                                            $offer_amount = $StaffProfile->offer_amount ?? 0;
+                                                        }
+                                                    @endphp
+                                                    <input type="number" step="0.01" class="form-control"
+                                                        value="{{ $offer_amount }}" name="offer_amount"
+                                                        id="offer_amount" min="0"
+                                                        onchange="validateOfferAmount()">
+                                                    <small class="text-muted" id="salary_range_hint"
+                                                        style="display: none;"></small>
+                                                    <small class="text-danger" id="offer_amount_error"
+                                                        style="display: none;"></small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label>Status</label>
+                                                    @php
+                                                        if ($status == '') {
+                                                            $status = old('status');
+                                                        }
+                                                    @endphp
+                                                    @php
+                                                        if ($status == '') {
+                                                            $status = $StaffProfile->status ?? 'Active';
+                                                        }
+                                                    @endphp
+                                                    <select class="form-control" name="status" id="status">
+                                                        <option value="Active"
+                                                            {{ $status == 'Active' ? 'selected' : '' }}>Active</option>
+                                                        <option value="Resigned"
+                                                            {{ $status == 'Resigned' ? 'selected' : '' }}>Resigned</option>
+                                                        <option value="Terminated"
+                                                            {{ $status == 'Terminated' ? 'selected' : '' }}>Terminated
+                                                        </option>
+                                                        <option value="Suspended"
+                                                            {{ $status == 'Suspended' ? 'selected' : '' }}>Suspended
+                                                        </option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -368,6 +421,84 @@
             }
             reader.readAsDataURL(event.target.files[0]);
         }
+
+        function updateSalaryRange() {
+            var gradeSelect = document.getElementById('grade');
+            var selectedOption = gradeSelect.options[gradeSelect.selectedIndex];
+            var lowerSalary = parseFloat(selectedOption.getAttribute('data-lower-salary')) || 0;
+            var upperSalary = parseFloat(selectedOption.getAttribute('data-upper-salary')) || 0;
+            var hintElement = document.getElementById('salary_range_hint');
+            var errorElement = document.getElementById('offer_amount_error');
+
+            if (gradeSelect.value && upperSalary > 0) {
+                hintElement.textContent = 'Salary range: ' + formatCurrency(lowerSalary) + ' - ' + formatCurrency(
+                    upperSalary);
+                hintElement.style.display = 'block';
+                errorElement.style.display = 'none';
+            } else {
+                hintElement.style.display = 'none';
+            }
+
+            // Validate current offer amount if it exists
+            validateOfferAmount();
+        }
+
+        function validateOfferAmount() {
+            var gradeSelect = document.getElementById('grade');
+            var offerAmountInput = document.getElementById('offer_amount');
+            var errorElement = document.getElementById('offer_amount_error');
+            var hintElement = document.getElementById('salary_range_hint');
+
+            if (!gradeSelect.value) {
+                errorElement.style.display = 'none';
+                return;
+            }
+
+            var selectedOption = gradeSelect.options[gradeSelect.selectedIndex];
+            var lowerSalary = parseFloat(selectedOption.getAttribute('data-lower-salary')) || 0;
+            var upperSalary = parseFloat(selectedOption.getAttribute('data-upper-salary')) || 0;
+            var offerAmount = parseFloat(offerAmountInput.value) || 0;
+
+            if (offerAmount > 0 && upperSalary > 0) {
+                if (offerAmount < lowerSalary || offerAmount > upperSalary) {
+                    errorElement.textContent = 'Offer amount must be between ' + formatCurrency(lowerSalary) + ' and ' +
+                        formatCurrency(upperSalary);
+                    errorElement.style.display = 'block';
+                    offerAmountInput.setCustomValidity('Offer amount must be within the grade salary range');
+                } else {
+                    errorElement.style.display = 'none';
+                    offerAmountInput.setCustomValidity('');
+                }
+            } else {
+                errorElement.style.display = 'none';
+                offerAmountInput.setCustomValidity('');
+            }
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        // Initialize salary range on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSalaryRange();
+
+            // Validate on form submit
+            var form = document.getElementById('mainform');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    validateOfferAmount();
+                    var errorElement = document.getElementById('offer_amount_error');
+                    if (errorElement.style.display === 'block') {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+            }
+        });
     </script>
 @endsection
 <!-- /Page Wrapper -->

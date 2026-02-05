@@ -71,6 +71,7 @@ class HR extends Basefunction
     	          'account_no' => $data['accountno'] ,
     	          'department' => $data['department']!=''? $data['department']:0 ,
     	          'offer_amount' => $data['offer_amount'] ? $data['offer_amount'] : 0,
+    	          'status' => 'Active',
     	        ]);
     	        
     	        if($request->hasFIle('passport')){
@@ -118,16 +119,32 @@ class HR extends Basefunction
    {
    	$data['department']=$request->input('department');
    	$data['grade']=$request->input('grade');
-    if ( isset( $_POST['del'] ) ) {
+    if ( isset( $_POST['delinv'] ) ) {
         $del=$request->input('deleteid');
-        if( DB::table('tblaccountchart')->where('subheadid',$del)->first())return back()->with('error_message','Brand exist with product. Hence, record cannot be deleted!'  );
-        DB::delete("DELETE FROM `tblaccountsubhead` WHERE `id`='$del'");
+        
+        // Check if staff exists in payroll records
+        if( DB::table('tblpayroll_payment')->where('staffid',$del)->first()) {
+            return back()->with('error_message','Staff has payroll records. Hence, record cannot be deleted!'  );
+        }
+        
+        // Check if staff exists in staff control variables
+        if( DB::table('tblstaff_cv')->where('staffid',$del)->first()) {
+            return back()->with('error_message','Staff has control variables. Hence, record cannot be deleted!'  );
+        }
+        
+        // Check if staff exists in staff monthly CV
+        if( DB::table('tblstaff_monthly_cv')->where('staffid',$del)->first()) {
+            return back()->with('error_message','Staff has monthly control variables. Hence, record cannot be deleted!'  );
+        }
+        
+        // Delete staff record
+        DB::delete("DELETE FROM `tblstaff` WHERE `id`='$del'");
         return back()->with('message',' Record successfully trashed.'  );
     }
     $data['Grade'] = $this->Grade();
     $data['Staffs'] = $this->Staffs('','');
     $data['Department'] = $this->Department();
-	return view('HR.stafflist', $data);
+	  return view('HR.stafflist', $data);
 	    
    }
    public function StaffRecordUpdate(Request $request)
@@ -141,8 +158,10 @@ class HR extends Basefunction
        	$data['address']='';
        	$data['department']='';
        	$data['grade']='';
+       	$data['offer_amount']='';
        	$data['bank']='';
        	$data['accountno']='';
+       	$data['status']='';
        $data['staffid']=$request->input('staffid');
        if($data['staffid']==''){$data['staffid']=Session::get('staffid');}
    	Session(['staffid' => $data['staffid']]);
@@ -156,8 +175,10 @@ class HR extends Basefunction
        	$data['address']=$request->input('address');
        	$data['department']=$request->input('department');
        	$data['grade']=$request->input('grade');
+       	$data['offer_amount']=$request->input('offer_amount');
        	$data['bank']=$request->input('bank');
        	$data['accountno']=$request->input('accountno');
+       	$data['status']=$request->input('status');
    	}
    	Session(['prevstaffid' => $data['staffid']]);
      if ( isset( $_POST['update'] ) ) {
@@ -170,7 +191,25 @@ class HR extends Basefunction
             'grade'      => 'required|string',
             'phoneno'      => 'required|string',
             'staffid'      => 'required|string',
+            'offer_amount' => 'nullable|numeric|min:0',
         ]);
+        
+        // Validate offer_amount against grade's salary range
+        if($data['offer_amount']) {
+            $gradeInfo = DB::table('tblstaff_grade_level')
+                ->where('id', $data['grade'])
+                ->first();
+            
+            if($gradeInfo) {
+                $lowerSalary = $gradeInfo->lower_salary ?? 0;
+                $upperSalary = $gradeInfo->upper_salary ?? 0;
+                
+                if($upperSalary > 0 && ($data['offer_amount'] < $lowerSalary || $data['offer_amount'] > $upperSalary)) {
+                    return back()->with('error_message', 'Offer amount must be between ' . number_format($lowerSalary, 2) . ' and ' . number_format($upperSalary, 2) . ' for the selected grade.')->withInput();
+                }
+            }
+        }
+        
         DB::table('tblstaff')->where('id',$data['staffid'])->update([
 	        'staff_no' => $data['staffno'] ,
             'first_name' => $data['fname'] ,
@@ -183,6 +222,8 @@ class HR extends Basefunction
             'bankid' => $data['bank'] ,
     	    'account_no' => $data['accountno'] ,
             'department' => $data['department']!=''? $data['department']:0 ,
+            'status' => $data['status'] ? $data['status'] : 'Active',
+            'offer_amount' => $data['offer_amount'] ? $data['offer_amount'] : 0,
 	   ]);
 	    if($request->hasFIle('passport')){
 	       
@@ -208,6 +249,12 @@ class HR extends Basefunction
      $data['BankList'] = $this->BankList();
     $data['Department'] = $this->Department();
     $data['StaffProfile'] = $this->StaffProfile($data['staffid']);
+    
+    // Initialize offer_amount if not set
+    if($data['offer_amount'] == '') {
+        $data['offer_amount'] = $data['StaffProfile']->offer_amount ?? 0;
+    }
+    
     //dd($data['StaffProfile']);
 	return view('HR.staffrecmodification', $data);
 	    
