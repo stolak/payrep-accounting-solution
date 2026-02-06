@@ -123,17 +123,15 @@ class Payroll extends Basefunction
     	        ]);  
     	      
     	     foreach($this->EarningVariable() as $v2){
-				// dd($v);
+				dd($v2);
              DB::table('tblpayroll_payment')
              ->where('id',$id)
-            //  ->update( [ $v2->ref_code => $this->VariableValue($year, $month, $v2->ref_code, $v->id, $v->grade,1,)]);
-			->update( [ $v2->ref_code => $this->VariableValue2($year, $month, $v2, $v,1,)]);
+             ->update( [ $v2->ref_code => $this->VariableValue($year, $month, $v2->ref_code, $v->id, $v->grade,1)]);
             }
             foreach($this->DeductionVariable() as $v2){
              DB::table('tblpayroll_payment')
              ->where('id',$id)
-            //  ->update( [ $v2->ref_code => -$this->VariableValue($year, $month,$v2->ref_code,$v->id,$v->grade,1)]);
-			->update( [ $v2->ref_code => -$this->VariableValue2($year, $month,$v2,$v,1)]);
+             ->update( [ $v2->ref_code => -$this->VariableValue($year, $month,$v2->ref_code,$v->id,$v->grade,1)]);
             }
             
            }

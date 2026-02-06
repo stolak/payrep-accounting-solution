@@ -834,7 +834,7 @@ Public function RefBatch() {
 	    where tblstaff.id<>0");
 	}
 
-	Public function StaffsForSalaryComputation($department,$grade) {
+	Public function StaffsForSalaryComputation($department, $grade) {
 	    return DB::Select("SELECT tblstaff.*,tbldepartment.department as departments,
 	    tblstaff_grade_level.grade as grades
 	    FROM `tblstaff` left JOIN tbldepartment on tbldepartment.id=tblstaff.department 
@@ -913,6 +913,43 @@ Public function RefBatch() {
         	$dat=DB::Select("SELECT `$variable` as amount FROM `tblpayroll_salary_new_chart` WHERE `grade`='$grade' and `step`='$step' ");
         	if($dat) $amount=$dat[0]->amount;
         }
+	    return $amount;
+        
+	}
+	Public function VariableValue2($year, $month, $variable, $staff, $step=1) {
+        $amount=0;
+        
+        $checkCV= DB::Select("SELECT * FROM `tblstaff_cv` WHERE `staffid`='$staff->id' and `ref_code`='$variable->ref_code' ");
+        if($checkCV)
+        {
+            $amount =$this->CVRembalance($staff->id,$checkCV[0]->amount_monthly,$checkCV[0]->amount_target,$checkCV[0]->is_continous);
+            if($amount>0){
+	        DB::table('tblstaff_monthly_cv')->insert(array(
+			'staffid'    	=> $staff->id,
+            'staffcvid'    	=> $checkCV[0]->id,
+			'month'	    	=> $month,
+			'year'    	    => $year,	
+			'cv'            => $checkCV[0]->cvid,
+			'ref_code'      => $checkCV[0]->ref_code,
+			
+		));
+		}
+		
+        } else{
+           //check if the variable is a function control variable
+          $isFunction=DB::Select("SELECT `isFunction` FROM `tblpayroll_variable` WHERE `id`='$variable->id' and `isFunction`=1");
+           if($isFunction) {
+			if($variable->variable_type==2){
+				$amount = $this->deductionsFunction($year, $month, $staff->id, $variable->id, $variable->percent);
+			} else {
+				$amount = $this->earningsFunction($staff->offer_amount, $variable->percent);
+			}
+		}else{
+				$dat=DB::Select("SELECT `$variable->ref_code` as amount FROM `tblpayroll_salary_new_chart` WHERE `grade`='$staff->grade' and `step`='$step' ");
+				if($dat) $amount=$dat[0]->amount;
+			}
+		}
+        
 	    return $amount;
         
 	}
@@ -1103,4 +1140,72 @@ Public function BankList() {
 	    if($data) return $data[0];
 	     return DB::Select("SELECT * FROM `tblstaff` WHERE `id`='0'")[0];
 	}
+
+	function calculateAnnualProgressiveTax(float $income): float
+{
+    $tax = 0;
+
+    $brackets = [
+        [800000, 0.0],
+        [2200000, 0.15],
+        [8000000, 0.18],
+        [13000000, 0.21],
+        [25000000, 0.23],
+        [PHP_FLOAT_MAX, 0.25],
+    ];
+
+    foreach ($brackets as [$limit, $rate]) {
+        if ($income <= 0) break;
+
+        $taxable = min($income, $limit);
+        $tax += $taxable * $rate;
+        $income -= $taxable;
+    }
+
+    return round($tax, 2);
+}
+
+function calculateMonthlyProgressiveTax(float $income): float
+{
+	$income = $income * 12;
+    return round(calculateAnnualProgressiveTax($income) / 12, 2);
+}
+
+function earningsFunction( $annual_gross_pay,$percentage)	
+{
+	$amount = $annual_gross_pay * $percentage / (100*12);
+	return round($amount, 2);
+}
+function deductionsFunction($year, $month, $staffId, $variable,$percentage)	
+{
+	// get cv elements from functions_control_variables where control_variabeId = variable
+	// join with tblpayroll_variable to get ref_code
+	$cvElements = DB::Select("
+		SELECT 
+			tblpayroll_variable.ref_code
+		FROM functions_control_variables
+		JOIN tblpayroll_variable ON tblpayroll_variable.id = functions_control_variables.added_control_variableId
+		WHERE functions_control_variables.control_variabeId = '$variable'
+	");
+	
+	// get the staff payroll for the month
+	$staffPayroll = DB::Select("
+		SELECT *
+		FROM tblpayroll_payment
+		WHERE staffid = '$staffId' AND year = '$year' AND month = '$month'
+	");
+	if($staffPayroll && count($cvElements) > 0){
+		$sum=0;
+		foreach ($cvElements as $cvElement) {
+			// Access dynamic property using curly braces
+			$refCode = $cvElement->ref_code;
+			if(isset($staffPayroll[0]->$refCode)) {
+				$sum += $staffPayroll[0]->$refCode;
+			}
+		}
+		return round($sum * $percentage / 100, 2);
+	} else {
+		return 0;
+	}
+}
 }
