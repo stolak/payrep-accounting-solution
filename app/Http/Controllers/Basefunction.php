@@ -1168,7 +1168,7 @@ Public function BankList() {
 function calculateMonthlyProgressiveTax(float $income): float
 {
 	$income = $income * 12;
-    return round(calculateAnnualProgressiveTax($income) / 12, 2);
+    return round($this->calculateAnnualProgressiveTax($income) / 12, 2);
 }
 
 function earningsFunction( $annual_gross_pay,$percentage)	
@@ -1202,6 +1202,10 @@ function deductionsFunction($year, $month, $staffId, $variable,$percentage)
 			if(isset($staffPayroll[0]->$refCode)) {
 				$sum += $staffPayroll[0]->$refCode;
 			}
+		}
+		if($variable==2){
+			$tax = $this->calculateMonthlyProgressiveTax($sum);
+			return round($tax, 2);
 		}
 		return round($sum * $percentage / 100, 2);
 	} else {

@@ -112,6 +112,7 @@
                                     }
                                     $totalEarnings = 0;
                                     $totalDeductions = 0;
+                                    $totalEmployerContributions = 0;
 
                                     // Filter earnings with non-zero values
                                     $filteredEarnings = [];
@@ -154,138 +155,371 @@
                                             $totalDeductions += $amount;
                                         }
                                     }
+
+                                    // Calculate Employer Contributions
+                                    $employerContributions = [];
+                                    $pensionableAmount = 0;
+                                    
+                                    // Get pensionable earnings (usually basic salary and statutory earnings)
+                                    foreach ($filteredEarnings as $earning) {
+                                        // Check if this earning is pensionable (you may need to adjust this logic)
+                                        $pensionableAmount += $earning->amount;
+                                    }
+                                    
+                                    // Employer Pension (10% of pensionable amount)
+                                    $employeePension = 0;
+                                    foreach ($filteredDeductions as $deduction) {
+                                        if (stripos($deduction->variable, 'pension') !== false || stripos($deduction->variable, 'Pension') !== false) {
+                                            $employeePension = $deduction->amount;
+                                            break;
+                                        }
+                                    }
+                                    // If employee pension is 8%, employer is 10% (ratio 8:10)
+                                    $employerPension = $employeePension > 0 ? ($employeePension * 10 / 8) : ($pensionableAmount * 0.10);
+                                    if ($employerPension > 0) {
+                                        $employerContributions[] = (object) [
+                                            'variable' => 'Employer Pension (10%)',
+                                            'amount' => $employerPension,
+                                        ];
+                                        $totalEmployerContributions += $employerPension;
+                                    }
+
+                                    // Employer NHIS (typically 10% of basic salary or fixed amount)
+                                    $employeeNHIS = 0;
+                                    foreach ($filteredDeductions as $deduction) {
+                                        if (stripos($deduction->variable, 'NHIS') !== false || stripos($deduction->variable, 'nhis') !== false) {
+                                            $employeeNHIS = $deduction->amount;
+                                            break;
+                                        }
+                                    }
+                                    // Employer NHIS is typically 10% of basic or employee contribution * 10/5
+                                    $employerNHIS = $employeeNHIS > 0 ? ($employeeNHIS * 10 / 5) : ($pensionableAmount * 0.10);
+                                    if ($employerNHIS > 0) {
+                                        $employerContributions[] = (object) [
+                                            'variable' => 'Employer NHIS',
+                                            'amount' => $employerNHIS,
+                                        ];
+                                        $totalEmployerContributions += $employerNHIS;
+                                    }
+
+                                    // NSITF (typically 1% of basic salary)
+                                    $nsitf = $pensionableAmount * 0.01;
+                                    if ($nsitf > 0) {
+                                        $employerContributions[] = (object) [
+                                            'variable' => 'NSITF',
+                                            'amount' => $nsitf,
+                                        ];
+                                        $totalEmployerContributions += $nsitf;
+                                    }
+
+                                    // ITF (Training Fund - typically 1% of basic salary)
+                                    $itf = $pensionableAmount * 0.01;
+                                    if ($itf > 0) {
+                                        $employerContributions[] = (object) [
+                                            'variable' => 'ITF (Training Fund)',
+                                            'amount' => $itf,
+                                        ];
+                                        $totalEmployerContributions += $itf;
+                                    }
                                 @endphp
                                 <style>
-                                    .salary-slip {
-                                        margin: 15px;
+                                    .payslip-container {
+                                        max-width: 900px;
+                                        margin: 0 auto;
+                                        background: white;
+                                        padding: 30px;
+                                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                                     }
 
-                                    .salary-slip .empDetail {
-                                        width: 100%;
-                                        text-align: left;
-                                        border: 2px solid black;
-                                        border-collapse: collapse;
-                                        table-layout: fixed;
+                                    .payslip-header {
+                                        display: flex;
+                                        justify-content: space-between;
+                                        align-items: center;
+                                        padding: 20px 0;
+                                        border-bottom: 3px solid #2c5f2d;
+                                        margin-bottom: 30px;
                                     }
 
-                                    .salary-slip .myBackground {
-                                        padding-top: 10px;
-                                        text-align: left;
-                                        border: 1px solid black;
-                                        height: 40px;
+                                    .payslip-logo {
+                                        height: 60px;
                                     }
 
-                                    .salary-slip .myAlign {
-                                        text-align: center;
-                                        border-right: 1px solid black;
-                                    }
-
-                                    .salary-slip .myTotalBackground {
-                                        padding-top: 10px;
-                                        text-align: left;
-                                        background-color: #EBF1DE;
-                                        border-spacing: 0px;
-                                    }
-
-                                    .salary-slip .table-border-right {
-                                        border-right: 1px solid;
-                                    }
-
-                                    .salary-slip .companyName {
+                                    .payslip-company-info {
                                         text-align: right;
-                                        font-size: 25px;
+                                    }
+
+                                    .payslip-company-name {
+                                        font-size: 24px;
+                                        font-weight: bold;
+                                        color: #2c5f2d;
+                                        margin: 0;
+                                    }
+
+                                    .payslip-tagline {
+                                        font-size: 12px;
+                                        color: #666;
+                                        margin-top: 5px;
+                                    }
+
+                                    .payslip-title {
+                                        text-align: center;
+                                        font-size: 28px;
+                                        font-weight: bold;
+                                        color: #2c5f2d;
+                                        margin: 20px 0;
+                                    }
+
+                                    .payslip-employee-info {
+                                        display: grid;
+                                        grid-template-columns: repeat(2, 1fr);
+                                        gap: 15px;
+                                        margin-bottom: 30px;
+                                        padding: 15px;
+                                        background: #f8f9fa;
+                                        border-radius: 5px;
+                                    }
+
+                                    .payslip-info-item {
+                                        display: flex;
+                                        flex-direction: column;
+                                    }
+
+                                    .payslip-info-label {
+                                        font-size: 11px;
+                                        color: #666;
+                                        text-transform: uppercase;
+                                        margin-bottom: 5px;
+                                    }
+
+                                    .payslip-info-value {
+                                        font-size: 14px;
+                                        font-weight: 600;
+                                        color: #333;
+                                    }
+
+                                    .payslip-sections {
+                                        display: grid;
+                                        grid-template-columns: repeat(2, 1fr);
+                                        gap: 20px;
+                                        margin-bottom: 30px;
+                                    }
+
+                                    .payslip-employer-section {
+                                        margin-top: 20px;
+                                        margin-bottom: 30px;
+                                    }
+
+                                    .payslip-employer-section .payslip-section {
+                                        width: 100%;
+                                    }
+
+                                    .payslip-section {
+                                        border: 1px solid #ddd;
+                                        border-radius: 5px;
+                                        overflow: hidden;
+                                    }
+
+                                    .payslip-section-header {
+                                        background: #2c5f2d;
+                                        color: white;
+                                        padding: 12px;
+                                        font-weight: bold;
+                                        text-align: center;
+                                        font-size: 14px;
+                                    }
+
+                                    .payslip-section-body {
+                                        padding: 0;
+                                    }
+
+                                    .payslip-item {
+                                        display: flex;
+                                        justify-content: space-between;
+                                        padding: 10px 12px;
+                                        border-bottom: 1px solid #eee;
+                                    }
+
+                                    .payslip-item:last-child {
+                                        border-bottom: none;
+                                    }
+
+                                    .payslip-item-label {
+                                        font-size: 12px;
+                                        color: #333;
+                                        flex: 1;
+                                    }
+
+                                    .payslip-item-amount {
+                                        font-size: 12px;
+                                        font-weight: 600;
+                                        color: #333;
+                                        text-align: right;
+                                        min-width: 120px;
+                                    }
+
+                                    .payslip-total {
+                                        background: #e8f5e9;
+                                        font-weight: bold;
+                                        padding: 12px;
+                                        display: flex;
+                                        justify-content: space-between;
+                                    }
+
+                                    .payslip-net-pay {
+                                        background: #2c5f2d;
+                                        color: white;
+                                        padding: 20px;
+                                        text-align: center;
+                                        border-radius: 5px;
+                                        margin: 30px 0;
+                                    }
+
+                                    .payslip-net-pay-label {
+                                        font-size: 14px;
+                                        margin-bottom: 10px;
+                                        text-transform: uppercase;
+                                    }
+
+                                    .payslip-net-pay-amount {
+                                        font-size: 32px;
                                         font-weight: bold;
                                     }
 
-                                    .salary-slip th,
-                                    .salary-slip td {
-                                        padding-left: 6px;
-                                        border: 1px solid black;
+                                    .payslip-footer {
+                                        margin-top: 30px;
+                                        padding: 15px;
+                                        background: #f8f9fa;
+                                        border-radius: 5px;
+                                        font-size: 11px;
+                                        color: #666;
+                                        text-align: center;
+                                        border-top: 2px solid #2c5f2d;
                                     }
 
-                                    .salary-slip .no-border-right {
-                                        border-right: none;
+                                    .payslip-empty {
+                                        color: #999;
+                                        font-style: italic;
                                     }
 
-                                    .salary-slip .no-border-left {
-                                        border-left: none;
+                                    @media print {
+                                        .payslip-container {
+                                            padding: 20px;
+                                        }
                                     }
                                 </style>
-                                <div id="payslip-content" class="salary-slip">
-                                    <table class="empDetail">
-                                        <tr height="100px">
-                                            <td class="no-border-right">
-                                                <img height="30px" src='{{ asset('assets/img/logo.jpeg') }}' />
-                                            </td>
-                                            <td colspan="2" class="no-border-left"></td>
-                                            <td colspan='3' class="companyName">
-                                                {{ env('Coy_Name', 'Payslip') }}</td>
-                                        </tr>
-                                        <tr>
-                                            <th>Name</th>
-                                            <td colspan="2">{{ $Payroll->fullname ?? '' }}</td>
+                                <div id="payslip-content" class="payslip-container">
+                                    <div class="payslip-header">
+                                        <div>
+                                            <img src="{{ asset('assets/img/logo.jpeg') }}" alt="Logo" class="payslip-logo" />
+                                        </div>
+                                        <div class="payslip-company-info">
+                                            <h2 class="payslip-company-name">{{ env('Coy_Name', 'McEmtol CONSULTING') }}</h2>
+                                            <p class="payslip-tagline">PROFESSIONALISM | SERVICE | RESULTS</p>
+                                        </div>
+                                    </div>
 
-                                            <th>Employee Number</th>
-                                            <td>{{ $Payroll->staff_no ?? '' }}</td>
+                                    <h1 class="payslip-title">EMPLOYEE PAYSLIP</h1>
 
+                                    <div class="payslip-employee-info">
+                                        <div class="payslip-info-item">
+                                            <span class="payslip-info-label">Employee Name</span>
+                                            <span class="payslip-info-value">{{ $Payroll->fullname ?? 'N/A' }}</span>
+                                        </div>
+                                        <div class="payslip-info-item">
+                                            <span class="payslip-info-label">Designation</span>
+                                            <span class="payslip-info-value">{{ $Payroll->designation ?? $Payroll->grades ?? 'N/A' }}</span>
+                                        </div>
+                                        <div class="payslip-info-item">
+                                            <span class="payslip-info-label">Employee ID</span>
+                                            <span class="payslip-info-value">{{ $Payroll->staff_no ?? 'N/A' }}</span>
+                                        </div>
+                                        <div class="payslip-info-item">
+                                            <span class="payslip-info-label">Pay Period</span>
+                                            <span class="payslip-info-value">{{ $monthName }}, {{ $Payroll->year ?? '' }}</span>
+                                        </div>
+                                    </div>
 
-                                            <td></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Grade</th>
-                                            <td>{{ $Payroll->grades ?? '' }}</td>
-                                            <th colspan="2"></th>
-                                            <th>Period</th>
-                                            <td>{{ $monthName }}, {{ $Payroll->year ?? '' }}</td>
-                                        </tr>
-                                        <tr class="myBackground">
-                                            <th colspan="2">Earnings</th>
-                                            <th class="table-border-right">Amount (Naira)</th>
-                                            <th colspan="2">Deductions</th>
-                                            <th>Amount (Naira)</th>
-                                        </tr>
-                                        @php
-                                            $maxRows = max(count($filteredEarnings), count($filteredDeductions));
-                                        @endphp
-                                        @for ($i = 0; $i < $maxRows; $i++)
-                                            <tr>
-                                                @if ($i < count($filteredEarnings))
-                                                    @php
-                                                        $earning = $filteredEarnings[$i];
-                                                    @endphp
-                                                    <th colspan="2">{{ $earning->variable }}</th>
-                                                    <td class="myAlign">{{ number_format($earning->amount, 2, '.', ',') }}
-                                                    </td>
+                                    <div class="payslip-sections">
+                                        <!-- Earnings Section -->
+                                        <div class="payslip-section">
+                                            <div class="payslip-section-header">Earnings</div>
+                                            <div class="payslip-section-body">
+                                                @if (count($filteredEarnings) > 0)
+                                                    @foreach ($filteredEarnings as $earning)
+                                                        <div class="payslip-item">
+                                                            <span class="payslip-item-label">{{ $earning->variable }}</span>
+                                                            <span class="payslip-item-amount">₦ {{ number_format($earning->amount, 2, '.', ',') }}</span>
+                                                        </div>
+                                                    @endforeach
                                                 @else
-                                                    <th colspan="2"></th>
-                                                    <td class="myAlign"></td>
+                                                    <div class="payslip-item">
+                                                        <span class="payslip-item-label payslip-empty">No earnings</span>
+                                                    </div>
                                                 @endif
-                                                @if ($i < count($filteredDeductions))
-                                                    @php
-                                                        $deduction = $filteredDeductions[$i];
-                                                    @endphp
-                                                    <th colspan="2">{{ $deduction->variable }}</th>
-                                                    <td class="myAlign">
-                                                        {{ number_format($deduction->amount, 2, '.', ',') }}</td>
-                                                @else
-                                                    <th colspan="2"></th>
-                                                    <td class="myAlign"></td>
-                                                @endif
-                                            </tr>
-                                        @endfor
-                                        <tr class="myBackground">
-                                            <th colspan="2">Total Payments</th>
-                                            <td class="myAlign">{{ number_format($totalEarnings, 2, '.', ',') }}</td>
-                                            <th colspan="2">Total Deductions</th>
-                                            <td class="myAlign">{{ number_format($totalDeductions, 2, '.', ',') }}</td>
-                                        </tr>
-                                        <tr height="40px">
-                                            <th colspan="3"></th>
+                                                <div class="payslip-total">
+                                                    <span>Total Earnings</span>
+                                                    <span>₦ {{ number_format($totalEarnings, 2, '.', ',') }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                            <th colspan="2" class="table-border-bottom">Net Salary</th>
-                                            <td>{{ number_format($totalEarnings - $totalDeductions, 2, '.', ',') }}</td>
-                                        </tr>
-                                    </table>
+                                        <!-- Deductions Section -->
+                                        <div class="payslip-section">
+                                            <div class="payslip-section-header">Deductions</div>
+                                            <div class="payslip-section-body">
+                                                @if (count($filteredDeductions) > 0)
+                                                    @foreach ($filteredDeductions as $deduction)
+                                                        <div class="payslip-item">
+                                                            <span class="payslip-item-label">{{ $deduction->variable }}</span>
+                                                            <span class="payslip-item-amount">₦ {{ number_format($deduction->amount, 2, '.', ',') }}</span>
+                                                        </div>
+                                                    @endforeach
+                                                @else
+                                                    <div class="payslip-item">
+                                                        <span class="payslip-item-label payslip-empty">No deductions</span>
+                                                    </div>
+                                                @endif
+                                                <div class="payslip-total">
+                                                    <span>Total Deductions</span>
+                                                    <span>₦ {{ number_format($totalDeductions, 2, '.', ',') }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Employer Contributions Section -->
+                                    <div class="payslip-employer-section">
+                                        <div class="payslip-section">
+                                            <div class="payslip-section-header">Employer Contributions (INFORMATIONAL - Not deducted from Employee)</div>
+                                            <div class="payslip-section-body">
+                                                @if (count($employerContributions) > 0)
+                                                    @foreach ($employerContributions as $contribution)
+                                                        <div class="payslip-item">
+                                                            <span class="payslip-item-label">{{ $contribution->variable }}</span>
+                                                            <span class="payslip-item-amount">₦ {{ number_format($contribution->amount, 2, '.', ',') }}</span>
+                                                        </div>
+                                                    @endforeach
+                                                @else
+                                                    <div class="payslip-item">
+                                                        <span class="payslip-item-label payslip-empty">No contributions</span>
+                                                    </div>
+                                                @endif
+                                                <div class="payslip-total">
+                                                    <span>Total Employer Contributions (INFO ONLY)</span>
+                                                    <span>₦ {{ number_format($totalEmployerContributions, 2, '.', ',') }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="payslip-net-pay">
+                                        <div class="payslip-net-pay-label">NET PAY</div>
+                                        <div class="payslip-net-pay-amount">₦ {{ number_format($totalEarnings - $totalDeductions, 2, '.', ',') }}</div>
+                                    </div>
+
+                                    <div class="payslip-footer">
+                                        <p><strong>Employer contributions shown above are for information only and do not reduce the employee's net pay. This payslip is computer-generated.</strong></p>
+                                    </div>
                                 </div>
                             @else
                                 <div class="alert alert-info">
@@ -313,7 +547,8 @@
         /* Print Styles */
         @media print {
             @page {
-                margin: 0.5cm;
+                margin: 1cm;
+                size: A4;
             }
 
             /* Hide everything by default */
@@ -368,6 +603,22 @@
             .container-fluid {
                 margin: 0 !important;
                 padding: 0 !important;
+            }
+
+            /* Ensure payslip container prints correctly */
+            .payslip-container {
+                margin: 0 !important;
+                padding: 20px !important;
+                max-width: 100% !important;
+            }
+
+            /* Prevent page breaks inside sections */
+            .payslip-section {
+                page-break-inside: avoid;
+            }
+
+            .payslip-net-pay {
+                page-break-inside: avoid;
             }
         }
     </style>
