@@ -196,6 +196,7 @@ class Payroll extends Basefunction
    	$data['taxable']=$request->input('taxable');
    	$data['isPensionable']=$request->input('isPensionable');
    	$data['isFunction']=$request->input('isFunction');
+   	$data['isbefore_tax']=$request->input('isbefore_tax');
    	$data['percent']=$request->input('percent');
    	$data['rank']=$request->input('rank');
    	
@@ -211,6 +212,7 @@ class Payroll extends Basefunction
 	          'istaxable' => ($data['taxable']=='on')? 1:0 ,
 	          'isPensionable' => ($data['isPensionable']=='on')? 1:0 ,
 	          'isFunction' => ($data['isFunction']=='on')? 1:0 ,
+	          'isbefore_tax' => ($data['variabletype']==2 && ($data['isbefore_tax']=='on'))? 1:0 ,
 	          'percent' => $data['percent'] ? $data['percent'] : 0 ,
 	          'rank' => $data['rank'] ,
 	        ]);
@@ -237,20 +239,22 @@ class Payroll extends Basefunction
               'variable'      => 'required|string|unique:tblpayroll_variable,variable,'.$request->input('id'),
               'id'      => 'required|string',
             ]);
-             DB::table('tblpayroll_variable')->where('id',$request->input('id'))->update([
+             $variableId = $request->input('id');
+             $variableInfo = DB::table('tblpayroll_variable')->where('id', $variableId)->first();
+             
+             DB::table('tblpayroll_variable')->where('id',$variableId)->update([
     	          'variable' => $data['variable'] ,
     	          'statutory' => ($data['statutory']=='on')? 1:0 ,
     	          'istaxable' => ($data['taxable']=='on')? 1:0 ,
     	          'isPensionable' => ($data['isPensionable']=='on')? 1:0 ,
     	          'isFunction' => ($data['isFunction']=='on')? 1:0 ,
+    	          'isbefore_tax' => ($variableInfo && $variableInfo->variable_type==2 && ($data['isbefore_tax']=='on'))? 1:0 ,
     	          'percent' => $data['percent'] ? $data['percent'] : 0 ,
     	          'status' => ($request->input('status')=='on')? 1:0 ,
     	          'rank' => $data['rank'] ,
     	        ]);
     	        
     	        // Update function control variables if isFunction is true and variable_type is 2 (deduction)
-    	        $variableId = $request->input('id');
-    	        $variableInfo = DB::table('tblpayroll_variable')->where('id', $variableId)->first();
     	        if($variableInfo && ($data['isFunction']=='on') && $variableInfo->variable_type==2) {
     	            // Delete existing selections
     	            DB::table('functions_control_variables')->where('control_variabeId', $variableId)->delete();
