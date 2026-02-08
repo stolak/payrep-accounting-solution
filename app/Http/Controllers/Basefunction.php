@@ -875,6 +875,12 @@ Public function RefBatch() {
 	Public function DeductionVariable() {
 	    return DB::Select("SELECT * FROM `tblpayroll_variable` where `variable_type`='2' and status=1 ORDER BY `rank` ");
 	}
+	Public function StatutoryVariableWithBeforeTaxFirst() {
+	    return DB::Select("SELECT * FROM `tblpayroll_variable` where `variable_type`='2' and status=1 ORDER BY `isbefore_tax` DESC, `rank` ");
+	}
+	Public function VariableWithBeforeTax() {
+	    return DB::Select("SELECT * FROM `tblpayroll_variable` where `isbefore_tax`=1 and status=1 ORDER BY `rank` ");
+	}
 
 	
 	Public function SalaryCharts() {
@@ -1204,6 +1210,25 @@ function deductionsFunction($year, $month, $staffId, $variable,$percentage)
 			}
 		}
 		if($variable==2){
+			// dd($sum*12);
+			// get the sum of all before tax variables for the staff in the tblpayroll_payment table
+			$beforeTaxVariables = $this->VariableWithBeforeTax();
+			$beforeTaxSum = 0;
+			$computedPayroll = DB::Select("
+				SELECT *
+				FROM tblpayroll_payment
+				WHERE staffid = '$staffId' AND year = '$year' AND month = '$month'
+			");
+			if($computedPayroll && count($beforeTaxVariables) > 0){
+				foreach ($beforeTaxVariables as $beforeTaxVariable) {
+					$refCode = $beforeTaxVariable->ref_code;
+					if(isset($computedPayroll[0]->$refCode)) {
+						$beforeTaxSum += $computedPayroll[0]->$refCode;
+					}
+				}
+			}
+			
+			$sum = $sum + $beforeTaxSum;
 			$tax = $this->calculateMonthlyProgressiveTax($sum);
 			return round($tax, 2);
 		}
