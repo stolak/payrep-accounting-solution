@@ -336,6 +336,11 @@
                                                         href="javascript: editfunc('{{ $list->id }}','{{ $list->projectCode }}','{{ $list->name }}','{{ $list->description }}','{{ $list->categoryId }}','{{ $list->location }}','{{ $list->status }}','{{ $list->clientId ?? '' }}','{{ $list->expenseAccountId ?? '' }}')">
                                                         <i class="fe fe-pencil"></i>
                                                     </a>
+                                                    <a class="btn btn-sm bg-info-light"
+                                                        href="{{ url('/project-po?projectId=' . $list->id) }}"
+                                                        title="Add New PO">New PO
+                                                        <i class="fe fe-file-plus"></i>
+                                                    </a>
                                                     <a class="btn btn-sm bg-danger-light"
                                                         href="javascript: deletefunc('{{ $list->id }}')">
                                                         <i class="fe fe-trash"></i>

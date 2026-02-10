@@ -13,8 +13,13 @@
                         <h3 class="page-title">Setup</h3>
                         <ul class="breadcrumb">
                             <li class="breadcrumb-item"><a href="/">Home</a></li>
-                            <li class="breadcrumb-item active">Project Purchase Order Setup</li>
+                            <li class="breadcrumb-item active">Purchase Order</li>
                         </ul>
+                    </div>
+                    <div class="col-auto">
+                        <a href="{{ url('/project-setup') }}" class="btn btn-primary">
+                            <i class="fe fe-arrow-left"></i> Back to Project
+                        </a>
                     </div>
                 </div>
             </div>
