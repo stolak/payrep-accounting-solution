@@ -45,6 +45,20 @@ class ProjectController extends Basefunction {
                 'po_vat.*' => 'nullable|numeric|min:0|max:100',
             ]);
 
+            // Validate that client has the selected project category
+            if (!empty($data['clientId']) && !empty($data['categoryId'])) {
+                $clientCategoryExists = DB::table('client_project_categories')
+                    ->where('clientId', $data['clientId'])
+                    ->where('project_categoryId', $data['categoryId'])
+                    ->exists();
+                
+                if (!$clientCategoryExists) {
+                    $clientName = DB::table('clients')->where('id', $data['clientId'])->value('name');
+                    $categoryName = DB::table('project_categories')->where('id', $data['categoryId'])->value('category');
+                    return back()->with('error_message', "The selected client '{$clientName}' does not have the project category '{$categoryName}' assigned. Please assign the category to the client first.");
+                }
+            }
+
             // Create project first
             $projectId = DB::table('projects')->insertGetId([
                 'projectCode' => $data['projectCode'],
@@ -131,6 +145,20 @@ class ProjectController extends Basefunction {
                 'clientId' => 'nullable|integer',
                 'id' => 'required|integer',
             ]);
+
+            // Validate that client has the selected project category
+            if (!empty($data['clientId']) && !empty($data['categoryId'])) {
+                $clientCategoryExists = DB::table('client_project_categories')
+                    ->where('clientId', $data['clientId'])
+                    ->where('project_categoryId', $data['categoryId'])
+                    ->exists();
+                
+                if (!$clientCategoryExists) {
+                    $clientName = DB::table('clients')->where('id', $data['clientId'])->value('name');
+                    $categoryName = DB::table('project_categories')->where('id', $data['categoryId'])->value('category');
+                    return back()->with('error_message', "The selected client '{$clientName}' does not have the project category '{$categoryName}' assigned. Please assign the category to the client first.");
+                }
+            }
 
             DB::table('projects')->where('id', $data['id'])->update([
                 'projectCode' => $data['projectCode'],
@@ -648,18 +676,32 @@ class ProjectController extends Basefunction {
     {
         $data['name'] = $request->input('name');
         $data['clientAccountId'] = $request->input('clientAccountId');
+        $data['projectCategoryIds'] = $request->input('projectCategoryIds', []);
         $data['id'] = $request->input('id');
         
         if (isset($_POST['addnew'])) {
             $this->validate($request, [
                 'name' => 'required|string|unique:clients,name',
                 'clientAccountId' => 'nullable|integer',
+                'projectCategoryIds' => 'nullable|array',
+                'projectCategoryIds.*' => 'integer|exists:project_categories,id',
             ]);
 
-            DB::table('clients')->insert([
+            $clientId = DB::table('clients')->insertGetId([
                 'name' => $data['name'],
                 'clientAccountId' => $data['clientAccountId'] ?? null,
             ]);
+
+            // Insert project categories
+            if (!empty($data['projectCategoryIds']) && is_array($data['projectCategoryIds'])) {
+                foreach ($data['projectCategoryIds'] as $categoryId) {
+                    DB::table('client_project_categories')->insert([
+                        'clientId' => $clientId,
+                        'project_categoryId' => $categoryId,
+                    ]);
+                }
+            }
+
             return back()->with('message', 'New record successfully added.');
         }
         
@@ -668,12 +710,28 @@ class ProjectController extends Basefunction {
                 'name' => 'required|string|unique:clients,name,' . $request->input('id'),
                 'clientAccountId' => 'nullable|integer',
                 'id' => 'required|integer',
+                'projectCategoryIds' => 'nullable|array',
+                'projectCategoryIds.*' => 'integer|exists:project_categories,id',
             ]);
 
             DB::table('clients')->where('id', $data['id'])->update([
                 'name' => $data['name'],
                 'clientAccountId' => $data['clientAccountId'] ?? null,
             ]);
+
+            // Delete existing project categories
+            DB::table('client_project_categories')->where('clientId', $data['id'])->delete();
+
+            // Insert new project categories
+            if (!empty($data['projectCategoryIds']) && is_array($data['projectCategoryIds'])) {
+                foreach ($data['projectCategoryIds'] as $categoryId) {
+                    DB::table('client_project_categories')->insert([
+                        'clientId' => $data['id'],
+                        'project_categoryId' => $categoryId,
+                    ]);
+                }
+            }
+
             return back()->with('message', 'Record successfully updated.');
         }
         
@@ -684,19 +742,40 @@ class ProjectController extends Basefunction {
             // if (DB::table('related_table')->where('clientId', $del)->first()) {
             //     return back()->with('error_message', 'Client has related records. Hence, record cannot be deleted!');
             // }
+            
+            // Delete associated project categories
+            DB::table('client_project_categories')->where('clientId', $del)->delete();
+            
             DB::table('clients')->where('id', $del)->delete();
             return back()->with('message', 'Record successfully deleted.');
         }
         
-        // Fetch clients list with account information
-        $data['clients'] = DB::table('clients')
+        // Fetch clients list with account information and project categories
+        $clients = DB::table('clients')
             ->leftJoin('account_charts', 'clients.clientAccountId', '=', 'account_charts.id')
             ->select('clients.id', 'clients.name', 'clients.clientAccountId', 'account_charts.accountdescription as accountName')
             ->orderBy('clients.name', 'asc')
             ->get();
+
+        // Fetch project categories for each client
+        foreach ($clients as $client) {
+            $client->projectCategories = DB::table('client_project_categories')
+                ->join('project_categories', 'client_project_categories.project_categoryId', '=', 'project_categories.id')
+                ->where('client_project_categories.clientId', $client->id)
+                ->select('project_categories.id', 'project_categories.category')
+                ->get();
+        }
+
+        $data['clients'] = $clients;
         
         // Fetch account charts for dropdown (using headId 6 as default, adjust if needed)
         $data['accountLookUp'] = $this->AccountLookUpByHeadId(6);
+        
+        // Fetch project categories for dropdown
+        $data['projectCategories'] = DB::table('project_categories')
+            ->select('id', 'category')
+            ->orderBy('category', 'asc')
+            ->get();
         
         return view('Project.client', $data);
     }

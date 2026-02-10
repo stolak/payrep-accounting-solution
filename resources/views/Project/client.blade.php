@@ -60,6 +60,23 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label>Project Categories</label>
+                                            <select class="select2 form-control" name="projectCategoryIds[]" multiple>
+                                                @foreach ($projectCategories as $category)
+                                                    <option value="{{ $category->id }}"
+                                                        {{ in_array($category->id, old('projectCategoryIds', [])) ? 'selected' : '' }}>
+                                                        {{ $category->category }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <small class="form-text text-muted">Select one or more project
+                                                categories</small>
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <div class="text-right">
                                     <button type="submit" class="btn btn-primary" name="addnew">Create</button>
@@ -86,6 +103,7 @@
                                             <th rowspan="1">S/N</th>
                                             <th rowspan="1">Name</th>
                                             <th rowspan="1">Client Account</th>
+                                            <th rowspan="1">Project Categories</th>
                                             <th rowspan="1">Action</th>
                                         </tr>
                                     </thead>
@@ -106,8 +124,22 @@
                                                     {{ $list->accountName ?? 'N/A' }}
                                                 </td>
                                                 <td>
+                                                    @if ($list->projectCategories && count($list->projectCategories) > 0)
+                                                        @foreach ($list->projectCategories as $category)
+                                                            <span class="badge badge-info">{{ $category->category }}</span>
+                                                        @endforeach
+                                                    @else
+                                                        <span class="text-muted">N/A</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @php
+                                                        $categoryIds = $list->projectCategories
+                                                            ? $list->projectCategories->pluck('id')->toArray()
+                                                            : [];
+                                                    @endphp
                                                     <a class="btn btn-sm bg-success-light"
-                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->name }}','{{ $list->clientAccountId ?? '' }}')">
+                                                        href="javascript: editfunc('{{ $list->id }}','{{ addslashes($list->name) }}','{{ $list->clientAccountId ?? '' }}',{{ json_encode($categoryIds) }})">
                                                         <i class="fe fe-pencil"></i>
                                                     </a>
                                                     <a class="btn btn-sm bg-danger-light"
@@ -130,7 +162,7 @@
 
         <!-- Edit Details Modal -->
         <div class="modal fade" id="edit_details" aria-hidden="true" role="dialog">
-            <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">Edit Client</h5>
@@ -160,6 +192,20 @@
                                                 </option>
                                             @endforeach
                                         </select>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm-12">
+                                    <div class="form-group">
+                                        <label>Project Categories</label>
+                                        <select class="select2 form-control" id="projectCategoryIds"
+                                            name="projectCategoryIds[]" multiple>
+                                            @foreach ($projectCategories as $category)
+                                                <option value="{{ $category->id }}">
+                                                    {{ $category->category }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <small class="form-text text-muted">Select one or more project categories</small>
                                     </div>
                                 </div>
                             </div>
@@ -200,7 +246,6 @@
         <!-- /Delete Modal -->
 
     </div>
-
 @endsection
 @section('styles')
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
@@ -218,10 +263,18 @@
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
     <script>
-        function editfunc(id, name, clientAccountId) {
+        function editfunc(id, name, clientAccountId, projectCategoryIds) {
             document.getElementById('id').value = id;
             document.getElementById('name').value = name;
             document.getElementById('clientAccountId').value = clientAccountId || '';
+
+            // Clear previous selections
+            $('#projectCategoryIds').val(null).trigger('change');
+
+            // Set selected project categories
+            if (projectCategoryIds && projectCategoryIds.length > 0) {
+                $('#projectCategoryIds').val(projectCategoryIds).trigger('change');
+            }
 
             $("#edit_details").modal('show')
         }
@@ -234,8 +287,3 @@
     </script>
 @endsection
 <!-- /Page Wrapper -->
-
-
-
-
-
