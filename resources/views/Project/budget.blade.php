@@ -13,8 +13,13 @@
                         <h3 class="page-title">Setup</h3>
                         <ul class="breadcrumb">
                             <li class="breadcrumb-item"><a href="/">Home</a></li>
-                            <li class="breadcrumb-item active">Budget Setup</li>
+                            <li class="breadcrumb-item active">Expense Element</li>
                         </ul>
+                    </div>
+                    <div class="col-auto">
+                        <a href="{{ url('/budget-category') }}" class="btn btn-primary">
+                            <i class="fe fe-arrow-left"></i> Back to Expense Classification
+                        </a>
                     </div>
                 </div>
             </div>
@@ -26,7 +31,7 @@
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-header">
-                            <h4 class="card-title">Create Budget/Sub contractor</h4>
+                            <h4 class="card-title">Expense Element</h4>
                         </div>
                         <div class="card-body">
                             <form method="post">
@@ -38,8 +43,9 @@
                                             <?php if ($classificationId == '') {
                                                 $classificationId = old('classificationId');
                                             } ?>
-                                            <select class="form-control" name="classificationId" required>
-                                                <option value="">--Select Category--</option>
+                                            <select class="form-control" name="classificationId" id="classificationId"
+                                                required onchange="filterByClassification(this.value)">
+                                                <option value="">--Select Classification--</option>
                                                 @foreach ($budgetCategories as $cat)
                                                     <option value="{{ $cat->id }}"
                                                         {{ $classificationId == $cat->id ? 'selected' : '' }}>
@@ -50,7 +56,7 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label>Budget/Sub contractor Name <span class="text-danger">*</span></label>
+                                            <label>Expense Element Name <span class="text-danger">*</span></label>
                                             <?php if ($name == '') {
                                                 $name = old('name');
                                             } ?>
@@ -63,7 +69,7 @@
                                 <div class="row">
                                     <div class="col-md-12">
                                         <div class="form-group">
-                                            <label>Description/Scope of Work</label>
+                                            <label>Description</label>
                                             <?php if ($description == '') {
                                                 $description = old('description');
                                             } ?>
@@ -87,7 +93,7 @@
                     <!-- List of budgets -->
                     <div class="card card-table">
                         <div class="card-header">
-                            <h4 class="card-title">Budgets</h4>
+                            <h4 class="card-title">Expense Elements</h4>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -95,8 +101,8 @@
                                     <thead>
                                         <tr>
                                             <th rowspan="1">S/N</th>
-                                            <th rowspan="1">Name</th>
-                                            <th rowspan="1">Category</th>
+                                            <th rowspan="1">Expense Element Name</th>
+                                            <th rowspan="1">Classification</th>
                                             <th rowspan="1">Description</th>
                                             <th rowspan="1">Action</th>
                                         </tr>
@@ -159,16 +165,16 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>Budget Name <span class="text-danger">*</span></label>
+                                        <label>Expense Element Name <span class="text-danger">*</span></label>
                                         <input type="text" id="name" name="name" class="form-control"
                                             style="text-align: left;" autocomplete="off" required>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>Category <span class="text-danger">*</span></label>
+                                        <label>Classification <span class="text-danger">*</span></label>
                                         <select class="form-control" id="classificationId" name="classificationId" required>
-                                            <option value="">--Select Category--</option>
+                                            <option value="">--Select Classification--</option>
                                             @foreach ($budgetCategories as $cat)
                                                 <option value="{{ $cat->id }}">{{ $cat->category }}</option>
                                             @endforeach
@@ -236,6 +242,16 @@
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
     <script>
+        function filterByClassification(classificationId) {
+            var url = new URL(window.location.href);
+            if (classificationId) {
+                url.searchParams.set('classificationId', classificationId);
+            } else {
+                url.searchParams.delete('classificationId');
+            }
+            window.location.href = url.toString();
+        }
+
         function editfunc(id, name, description, classificationId) {
             document.getElementById('id').value = id;
             document.getElementById('name').value = name;

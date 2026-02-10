@@ -241,7 +241,8 @@ class ProjectController extends Basefunction {
     {
         $data['name'] = $request->input('name');
         $data['description'] = $request->input('description');
-        $data['classificationId'] = $request->input('classificationId');
+        // Get classificationId from query string or form input
+        $data['classificationId'] = $request->input('classificationId') ?? $request->query('classificationId') ?? '';
         $data['id'] = $request->input('id');
         
         if (isset($_POST['addnew'])) {
@@ -286,12 +287,17 @@ class ProjectController extends Basefunction {
             return back()->with('message', 'Record successfully deleted.');
         }
         
-        // Fetch budgets list with classification
-        $data['budgets'] = DB::table('budgets')
+        // Fetch budgets list with classification, filtered by classificationId if provided
+        $budgetsQuery = DB::table('budgets')
             ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
-            ->select('budgets.id', 'budgets.name', 'budgets.description', 'budgets.classificationId', 'budget_classifications.category as categoryName')
-            ->orderBy('budgets.name', 'asc')
-            ->get();
+            ->select('budgets.id', 'budgets.name', 'budgets.description', 'budgets.classificationId', 'budget_classifications.category as categoryName');
+        
+        // Filter by classificationId if provided
+        if (!empty($data['classificationId'])) {
+            $budgetsQuery->where('budgets.classificationId', $data['classificationId']);
+        }
+        
+        $data['budgets'] = $budgetsQuery->orderBy('budgets.name', 'asc')->get();
         
         // Fetch budget classifications for dropdown
         $data['budgetCategories'] = DB::table('budget_classifications')

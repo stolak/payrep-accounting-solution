@@ -34,7 +34,7 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label>Category</label>
+                                            <label>Classification</label>
                                             <?php if ($category == '') {
                                                 $category = old('category');
                                             } ?>
@@ -92,6 +92,11 @@
                                                     <a class="btn btn-sm bg-success-light"
                                                         href="javascript: editfunc('{{ $list->id }}','{{ $list->category }}','{{ $list->isMeasure }}','{{ $list->isMilestone }}','{{ $list->isSubContrator }}')">
                                                         <i class="fe fe-pencil"></i>
+                                                    </a>
+                                                    <a class="btn btn-sm bg-info-light"
+                                                        href="{{ url('/budget-setup?classificationId=' . $list->id) }}"
+                                                        title="Expense Element">
+                                                        <i class="fe fe-list"></i> Expense Element
                                                     </a>
                                                     <a class="btn btn-sm bg-danger-light"
                                                         href="javascript: deletefunc('{{ $list->id }}')">
