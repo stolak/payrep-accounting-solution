@@ -55,7 +55,7 @@ class ProjectController extends Basefunction {
                 if (!$clientCategoryExists) {
                     $clientName = DB::table('clients')->where('id', $data['clientId'])->value('name');
                     $categoryName = DB::table('project_categories')->where('id', $data['categoryId'])->value('category');
-                    return back()->with('error_message', "The selected client '{$clientName}' does not have the project category '{$categoryName}' assigned. Please assign the category to the client first.");
+                    return back()->withInput()->with('error_message', "The selected client '{$clientName}' does not have the project category '{$categoryName}' assigned. Please assign the category to the client first.");
                 }
             }
 
@@ -156,7 +156,7 @@ class ProjectController extends Basefunction {
                 if (!$clientCategoryExists) {
                     $clientName = DB::table('clients')->where('id', $data['clientId'])->value('name');
                     $categoryName = DB::table('project_categories')->where('id', $data['categoryId'])->value('category');
-                    return back()->with('error_message', "The selected client '{$clientName}' does not have the project category '{$categoryName}' assigned. Please assign the category to the client first.");
+                    return back()->withInput()->with('error_message', "The selected client '{$clientName}' does not have the project category '{$categoryName}' assigned. Please assign the category to the client first.");
                 }
             }
 
