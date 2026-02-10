@@ -35,14 +35,20 @@ class ProjectController extends Basefunction {
                 'po_poNumber.*' => 'required|string|distinct',
                 'po_description' => 'required|array|min:1',
                 'po_description.*' => 'required|string',
-                'po_qty' => 'required|array|min:1',
-                'po_qty.*' => 'required|numeric|min:0',
-                'po_unitCost' => 'required|array|min:1',
-                'po_unitCost.*' => 'required|numeric|min:0',
-                'po_uomId' => 'nullable|array',
-                'po_uomId.*' => 'nullable|integer',
                 'po_vat' => 'nullable|array',
                 'po_vat.*' => 'nullable|numeric|min:0|max:100',
+                'po_item_description' => 'required|array|min:1',
+                'po_item_description.*' => 'required|array|min:1',
+                'po_item_description.*.*' => 'required|string',
+                'po_item_qty' => 'required|array|min:1',
+                'po_item_qty.*' => 'required|array|min:1',
+                'po_item_qty.*.*' => 'required|numeric|min:0',
+                'po_item_unitCost' => 'required|array|min:1',
+                'po_item_unitCost.*' => 'required|array|min:1',
+                'po_item_unitCost.*.*' => 'required|numeric|min:0',
+                'po_item_uomId' => 'nullable|array',
+                'po_item_uomId.*' => 'nullable|array',
+                'po_item_uomId.*.*' => 'nullable|integer',
             ]);
 
             // Validate that client has the selected project category
@@ -94,32 +100,46 @@ class ProjectController extends Basefunction {
                 }
             }
 
-            // Create POs for the project
+            // Create POs for the project with line items
             $poPoNumbers = $request->input('po_poNumber', []);
             $poDescriptions = $request->input('po_description', []);
-            $poUomIds = $request->input('po_uomId', []);
-            $poQties = $request->input('po_qty', []);
-            $poUnitCosts = $request->input('po_unitCost', []);
             $poVats = $request->input('po_vat', []);
+            
+            // Get line items for each PO
+            $poItemDescriptions = $request->input('po_item_description', []);
+            $poItemUomIds = $request->input('po_item_uomId', []);
+            $poItemQties = $request->input('po_item_qty', []);
+            $poItemUnitCosts = $request->input('po_item_unitCost', []);
 
-            foreach ($poDescriptions as $index => $description) {
-                if (!empty($description) && !empty($poPoNumbers[$index])) {
-                    $qty = $poQties[$index] ?? 0;
-                    $unitCost = $poUnitCosts[$index] ?? 0;
-                    $vat = $poVats[$index] ?? 0;
+            foreach ($poPoNumbers as $poIndex => $poNumber) {
+                if (!empty($poNumber) && !empty($poDescriptions[$poIndex])) {
+                    $poDescription = $poDescriptions[$poIndex];
+                    $vat = $poVats[$poIndex] ?? 0;
                     
-                    $subcost = $qty * $unitCost;
-                    $vatAmount = $subcost * ($vat / 100);
-                    $subnet = $subcost + $vatAmount;
+                    // Calculate totals from line items
+                    $totalSubcost = 0;
+                    $itemDescriptions = $poItemDescriptions[$poIndex] ?? [];
+                    $itemUomIds = $poItemUomIds[$poIndex] ?? [];
+                    $itemQties = $poItemQties[$poIndex] ?? [];
+                    $itemUnitCosts = $poItemUnitCosts[$poIndex] ?? [];
+                    
+                    // Calculate total subcost from all line items
+                    foreach ($itemDescriptions as $itemIndex => $itemDescription) {
+                        if (!empty($itemDescription)) {
+                            $qty = $itemQties[$itemIndex] ?? 0;
+                            $unitCost = $itemUnitCosts[$itemIndex] ?? 0;
+                            $totalSubcost += $qty * $unitCost;
+                        }
+                    }
+                    
+                    $vatAmount = $totalSubcost * ($vat / 100);
+                    $subnet = $totalSubcost + $vatAmount;
 
-                    DB::table('project_po')->insert([
+                    // Create PO header
+                    $poId = DB::table('project_po')->insertGetId([
                         'projectId' => $projectId,
-                        'poNumber' => $poPoNumbers[$index],
-                        'description' => $description,
-                        'uomId' => $poUomIds[$index] ?? null,
-                        'qty' => $qty,
-                        'unitCost' => $unitCost,
-                        'subcost' => $subcost,
+                        'poNumber' => $poNumber,
+                        'description' => $poDescription,
                         'vat' => $vat,
                         'vatAmount' => $vatAmount,
                         'subnet' => $subnet,
@@ -128,6 +148,26 @@ class ProjectController extends Basefunction {
                         'updatedAt' => now(),
                         'createdBy' => Auth::user()->id,
                     ]);
+                    
+                    // Create PO line items
+                    foreach ($itemDescriptions as $itemIndex => $itemDescription) {
+                        if (!empty($itemDescription)) {
+                            $qty = $itemQties[$itemIndex] ?? 0;
+                            $unitCost = $itemUnitCosts[$itemIndex] ?? 0;
+                            $subcost = $qty * $unitCost;
+                            
+                            DB::table('project_po_item')->insert([
+                                'poId' => $poId,
+                                'description' => $itemDescription,
+                                'uomId' => $itemUomIds[$itemIndex] ?? null,
+                                'qty' => $qty,
+                                'unitCost' => $unitCost,
+                                'subcost' => $subcost,
+                                'createdAt' => now(),
+                                'updatedAt' => now(),
+                            ]);
+                        }
+                    }
                 }
             }
 
@@ -810,37 +850,70 @@ class ProjectController extends Basefunction {
                 'projectId' => 'required|integer',
                 'poNumber' => 'required|string|unique:project_po,poNumber',
                 'description' => 'required|string',
-                'uomId' => 'nullable|integer',
-                'qty' => 'required|numeric|min:0',
-                'unitCost' => 'required|numeric|min:0',
                 'vat' => 'nullable|numeric|min:0|max:100',
+                'item_description' => 'required|array|min:1',
+                'item_description.*' => 'required|string',
+                'item_qty' => 'required|array|min:1',
+                'item_qty.*' => 'required|numeric|min:0',
+                'item_unitCost' => 'required|array|min:1',
+                'item_unitCost.*' => 'required|numeric|min:0',
+                'item_uomId' => 'nullable|array',
+                'item_uomId.*' => 'nullable|integer',
             ]);
 
-            // Calculate subcost, vatAmount, and subnet
-            $qty = $data['qty'];
-            $unitCost = $data['unitCost'];
+            // Calculate totals from line items
+            $itemDescriptions = $request->input('item_description', []);
+            $itemUomIds = $request->input('item_uomId', []);
+            $itemQties = $request->input('item_qty', []);
+            $itemUnitCosts = $request->input('item_unitCost', []);
             $vat = $data['vat'] ?? 0;
             
-            $subcost = $qty * $unitCost;
-            $vatAmount = $subcost * ($vat / 100);
-            $subnet = $subcost + $vatAmount;
+            $totalSubcost = 0;
+            foreach ($itemDescriptions as $index => $itemDescription) {
+                if (!empty($itemDescription)) {
+                    $qty = $itemQties[$index] ?? 0;
+                    $unitCost = $itemUnitCosts[$index] ?? 0;
+                    $totalSubcost += $qty * $unitCost;
+                }
+            }
+            
+            $vatAmount = $totalSubcost * ($vat / 100);
+            $subnet = $totalSubcost + $vatAmount;
 
-            DB::table('project_po')->insert([
+            // Create PO header
+            $poId = DB::table('project_po')->insertGetId([
                 'projectId' => $data['projectId'],
                 'poNumber' => $data['poNumber'],
                 'description' => $data['description'],
-                'uomId' => $data['uomId'] ?? null,
-                'qty' => $qty,
-                'unitCost' => $unitCost,
-                'subcost' => $subcost,
                 'vat' => $vat,
                 'vatAmount' => $vatAmount,
                 'subnet' => $subnet,
-                'status' => 'Pending', // Default status
+                'status' => 'Pending',
                 'createdAt' => now(),
                 'updatedAt' => now(),
                 'createdBy' => Auth::user()->id,
             ]);
+            
+            // Create PO line items
+            foreach ($itemDescriptions as $index => $itemDescription) {
+                if (!empty($itemDescription)) {
+                    $qty = $itemQties[$index] ?? 0;
+                    $unitCost = $itemUnitCosts[$index] ?? 0;
+                    $subcost = $qty * $unitCost;
+                    
+                    DB::table('project_po_item')->insert([
+                        'poId' => $poId,
+                        'description' => $itemDescription,
+                        'uomId' => $itemUomIds[$index] ?? null,
+                        'qty' => $qty,
+                        'unitCost' => $unitCost,
+                        'subcost' => $subcost,
+                        'createdAt' => now(),
+                        'updatedAt' => now(),
+                    ]);
+                }
+            }
+            
             return back()->with('message', 'New PO record successfully added.');
         }
         
@@ -849,34 +922,70 @@ class ProjectController extends Basefunction {
                 'projectId' => 'required|integer',
                 'poNumber' => 'required|string|unique:project_po,poNumber,' . $request->input('id'),
                 'description' => 'required|string',
-                'uomId' => 'nullable|integer',
-                'qty' => 'required|numeric|min:0',
-                'unitCost' => 'required|numeric|min:0',
                 'vat' => 'nullable|numeric|min:0|max:100',
                 'id' => 'required|integer',
+                'item_description' => 'required|array|min:1',
+                'item_description.*' => 'required|string',
+                'item_qty' => 'required|array|min:1',
+                'item_qty.*' => 'required|numeric|min:0',
+                'item_unitCost' => 'required|array|min:1',
+                'item_unitCost.*' => 'required|numeric|min:0',
+                'item_uomId' => 'nullable|array',
+                'item_uomId.*' => 'nullable|integer',
             ]);
 
-            // Calculate subcost, vatAmount, and subnet
-            $qty = $data['qty'];
-            $unitCost = $data['unitCost'];
+            // Calculate totals from line items
+            $itemDescriptions = $request->input('item_description', []);
+            $itemUomIds = $request->input('item_uomId', []);
+            $itemQties = $request->input('item_qty', []);
+            $itemUnitCosts = $request->input('item_unitCost', []);
             $vat = $data['vat'] ?? 0;
             
-            $subcost = $qty * $unitCost;
-            $vatAmount = $subcost * ($vat / 100);
-            $subnet = $subcost + $vatAmount;
+            $totalSubcost = 0;
+            foreach ($itemDescriptions as $index => $itemDescription) {
+                if (!empty($itemDescription)) {
+                    $qty = $itemQties[$index] ?? 0;
+                    $unitCost = $itemUnitCosts[$index] ?? 0;
+                    $totalSubcost += $qty * $unitCost;
+                }
+            }
+            
+            $vatAmount = $totalSubcost * ($vat / 100);
+            $subnet = $totalSubcost + $vatAmount;
 
+            // Update PO header
             DB::table('project_po')->where('id', $data['id'])->update([
                 'poNumber' => $data['poNumber'],
                 'description' => $data['description'],
-                'uomId' => $data['uomId'] ?? null,
-                'qty' => $qty,
-                'unitCost' => $unitCost,
-                'subcost' => $subcost,
                 'vat' => $vat,
                 'vatAmount' => $vatAmount,
                 'subnet' => $subnet,
                 'updatedAt' => now(),
             ]);
+            
+            // Delete existing line items
+            DB::table('project_po_item')->where('poId', $data['id'])->delete();
+            
+            // Create new line items
+            foreach ($itemDescriptions as $index => $itemDescription) {
+                if (!empty($itemDescription)) {
+                    $qty = $itemQties[$index] ?? 0;
+                    $unitCost = $itemUnitCosts[$index] ?? 0;
+                    $subcost = $qty * $unitCost;
+                    
+                    DB::table('project_po_item')->insert([
+                        'poId' => $data['id'],
+                        'description' => $itemDescription,
+                        'uomId' => $itemUomIds[$index] ?? null,
+                        'qty' => $qty,
+                        'unitCost' => $unitCost,
+                        'subcost' => $subcost,
+                        'createdAt' => now(),
+                        'updatedAt' => now(),
+                    ]);
+                }
+            }
+            
             return back()->with('message', 'PO record successfully updated.');
         }
         
@@ -892,6 +1001,9 @@ class ProjectController extends Basefunction {
         
         if (isset($_POST['del'])) {
             $del = $request->input('deleteid');
+            // Delete line items first
+            DB::table('project_po_item')->where('poId', $del)->delete();
+            // Then delete PO header
             DB::table('project_po')->where('id', $del)->delete();
             return back()->with('message', 'PO record successfully deleted.');
         }
@@ -911,8 +1023,7 @@ class ProjectController extends Basefunction {
         // Fetch project POs for selected project with joins
         $data['projectPos'] = collect();
         if (!empty($data['projectId'])) {
-            $data['projectPos'] = DB::table('project_po')
-                ->leftJoin('uom', 'project_po.uomId', '=', 'uom.id')
+            $projectPos = DB::table('project_po')
                 ->leftJoin('users as creator', 'project_po.createdBy', '=', 'creator.id')
                 ->leftJoin('users as approver', 'project_po.approvedBy', '=', 'approver.id')
                 ->where('project_po.projectId', $data['projectId'])
@@ -921,10 +1032,6 @@ class ProjectController extends Basefunction {
                     'project_po.projectId',
                     'project_po.poNumber',
                     'project_po.description',
-                    'project_po.uomId',
-                    'project_po.qty',
-                    'project_po.unitCost',
-                    'project_po.subcost',
                     'project_po.vat',
                     'project_po.vatAmount',
                     'project_po.subnet',
@@ -933,12 +1040,31 @@ class ProjectController extends Basefunction {
                     'project_po.approvedBy',
                     'project_po.createdAt',
                     'project_po.updatedAt',
-                    'uom.measurement as uomMeasurement',
                     'creator.name as createdByName',
                     'approver.name as approvedByName'
                 )
                 ->orderBy('project_po.createdAt', 'desc')
                 ->get();
+            
+            // Fetch line items for each PO
+            foreach ($projectPos as $po) {
+                $po->items = DB::table('project_po_item')
+                    ->leftJoin('uom', 'project_po_item.uomId', '=', 'uom.id')
+                    ->where('project_po_item.poId', $po->id)
+                    ->select(
+                        'project_po_item.id',
+                        'project_po_item.description',
+                        'project_po_item.uomId',
+                        'project_po_item.qty',
+                        'project_po_item.unitCost',
+                        'project_po_item.subcost',
+                        'uom.measurement as uomMeasurement'
+                    )
+                    ->orderBy('project_po_item.id', 'asc')
+                    ->get();
+            }
+            
+            $data['projectPos'] = $projectPos;
         }
         
         return view('Project.projectpo', $data);

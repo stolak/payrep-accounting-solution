@@ -65,122 +65,6 @@
             @if (!empty($projectId))
                 <div class="row">
                     <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h4 class="card-title">Add Purchase Order</h4>
-                            </div>
-                            <div class="card-body">
-                                <form method="post" id="addPoForm">
-                                    {{ csrf_field() }}
-                                    <input type="hidden" name="projectId" value="{{ $projectId }}">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>PO Number <span class="text-danger">*</span></label>
-                                                <?php if ($poNumber == '') {
-                                                    $poNumber = old('poNumber');
-                                                } ?>
-                                                <input type="text" class="form-control" value="{{ $poNumber }}"
-                                                    name="poNumber" id="poNumber" required>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>Description <span class="text-danger">*</span></label>
-                                                <?php if ($description == '') {
-                                                    $description = old('description');
-                                                } ?>
-                                                <input type="text" class="form-control" value="{{ $description }}"
-                                                    name="description" id="description" required>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label>Unit of Measure (UOM)</label>
-                                                <?php if ($uomId == '') {
-                                                    $uomId = old('uomId');
-                                                } ?>
-                                                <select class="select2 form-control" name="uomId" id="uomId">
-                                                    <option value="">--Select UOM--</option>
-                                                    @foreach ($uoms as $uom)
-                                                        <option value="{{ $uom->id }}"
-                                                            {{ $uomId == $uom->id ? 'selected' : '' }}>
-                                                            {{ $uom->measurement }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label>Quantity <span class="text-danger">*</span></label>
-                                                <?php if ($qty == '') {
-                                                    $qty = old('qty');
-                                                } ?>
-                                                <input type="number" class="form-control" value="{{ $qty }}"
-                                                    name="qty" id="qty" step="0.01" min="0" required
-                                                    oninput="calculatePoAmounts()">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label>Unit Cost <span class="text-danger">*</span></label>
-                                                <?php if ($unitCost == '') {
-                                                    $unitCost = old('unitCost');
-                                                } ?>
-                                                <input type="number" class="form-control" value="{{ $unitCost }}"
-                                                    name="unitCost" id="unitCost" step="0.01" min="0" required
-                                                    oninput="calculatePoAmounts()">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label>VAT %</label>
-                                                <?php if ($vat == '') {
-                                                    $vat = old('vat');
-                                                } ?>
-                                                <input type="number" class="form-control" value="{{ $vat }}"
-                                                    name="vat" id="vat" step="0.01" min="0"
-                                                    max="100" oninput="calculatePoAmounts()">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Purchase value</label>
-                                                <input type="number" class="form-control" id="subcost" readonly
-                                                    style="background-color: #f0f0f0;">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>VAT Amount</label>
-                                                <input type="number" class="form-control" id="vatAmount" readonly
-                                                    style="background-color: #f0f0f0;">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Total PO value</label>
-                                                <input type="number" class="form-control" id="subnet" readonly
-                                                    style="background-color: #f0f0f0;">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="text-right">
-                                        <button type="submit" class="btn btn-primary" name="addnew">Add PO</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-12">
                         <!-- List of project POs -->
                         <div class="card card-table">
                             <div class="card-header">
@@ -193,11 +77,12 @@
                                             <tr>
                                                 <th rowspan="1">S/N</th>
                                                 <th rowspan="1">PO Number</th>
-                                                <th rowspan="1">Description</th>
+                                                <th rowspan="1">PO Description</th>
+                                                <th rowspan="1">Line Item</th>
                                                 <th rowspan="1">UOM</th>
                                                 <th rowspan="1">Qty</th>
                                                 <th rowspan="1">Unit Cost</th>
-                                                <th rowspan="1">Purchase value</th>
+                                                <th rowspan="1">Subtotal</th>
                                                 <th rowspan="1">VAT %</th>
                                                 <th rowspan="1">VAT Amount</th>
                                                 <th rowspan="1">Total PO value</th>
@@ -217,85 +102,139 @@
                                                 @foreach ($projectPos as $list)
                                                     @php
                                                         $totalSubnet += $list->subnet;
+                                                        $items = $list->items ?? collect();
+                                                        $itemCount = $items->count();
                                                     @endphp
-                                                    <tr>
-                                                        <td>
-                                                            {{ $i++ }}
-                                                        </td>
-                                                        <td>
-                                                            {{ $list->poNumber }}
-                                                        </td>
-                                                        <td>
-                                                            {{ $list->description }}
-                                                        </td>
-                                                        <td>
-                                                            {{ $list->uomMeasurement ?? 'N/A' }}
-                                                        </td>
-                                                        <td style="text-align: right;">
-                                                            {{ number_format($list->qty, 2, '.', ',') }}
-                                                        </td>
-                                                        <td style="text-align: right;">
-                                                            {{ number_format($list->unitCost, 2, '.', ',') }}
-                                                        </td>
-                                                        <td style="text-align: right;">
-                                                            {{ number_format($list->subcost, 2, '.', ',') }}
-                                                        </td>
-                                                        <td style="text-align: right;">
-                                                            {{ $list->vat ? number_format($list->vat, 2, '.', ',') . '%' : '0%' }}
-                                                        </td>
-                                                        <td style="text-align: right;">
-                                                            {{ number_format($list->vatAmount, 2, '.', ',') }}
-                                                        </td>
-                                                        <td style="text-align: right;">
-                                                            {{ number_format($list->subnet, 2, '.', ',') }}
-                                                        </td>
-                                                        <td>
-                                                            @if ($list->status == 'Approved')
-                                                                <span class="badge bg-success">Approved</span>
-                                                            @else
-                                                                <span class="badge bg-warning">Pending</span>
-                                                            @endif
-                                                        </td>
-                                                        <td>
-                                                            {{ $list->createdByName ?? 'N/A' }}
-                                                        </td>
-                                                        <td>
-                                                            {{ $list->approvedByName ?? 'N/A' }}
-                                                        </td>
-                                                        <td>
-                                                            @if ($list->status != 'Approved')
-                                                                <a class="btn btn-sm bg-success-light"
-                                                                    href="javascript: editfunc('{{ $list->id }}','{{ $list->poNumber }}','{{ addslashes($list->description) }}','{{ $list->uomId ?? '' }}','{{ $list->qty }}','{{ $list->unitCost }}','{{ $list->vat ?? 0 }}')">
-                                                                    <i class="fe fe-pencil"></i>
+                                                    @if ($itemCount > 0)
+                                                        @foreach ($items as $itemIdx => $item)
+                                                            <tr class="{{ $itemIdx == 0 ? 'table-primary' : '' }}">
+                                                                @if ($itemIdx == 0)
+                                                                    <td rowspan="{{ $itemCount }}"
+                                                                        style="vertical-align: middle;">
+                                                                        {{ $i++ }}
+                                                                    </td>
+                                                                    <td rowspan="{{ $itemCount }}"
+                                                                        style="vertical-align: middle;">
+                                                                        <strong>{{ $list->poNumber }}</strong>
+                                                                    </td>
+                                                                    <td rowspan="{{ $itemCount }}"
+                                                                        style="vertical-align: middle;">
+                                                                        <strong>{{ $list->description }}</strong>
+                                                                    </td>
+                                                                @endif
+                                                                <td>{{ $item->description }}</td>
+                                                                <td>{{ $item->uomMeasurement ?? 'N/A' }}</td>
+                                                                <td style="text-align: right;">
+                                                                    {{ number_format($item->qty, 2, '.', ',') }}</td>
+                                                                <td style="text-align: right;">
+                                                                    {{ number_format($item->unitCost, 2, '.', ',') }}</td>
+                                                                <td style="text-align: right;">
+                                                                    {{ number_format($item->subcost, 2, '.', ',') }}</td>
+                                                                @if ($itemIdx == 0)
+                                                                    <td rowspan="{{ $itemCount }}"
+                                                                        style="vertical-align: middle; text-align: right;">
+                                                                        <strong>{{ $list->vat ? number_format($list->vat, 2, '.', ',') . '%' : '0%' }}</strong>
+                                                                    </td>
+                                                                    <td rowspan="{{ $itemCount }}"
+                                                                        style="vertical-align: middle; text-align: right;">
+                                                                        <strong>{{ number_format($list->vatAmount, 2, '.', ',') }}</strong>
+                                                                    </td>
+                                                                    <td rowspan="{{ $itemCount }}"
+                                                                        style="vertical-align: middle; text-align: right;">
+                                                                        <strong>{{ number_format($list->subnet, 2, '.', ',') }}</strong>
+                                                                    </td>
+                                                                    <td rowspan="{{ $itemCount }}"
+                                                                        style="vertical-align: middle;">
+                                                                        @if ($list->status == 'Approved')
+                                                                            <span class="badge bg-success">Approved</span>
+                                                                        @else
+                                                                            <span class="badge bg-warning">Pending</span>
+                                                                        @endif
+                                                                    </td>
+                                                                    <td rowspan="{{ $itemCount }}"
+                                                                        style="vertical-align: middle;">
+                                                                        {{ $list->createdByName ?? 'N/A' }}
+                                                                    </td>
+                                                                    <td rowspan="{{ $itemCount }}"
+                                                                        style="vertical-align: middle;">
+                                                                        {{ $list->approvedByName ?? 'N/A' }}
+                                                                    </td>
+                                                                    <td rowspan="{{ $itemCount }}"
+                                                                        style="vertical-align: middle;">
+                                                                        @if ($list->status != 'Approved')
+                                                                            <a class="btn btn-sm bg-success-light"
+                                                                                href="javascript: editfunc('{{ $list->id }}','{{ $list->poNumber }}','{{ addslashes($list->description) }}','{{ $list->vat ?? 0 }}',{{ json_encode($items->map(function ($item) {return ['id' => $item->id, 'description' => $item->description, 'uomId' => $item->uomId ?? '', 'qty' => $item->qty, 'unitCost' => $item->unitCost];})->toArray()) }})">
+                                                                                <i class="fe fe-pencil"></i>
+                                                                            </a>
+                                                                            <a class="btn btn-sm bg-info-light"
+                                                                                href="javascript: approvefunc('{{ $list->id }}')">
+                                                                                <i class="fe fe-check"></i>
+                                                                            </a>
+                                                                        @endif
+                                                                        <a class="btn btn-sm bg-danger-light"
+                                                                            href="javascript: deletefunc('{{ $list->id }}')">
+                                                                            <i class="fe fe-trash"></i>
+                                                                        </a>
+                                                                    </td>
+                                                                @endif
+                                                            </tr>
+                                                        @endforeach
+                                                    @else
+                                                        <tr>
+                                                            <td>{{ $i++ }}</td>
+                                                            <td><strong>{{ $list->poNumber }}</strong></td>
+                                                            <td><strong>{{ $list->description }}</strong></td>
+                                                            <td colspan="3" class="text-center text-muted">No line
+                                                                items</td>
+                                                            <td style="text-align: right;">
+                                                                <strong>{{ $list->vat ? number_format($list->vat, 2, '.', ',') . '%' : '0%' }}</strong>
+                                                            </td>
+                                                            <td style="text-align: right;">
+                                                                <strong>{{ number_format($list->vatAmount, 2, '.', ',') }}</strong>
+                                                            </td>
+                                                            <td style="text-align: right;">
+                                                                <strong>{{ number_format($list->subnet, 2, '.', ',') }}</strong>
+                                                            </td>
+                                                            <td>
+                                                                @if ($list->status == 'Approved')
+                                                                    <span class="badge bg-success">Approved</span>
+                                                                @else
+                                                                    <span class="badge bg-warning">Pending</span>
+                                                                @endif
+                                                            </td>
+                                                            <td>{{ $list->createdByName ?? 'N/A' }}</td>
+                                                            <td>{{ $list->approvedByName ?? 'N/A' }}</td>
+                                                            <td>
+                                                                @if ($list->status != 'Approved')
+                                                                    <a class="btn btn-sm bg-success-light"
+                                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->poNumber }}','{{ addslashes($list->description) }}','{{ $list->vat ?? 0 }}',[])">
+                                                                        <i class="fe fe-pencil"></i>
+                                                                    </a>
+                                                                    <a class="btn btn-sm bg-info-light"
+                                                                        href="javascript: approvefunc('{{ $list->id }}')">
+                                                                        <i class="fe fe-check"></i>
+                                                                    </a>
+                                                                @endif
+                                                                <a class="btn btn-sm bg-danger-light"
+                                                                    href="javascript: deletefunc('{{ $list->id }}')">
+                                                                    <i class="fe fe-trash"></i>
                                                                 </a>
-                                                                <a class="btn btn-sm bg-info-light"
-                                                                    href="javascript: approvefunc('{{ $list->id }}')">
-                                                                    <i class="fe fe-check"></i>
-                                                                </a>
-                                                            @endif
-                                                            <a class="btn btn-sm bg-danger-light"
-                                                                href="javascript: deletefunc('{{ $list->id }}')">
-                                                                <i class="fe fe-trash"></i>
-                                                            </a>
-                                                        </td>
-                                                    </tr>
+                                                            </td>
+                                                        </tr>
+                                                    @endif
                                                 @endforeach
                                                 <tr
                                                     style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
-                                                    <td></td>
-                                                    <td></td>
-                                                    <td colspan="9" class="text-right"><strong>Grand Total:</strong>
+                                                    <td colspan="7" class="text-right"><strong>Grand Total:</strong>
                                                     </td>
                                                     <td style="text-align: right;">
                                                         <strong>{{ number_format($totalSubnet, 2, '.', ',') }}</strong>
                                                     </td>
-                                                    <td></td>
-                                                    <td></td>
-                                                    <td></td>
+                                                    <td colspan="7"></td>
                                                 </tr>
                                             @else
                                                 <tr>
-                                                    <td colspan="14" class="text-center">No purchase orders for this
+                                                    <td colspan="15" class="text-center">No purchase orders for this
                                                         project yet.</td>
                                                 </tr>
                                             @endif
@@ -305,6 +244,169 @@
                             </div>
                         </div>
                         <!-- /List of project POs -->
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title">Add Purchase Order</h4>
+                            </div>
+                            <div class="card-body">
+                                <form method="post" id="addPoForm">
+                                    {{ csrf_field() }}
+                                    <input type="hidden" name="projectId" value="{{ $projectId }}">
+
+                                    <!-- PO Header -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>PO Number <span class="text-danger">*</span></label>
+                                                <?php if ($poNumber == '') {
+                                                    $poNumber = old('poNumber');
+                                                } ?>
+                                                <input type="text" class="form-control" value="{{ $poNumber }}"
+                                                    name="poNumber" id="poNumber" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <div class="form-group">
+                                                <label>PO Description <span class="text-danger">*</span></label>
+                                                <?php if ($description == '') {
+                                                    $description = old('description');
+                                                } ?>
+                                                <input type="text" class="form-control" value="{{ $description }}"
+                                                    name="description" id="description" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>VAT %</label>
+                                                <?php if ($vat == '') {
+                                                    $vat = old('vat');
+                                                } ?>
+                                                <input type="number" class="form-control" value="{{ $vat }}"
+                                                    name="vat" id="vat" step="0.01" min="0"
+                                                    max="100" oninput="calculatePoTotals()">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Line Items -->
+                                    <h6 class="mb-2">Line Items <span class="text-danger">*</span> <small
+                                            class="text-muted">(At least one line item is required)</small></h6>
+                                    <div id="po-items-container">
+                                        @php
+                                            $oldItemDescriptions = old('item_description', []);
+                                            $oldItemUomIds = old('item_uomId', []);
+                                            $oldItemQties = old('item_qty', []);
+                                            $oldItemUnitCosts = old('item_unitCost', []);
+                                            $itemCount = max(1, count($oldItemDescriptions));
+                                        @endphp
+                                        @for ($i = 0; $i < $itemCount; $i++)
+                                            <div class="po-line-item card mb-2" data-item-index="{{ $i }}">
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <div class="col-md-4">
+                                                            <div class="form-group">
+                                                                <label>Item Description <span
+                                                                        class="text-danger">*</span></label>
+                                                                <input type="text" class="form-control"
+                                                                    name="item_description[]"
+                                                                    value="{{ $oldItemDescriptions[$i] ?? '' }}" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <div class="form-group">
+                                                                <label>UOM</label>
+                                                                <select class="select2 form-control" name="item_uomId[]">
+                                                                    <option value="">--Select--</option>
+                                                                    @foreach ($uoms as $uom)
+                                                                        <option value="{{ $uom->id }}"
+                                                                            {{ ($oldItemUomIds[$i] ?? '') == $uom->id ? 'selected' : '' }}>
+                                                                            {{ $uom->measurement }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <div class="form-group">
+                                                                <label>Qty <span class="text-danger">*</span></label>
+                                                                <input type="number" class="form-control po-item-qty"
+                                                                    name="item_qty[]" step="0.01" min="0"
+                                                                    value="{{ $oldItemQties[$i] ?? '' }}" required
+                                                                    oninput="calculatePoItemAmount(this)">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <div class="form-group">
+                                                                <label>Unit Cost <span class="text-danger">*</span></label>
+                                                                <input type="number"
+                                                                    class="form-control po-item-unitCost"
+                                                                    name="item_unitCost[]" step="0.01" min="0"
+                                                                    value="{{ $oldItemUnitCosts[$i] ?? '' }}" required
+                                                                    oninput="calculatePoItemAmount(this)">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <div class="form-group">
+                                                                <label>Subtotal</label>
+                                                                <input type="number" class="form-control po-item-subcost"
+                                                                    readonly style="background-color: #f0f0f0;">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <button type="button"
+                                                            class="btn btn-sm btn-danger remove-po-line-item"
+                                                            onclick="removePoLineItem(this)"
+                                                            style="display: {{ $itemCount > 1 ? 'inline-block' : 'none' }};">
+                                                            <i class="fe fe-trash"></i> Remove Item
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endfor
+                                    </div>
+                                    <div class="mb-3">
+                                        <button type="button" class="btn btn-sm btn-secondary"
+                                            onclick="addPoLineItem()">
+                                            <i class="fe fe-plus"></i> Add Line Item
+                                        </button>
+                                    </div>
+
+                                    <!-- PO Totals -->
+                                    <div class="row mt-3 pt-3 border-top">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label><strong>Total Purchase Value</strong></label>
+                                                <input type="number" class="form-control" id="total-subcost" readonly
+                                                    style="background-color: #e9ecef; font-weight: bold;">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label><strong>VAT Amount</strong></label>
+                                                <input type="number" class="form-control" id="total-vatAmount" readonly
+                                                    style="background-color: #e9ecef; font-weight: bold;">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label><strong>Total PO Value</strong></label>
+                                                <input type="number" class="form-control" id="total-subnet" readonly
+                                                    style="background-color: #e9ecef; font-weight: bold;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-right">
+                                        <button type="submit" class="btn btn-primary" name="addnew">Add PO</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
             @else
@@ -334,40 +436,21 @@
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
-                        <div class="modal-body">
-                            <div class="form-group">
-                                <label>PO Number <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="edit_poNumber" name="poNumber" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Description <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="edit_description" name="description"
-                                    required>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-3">
+                        <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                            <!-- PO Header -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
                                     <div class="form-group">
-                                        <label>Unit of Measure (UOM)</label>
-                                        <select class="select2 form-control" id="edit_uomId" name="uomId">
-                                            <option value="">--Select UOM--</option>
-                                            @foreach ($uoms as $uom)
-                                                <option value="{{ $uom->id }}">{{ $uom->measurement }}</option>
-                                            @endforeach
-                                        </select>
+                                        <label>PO Number <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="edit_poNumber" name="poNumber"
+                                            required>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-5">
                                     <div class="form-group">
-                                        <label>Quantity <span class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" id="edit_qty" name="qty"
-                                            step="0.01" min="0" required oninput="calculateEditPoAmounts()">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label>Unit Cost <span class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" id="edit_unitCost" name="unitCost"
-                                            step="0.01" min="0" required oninput="calculateEditPoAmounts()">
+                                        <label>PO Description <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="edit_description"
+                                            name="description" required>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
@@ -375,30 +458,41 @@
                                         <label>VAT %</label>
                                         <input type="number" class="form-control" id="edit_vat" name="vat"
                                             step="0.01" min="0" max="100"
-                                            oninput="calculateEditPoAmounts()">
+                                            oninput="calculateEditPoTotals()">
                                     </div>
                                 </div>
                             </div>
-                            <div class="row">
+
+                            <!-- Line Items -->
+                            <h6 class="mb-2">Line Items <span class="text-danger">*</span></h6>
+                            <div id="edit-po-items-container"></div>
+                            <div class="mb-2">
+                                <button type="button" class="btn btn-sm btn-secondary" onclick="addEditPoLineItem()">
+                                    <i class="fe fe-plus"></i> Add Line Item
+                                </button>
+                            </div>
+
+                            <!-- PO Totals -->
+                            <div class="row mt-3 pt-3 border-top">
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label>Purchase value</label>
-                                        <input type="number" class="form-control" id="edit_subcost" readonly
-                                            style="background-color: #f0f0f0;">
+                                        <label><strong>Total Purchase Value</strong></label>
+                                        <input type="number" class="form-control" id="edit_total-subcost" readonly
+                                            style="background-color: #e9ecef; font-weight: bold;">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label>VAT Amount</label>
-                                        <input type="number" class="form-control" id="edit_vatAmount" readonly
-                                            style="background-color: #f0f0f0;">
+                                        <label><strong>VAT Amount</strong></label>
+                                        <input type="number" class="form-control" id="edit_total-vatAmount" readonly
+                                            style="background-color: #e9ecef; font-weight: bold;">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label>Total PO value</label>
-                                        <input type="number" class="form-control" id="edit_subnet" readonly
-                                            style="background-color: #f0f0f0;">
+                                        <label><strong>Total PO Value</strong></label>
+                                        <input type="number" class="form-control" id="edit_total-subnet" readonly
+                                            style="background-color: #e9ecef; font-weight: bold;">
                                     </div>
                                 </div>
                             </div>
@@ -482,43 +576,257 @@
             }
         }
 
-        function calculatePoAmounts() {
-            var qty = parseFloat(document.getElementById('qty').value) || 0;
-            var unitCost = parseFloat(document.getElementById('unitCost').value) || 0;
-            var vat = parseFloat(document.getElementById('vat').value) || 0;
+        let editItemIndex = 0;
 
-            var subcost = qty * unitCost;
-            var vatAmount = subcost * (vat / 100);
-            var subnet = subcost + vatAmount;
+        // Calculate individual line item amount (add form)
+        function calculatePoItemAmount(element) {
+            const lineItem = element.closest('.po-line-item');
+            const qty = parseFloat(lineItem.querySelector('.po-item-qty').value) || 0;
+            const unitCost = parseFloat(lineItem.querySelector('.po-item-unitCost').value) || 0;
+            const subcost = qty * unitCost;
 
-            document.getElementById('subcost').value = subcost.toFixed(2);
-            document.getElementById('vatAmount').value = vatAmount.toFixed(2);
-            document.getElementById('subnet').value = subnet.toFixed(2);
+            lineItem.querySelector('.po-item-subcost').value = subcost.toFixed(2);
+            calculatePoTotals();
         }
 
-        function calculateEditPoAmounts() {
-            var qty = parseFloat(document.getElementById('edit_qty').value) || 0;
-            var unitCost = parseFloat(document.getElementById('edit_unitCost').value) || 0;
-            var vat = parseFloat(document.getElementById('edit_vat').value) || 0;
+        // Calculate PO totals from all line items (add form)
+        function calculatePoTotals() {
+            const lineItems = document.querySelectorAll('#po-items-container .po-line-item');
+            let totalSubcost = 0;
 
-            var subcost = qty * unitCost;
-            var vatAmount = subcost * (vat / 100);
-            var subnet = subcost + vatAmount;
+            lineItems.forEach(lineItem => {
+                const subcost = parseFloat(lineItem.querySelector('.po-item-subcost').value) || 0;
+                totalSubcost += subcost;
+            });
 
-            document.getElementById('edit_subcost').value = subcost.toFixed(2);
-            document.getElementById('edit_vatAmount').value = vatAmount.toFixed(2);
-            document.getElementById('edit_subnet').value = subnet.toFixed(2);
+            const vat = parseFloat(document.getElementById('vat').value) || 0;
+            const vatAmount = totalSubcost * (vat / 100);
+            const subnet = totalSubcost + vatAmount;
+
+            document.getElementById('total-subcost').value = totalSubcost.toFixed(2);
+            document.getElementById('total-vatAmount').value = vatAmount.toFixed(2);
+            document.getElementById('total-subnet').value = subnet.toFixed(2);
         }
 
-        function editfunc(id, poNumber, description, uomId, qty, unitCost, vat) {
+        // Add line item (add form)
+        function addPoLineItem() {
+            const container = document.getElementById('po-items-container');
+            const firstItem = container.querySelector('.po-line-item');
+            const newItem = firstItem.cloneNode(true);
+
+            const itemIndex = container.querySelectorAll('.po-line-item').length;
+            newItem.setAttribute('data-item-index', itemIndex);
+
+            // Clear values
+            newItem.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
+                if (!input.readOnly) {
+                    input.value = '';
+                } else {
+                    input.value = '0.00';
+                }
+            });
+            newItem.querySelectorAll('select').forEach(select => {
+                select.value = '';
+            });
+
+            // Update function calls
+            newItem.querySelectorAll('.po-item-qty, .po-item-unitCost').forEach(input => {
+                input.setAttribute('oninput', 'calculatePoItemAmount(this)');
+            });
+            newItem.querySelector('.remove-po-line-item').setAttribute('onclick', 'removePoLineItem(this)');
+
+            // Show remove buttons
+            container.querySelectorAll('.remove-po-line-item').forEach(btn => {
+                btn.style.display = 'inline-block';
+            });
+
+            container.appendChild(newItem);
+        }
+
+        // Remove line item (add form)
+        function removePoLineItem(button) {
+            const container = document.getElementById('po-items-container');
+            const lineItems = container.querySelectorAll('.po-line-item');
+
+            if (lineItems.length > 1) {
+                button.closest('.po-line-item').remove();
+
+                if (container.querySelectorAll('.po-line-item').length === 1) {
+                    container.querySelector('.remove-po-line-item').style.display = 'none';
+                }
+
+                calculatePoTotals();
+            }
+        }
+
+        // Calculate individual line item amount (edit form)
+        function calculateEditPoItemAmount(element) {
+            const lineItem = element.closest('.po-line-item');
+            const qty = parseFloat(lineItem.querySelector('.po-item-qty').value) || 0;
+            const unitCost = parseFloat(lineItem.querySelector('.po-item-unitCost').value) || 0;
+            const subcost = qty * unitCost;
+
+            lineItem.querySelector('.po-item-subcost').value = subcost.toFixed(2);
+            calculateEditPoTotals();
+        }
+
+        // Calculate PO totals from all line items (edit form)
+        function calculateEditPoTotals() {
+            const lineItems = document.querySelectorAll('#edit-po-items-container .po-line-item');
+            let totalSubcost = 0;
+
+            lineItems.forEach(lineItem => {
+                const subcost = parseFloat(lineItem.querySelector('.po-item-subcost').value) || 0;
+                totalSubcost += subcost;
+            });
+
+            const vat = parseFloat(document.getElementById('edit_vat').value) || 0;
+            const vatAmount = totalSubcost * (vat / 100);
+            const subnet = totalSubcost + vatAmount;
+
+            document.getElementById('edit_total-subcost').value = totalSubcost.toFixed(2);
+            document.getElementById('edit_total-vatAmount').value = vatAmount.toFixed(2);
+            document.getElementById('edit_total-subnet').value = subnet.toFixed(2);
+        }
+
+        // Add line item (edit form)
+        function addEditPoLineItem() {
+            const container = document.getElementById('edit-po-items-container');
+            const template = document.querySelector('#po-items-container .po-line-item');
+
+            if (!template) {
+                console.error('Template not found');
+                return;
+            }
+
+            const newItem = template.cloneNode(true);
+            const itemIndex = editItemIndex++;
+            newItem.setAttribute('data-item-index', itemIndex);
+
+            // Clear values
+            newItem.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
+                if (!input.readOnly) {
+                    input.value = '';
+                } else {
+                    input.value = '0.00';
+                }
+            });
+            newItem.querySelectorAll('select').forEach(select => {
+                select.value = '';
+            });
+
+            // Update function calls
+            newItem.querySelectorAll('.po-item-qty, .po-item-unitCost').forEach(input => {
+                input.setAttribute('oninput', 'calculateEditPoItemAmount(this)');
+            });
+            newItem.querySelector('.remove-po-line-item').setAttribute('onclick', 'removeEditPoLineItem(this)');
+
+            // Show remove buttons for all items
+            container.querySelectorAll('.remove-po-line-item').forEach(btn => {
+                btn.style.display = 'inline-block';
+            });
+
+            container.appendChild(newItem);
+        }
+
+        // Remove line item (edit form)
+        function removeEditPoLineItem(button) {
+            const container = document.getElementById('edit-po-items-container');
+            const lineItems = container.querySelectorAll('.po-line-item');
+
+            if (lineItems.length > 1) {
+                button.closest('.po-line-item').remove();
+
+                if (container.querySelectorAll('.po-line-item').length === 1) {
+                    container.querySelector('.remove-po-line-item').style.display = 'none';
+                }
+
+                calculateEditPoTotals();
+            }
+        }
+
+        // Recalculate on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const lineItems = document.querySelectorAll('#po-items-container .po-line-item');
+            lineItems.forEach(lineItem => {
+                const qtyInput = lineItem.querySelector('.po-item-qty');
+                const unitCostInput = lineItem.querySelector('.po-item-unitCost');
+                if (qtyInput && unitCostInput && (qtyInput.value || unitCostInput.value)) {
+                    calculatePoItemAmount(qtyInput);
+                }
+            });
+            calculatePoTotals();
+        });
+
+        function editfunc(id, poNumber, description, vat, items) {
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_poNumber').value = poNumber || '';
             document.getElementById('edit_description').value = description || '';
-            document.getElementById('edit_uomId').value = uomId || '';
-            document.getElementById('edit_qty').value = qty || '';
-            document.getElementById('edit_unitCost').value = unitCost || '';
             document.getElementById('edit_vat').value = vat || 0;
-            calculateEditPoAmounts();
+
+            // Clear existing items
+            const container = document.getElementById('edit-po-items-container');
+            container.innerHTML = '';
+            editItemIndex = 0;
+
+            // Parse items if it's a string
+            let itemsArray = items;
+            if (typeof items === 'string') {
+                try {
+                    itemsArray = JSON.parse(items);
+                } catch (e) {
+                    itemsArray = [];
+                }
+            }
+
+            // Get UOM select template from add form
+            const uomTemplate = document.querySelector('#po-items-container select[name="item_uomId[]"]');
+
+            // Add line items
+            if (itemsArray && itemsArray.length > 0) {
+                itemsArray.forEach((item, index) => {
+                    // Clone template from add form
+                    const template = document.querySelector('#po-items-container .po-line-item');
+                    if (template) {
+                        const newItem = template.cloneNode(true);
+                        newItem.setAttribute('data-item-index', index);
+
+                        // Update field names and values
+                        newItem.querySelector('input[name="item_description[]"]').value = item.description || '';
+                        const uomSelect = newItem.querySelector('select[name="item_uomId[]"]');
+                        if (uomSelect && item.uomId) {
+                            uomSelect.value = item.uomId;
+                        }
+                        newItem.querySelector('input[name="item_qty[]"]').value = item.qty || '';
+                        newItem.querySelector('input[name="item_unitCost[]"]').value = item.unitCost || '';
+
+                        // Update function calls
+                        newItem.querySelectorAll('.po-item-qty, .po-item-unitCost').forEach(input => {
+                            input.setAttribute('oninput', 'calculateEditPoItemAmount(this)');
+                        });
+                        newItem.querySelector('.remove-po-line-item').setAttribute('onclick',
+                            'removeEditPoLineItem(this)');
+                        newItem.querySelector('.remove-po-line-item').style.display = itemsArray.length > 1 ?
+                            'inline-block' : 'none';
+
+                        container.appendChild(newItem);
+
+                        // Calculate item amount
+                        const qtyInput = newItem.querySelector('.po-item-qty');
+                        if (qtyInput && qtyInput.value) {
+                            calculateEditPoItemAmount(qtyInput);
+                        }
+                    }
+                });
+                editItemIndex = itemsArray.length;
+            } else {
+                // Add one empty item using template
+                if (document.querySelector('#po-items-container .po-line-item')) {
+                    addEditPoLineItem();
+                }
+            }
+
+            calculateEditPoTotals();
             $("#edit_modal").modal('show');
         }
 

@@ -134,22 +134,31 @@
                                 <div class="row mt-3">
                                     <div class="col-md-12">
                                         <h5 class="mb-3">Purchase Orders <span class="text-danger">*</span> <small
-                                                class="text-muted">(At least one PO is required)</small></h5>
+                                                class="text-muted">(At least one PO with one line item is required)</small>
+                                        </h5>
                                         <div id="po-container">
                                             @php
                                                 $oldPoNumbers = old('po_poNumber', []);
                                                 $oldPoDescriptions = old('po_description', []);
-                                                $oldPoUomIds = old('po_uomId', []);
-                                                $oldPoQties = old('po_qty', []);
-                                                $oldPoUnitCosts = old('po_unitCost', []);
                                                 $oldPoVats = old('po_vat', []);
+                                                $oldPoItemDescriptions = old('po_item_description', []);
+                                                $oldPoItemUomIds = old('po_item_uomId', []);
+                                                $oldPoItemQties = old('po_item_qty', []);
+                                                $oldPoItemUnitCosts = old('po_item_unitCost', []);
                                                 $poCount = max(1, count($oldPoNumbers));
                                             @endphp
                                             @for ($i = 0; $i < $poCount; $i++)
+                                                @php
+                                                    $itemCount = max(1, count($oldPoItemDescriptions[$i] ?? []));
+                                                @endphp
                                                 <div class="po-item card mb-3" data-po-index="{{ $i }}">
+                                                    <div class="card-header bg-light">
+                                                        <h6 class="mb-0">PO #{{ $i + 1 }}</h6>
+                                                    </div>
                                                     <div class="card-body">
-                                                        <div class="row">
-                                                            <div class="col-md-6">
+                                                        <!-- PO Header -->
+                                                        <div class="row mb-3">
+                                                            <div class="col-md-4">
                                                                 <div class="form-group">
                                                                     <label>PO Number <span
                                                                             class="text-danger">*</span></label>
@@ -158,9 +167,9 @@
                                                                         value="{{ $oldPoNumbers[$i] ?? '' }}" required>
                                                                 </div>
                                                             </div>
-                                                            <div class="col-md-6">
+                                                            <div class="col-md-5">
                                                                 <div class="form-group">
-                                                                    <label>Description <span
+                                                                    <label>PO Description <span
                                                                             class="text-danger">*</span></label>
                                                                     <input type="text" class="form-control"
                                                                         name="po_description[]"
@@ -168,93 +177,150 @@
                                                                         required>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                        <div class="row">
-                                                            <div class="col-md-3">
-                                                                <div class="form-group">
-                                                                    <label>Unit of Measure (UOM)</label>
-                                                                    <select class="select2 form-control" name="po_uomId[]">
-                                                                        <option value="">--Select UOM--</option>
-                                                                        @foreach ($uoms as $uom)
-                                                                            <option value="{{ $uom->id }}"
-                                                                                {{ ($oldPoUomIds[$i] ?? '') == $uom->id ? 'selected' : '' }}>
-                                                                                {{ $uom->measurement }}</option>
-                                                                        @endforeach
-                                                                    </select>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-3">
-                                                                <div class="form-group">
-                                                                    <label>Quantity <span
-                                                                            class="text-danger">*</span></label>
-                                                                    <input type="number" class="form-control po-qty"
-                                                                        name="po_qty[]" step="0.01" min="0"
-                                                                        required value="{{ $oldPoQties[$i] ?? '' }}"
-                                                                        oninput="calculatePoAmounts(this)">
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-3">
-                                                                <div class="form-group">
-                                                                    <label>Unit Cost <span
-                                                                            class="text-danger">*</span></label>
-                                                                    <input type="number" class="form-control po-unitCost"
-                                                                        name="po_unitCost[]" step="0.01"
-                                                                        min="0"
-                                                                        value="{{ $oldPoUnitCosts[$i] ?? '' }}" required
-                                                                        oninput="calculatePoAmounts(this)">
-                                                                </div>
-                                                            </div>
                                                             <div class="col-md-3">
                                                                 <div class="form-group">
                                                                     <label>VAT %</label>
-                                                                    <input type="number" class="form-control po-vat"
+                                                                    <input type="number" class="form-control po-header-vat"
                                                                         name="po_vat[]" step="0.01" min="0"
                                                                         value="{{ $oldPoVats[$i] ?? '' }}" max="100"
-                                                                        oninput="calculatePoAmounts(this)">
+                                                                        oninput="calculatePoTotals({{ $i }})">
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div class="row">
-                                                            <div class="col-md-4">
-                                                                <div class="form-group">
-                                                                    <label>Purchase value</label>
-                                                                    <input type="number" class="form-control po-subcost"
-                                                                        readonly style="background-color: #f0f0f0;">
+
+                                                        <!-- PO Line Items -->
+                                                        <h6 class="mb-2">Line Items <span class="text-danger">*</span>
+                                                        </h6>
+                                                        <div class="po-items-container"
+                                                            data-po-index="{{ $i }}">
+                                                            @for ($j = 0; $j < $itemCount; $j++)
+                                                                <div class="po-line-item card mb-2"
+                                                                    data-item-index="{{ $j }}">
+                                                                    <div class="card-body">
+                                                                        <div class="row">
+                                                                            <div class="col-md-4">
+                                                                                <div class="form-group">
+                                                                                    <label>Item Description <span
+                                                                                            class="text-danger">*</span></label>
+                                                                                    <input type="text"
+                                                                                        class="form-control"
+                                                                                        name="po_item_description[{{ $i }}][]"
+                                                                                        value="{{ $oldPoItemDescriptions[$i][$j] ?? '' }}"
+                                                                                        required>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="col-md-2">
+                                                                                <div class="form-group">
+                                                                                    <label>UOM</label>
+                                                                                    <select class="select2 form-control"
+                                                                                        name="po_item_uomId[{{ $i }}][]">
+                                                                                        <option value="">--Select--
+                                                                                        </option>
+                                                                                        @foreach ($uoms as $uom)
+                                                                                            <option
+                                                                                                value="{{ $uom->id }}"
+                                                                                                {{ ($oldPoItemUomIds[$i][$j] ?? '') == $uom->id ? 'selected' : '' }}>
+                                                                                                {{ $uom->measurement }}
+                                                                                            </option>
+                                                                                        @endforeach
+                                                                                    </select>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="col-md-2">
+                                                                                <div class="form-group">
+                                                                                    <label>Qty <span
+                                                                                            class="text-danger">*</span></label>
+                                                                                    <input type="number"
+                                                                                        class="form-control po-item-qty"
+                                                                                        name="po_item_qty[{{ $i }}][]"
+                                                                                        step="0.01" min="0"
+                                                                                        value="{{ $oldPoItemQties[$i][$j] ?? '' }}"
+                                                                                        required
+                                                                                        oninput="calculatePoItemAmount({{ $i }}, {{ $j }})">
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="col-md-2">
+                                                                                <div class="form-group">
+                                                                                    <label>Unit Cost <span
+                                                                                            class="text-danger">*</span></label>
+                                                                                    <input type="number"
+                                                                                        class="form-control po-item-unitCost"
+                                                                                        name="po_item_unitCost[{{ $i }}][]"
+                                                                                        step="0.01" min="0"
+                                                                                        value="{{ $oldPoItemUnitCosts[$i][$j] ?? '' }}"
+                                                                                        required
+                                                                                        oninput="calculatePoItemAmount({{ $i }}, {{ $j }})">
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="col-md-2">
+                                                                                <div class="form-group">
+                                                                                    <label>Subtotal</label>
+                                                                                    <input type="number"
+                                                                                        class="form-control po-item-subcost"
+                                                                                        readonly
+                                                                                        style="background-color: #f0f0f0;">
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="text-right">
+                                                                            <button type="button"
+                                                                                class="btn btn-sm btn-danger remove-po-line-item"
+                                                                                onclick="removePoLineItem({{ $i }}, this)"
+                                                                                style="display: {{ $itemCount > 1 ? 'inline-block' : 'none' }};">
+                                                                                <i class="fe fe-trash"></i> Remove Item
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
+                                                            @endfor
+                                                        </div>
+                                                        <div class="mb-2">
+                                                            <button type="button" class="btn btn-sm btn-secondary"
+                                                                onclick="addPoLineItem({{ $i }})">
+                                                                <i class="fe fe-plus"></i> Add Line Item
+                                                            </button>
+                                                        </div>
+
+                                                        <!-- PO Totals -->
+                                                        <div class="row mt-3 pt-3 border-top">
                                                             <div class="col-md-4">
                                                                 <div class="form-group">
-                                                                    <label>VAT Amount</label>
+                                                                    <label><strong>Total Purchase Value</strong></label>
                                                                     <input type="number"
-                                                                        class="form-control po-vatAmount" readonly
-                                                                        style="background-color: #f0f0f0;">
+                                                                        class="form-control po-total-subcost" readonly
+                                                                        style="background-color: #e9ecef; font-weight: bold;">
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-4">
                                                                 <div class="form-group">
-                                                                    <label> Total PO value</label>
-                                                                    <input type="number" class="form-control po-subnet"
-                                                                        readonly style="background-color: #f0f0f0;">
+                                                                    <label><strong>VAT Amount</strong></label>
+                                                                    <input type="number"
+                                                                        class="form-control po-total-vatAmount" readonly
+                                                                        style="background-color: #e9ecef; font-weight: bold;">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="form-group">
+                                                                    <label><strong>Total PO Value</strong></label>
+                                                                    <input type="number"
+                                                                        class="form-control po-total-subnet" readonly
+                                                                        style="background-color: #e9ecef; font-weight: bold;">
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div class="text-right">
+
+                                                        <div class="text-right mt-2">
                                                             <button type="button" class="btn btn-sm btn-danger remove-po"
                                                                 onclick="removePoItem(this)"
                                                                 style="display: {{ $poCount > 1 ? 'inline-block' : 'none' }};">
-                                                                <i class="fe fe-trash"></i> Remove
+                                                                <i class="fe fe-trash"></i> Remove PO
                                                             </button>
                                                         </div>
                                                     </div>
                                                 </div>
                                             @endfor
                                         </div>
-                                        <div class="text-right mb-3">
-                                            <button type="button" class="btn btn-sm btn-secondary"
-                                                onclick="addPoItem()">
-                                                <i class="fe fe-plus"></i> Add Another PO
-                                            </button>
-                                        </div>
+
                                     </div>
                                 </div>
                                 <!-- /Purchase Orders Section -->
@@ -338,8 +404,8 @@
                                                     </a>
                                                     <a class="btn btn-sm bg-info-light"
                                                         href="{{ url('/project-po?projectId=' . $list->id) }}"
-                                                        title="Add New PO">New PO
-                                                        <i class="fe fe-file-plus"></i>
+                                                        title="View PO">View PO
+                                                        <i class="fe fe-eye"></i>
                                                     </a>
                                                     <a class="btn btn-sm bg-danger-light"
                                                         href="javascript: deletefunc('{{ $list->id }}')">
@@ -527,26 +593,90 @@
 
         let poIndex = {{ $poCount ?? 1 }};
 
-        // Recalculate PO amounts on page load for old input values
+        // Recalculate all PO amounts on page load for old input values
         document.addEventListener('DOMContentLoaded', function() {
             const poItems = document.querySelectorAll('.po-item');
-            poItems.forEach(item => {
-                const qtyInput = item.querySelector('.po-qty');
-                const unitCostInput = item.querySelector('.po-unitCost');
-                const vatInput = item.querySelector('.po-vat');
-
-                if (qtyInput && unitCostInput) {
-                    calculatePoAmounts(qtyInput);
-                }
+            poItems.forEach((poItem, poIdx) => {
+                const lineItems = poItem.querySelectorAll('.po-line-item');
+                lineItems.forEach((lineItem, itemIdx) => {
+                    calculatePoItemAmount(poIdx, itemIdx);
+                });
+                calculatePoTotals(poIdx);
             });
         });
 
+        // Calculate individual line item amount
+        function calculatePoItemAmount(poIndex, itemIndex) {
+            const poItem = document.querySelector(`.po-item[data-po-index="${poIndex}"]`);
+            const lineItem = poItem.querySelector(`.po-line-item[data-item-index="${itemIndex}"]`);
+
+            const qty = parseFloat(lineItem.querySelector('.po-item-qty').value) || 0;
+            const unitCost = parseFloat(lineItem.querySelector('.po-item-unitCost').value) || 0;
+            const subcost = qty * unitCost;
+
+            lineItem.querySelector('.po-item-subcost').value = subcost.toFixed(2);
+
+            // Recalculate PO totals
+            calculatePoTotals(poIndex);
+        }
+
+        // Calculate PO totals from all line items
+        function calculatePoTotals(poIndex) {
+            const poItem = document.querySelector(`.po-item[data-po-index="${poIndex}"]`);
+            const lineItems = poItem.querySelectorAll('.po-line-item');
+
+            let totalSubcost = 0;
+            lineItems.forEach(lineItem => {
+                const subcost = parseFloat(lineItem.querySelector('.po-item-subcost').value) || 0;
+                totalSubcost += subcost;
+            });
+
+            const vat = parseFloat(poItem.querySelector('.po-header-vat').value) || 0;
+            const vatAmount = totalSubcost * (vat / 100);
+            const subnet = totalSubcost + vatAmount;
+
+            poItem.querySelector('.po-total-subcost').value = totalSubcost.toFixed(2);
+            poItem.querySelector('.po-total-vatAmount').value = vatAmount.toFixed(2);
+            poItem.querySelector('.po-total-subnet').value = subnet.toFixed(2);
+        }
+
+        // Add new PO
         function addPoItem() {
             const container = document.getElementById('po-container');
             const firstItem = container.querySelector('.po-item');
             const newItem = firstItem.cloneNode(true);
 
-            // Clear input values
+            // Update PO index
+            const newPoIndex = poIndex;
+            newItem.setAttribute('data-po-index', newPoIndex);
+            newItem.querySelector('.card-header h6').textContent = `PO #${newPoIndex + 1}`;
+
+            // Update all field names with new PO index
+            newItem.querySelectorAll('input, select').forEach(input => {
+                if (input.name) {
+                    input.name = input.name.replace(/\[(\d+)\]/, `[${newPoIndex}]`);
+                }
+            });
+
+            // Update data attributes and function calls
+            newItem.querySelector('.po-items-container').setAttribute('data-po-index', newPoIndex);
+            newItem.querySelectorAll('.po-line-item').forEach((lineItem, idx) => {
+                lineItem.setAttribute('data-item-index', idx);
+                lineItem.querySelectorAll('input, select').forEach(input => {
+                    if (input.name) {
+                        input.name = input.name.replace(/\[(\d+)\]\[(\d+)\]/, `[${newPoIndex}][${idx}]`);
+                    }
+                });
+                lineItem.querySelectorAll('.po-item-qty, .po-item-unitCost').forEach(input => {
+                    input.setAttribute('oninput', `calculatePoItemAmount(${newPoIndex}, ${idx})`);
+                });
+                lineItem.querySelector('.remove-po-line-item').setAttribute('onclick',
+                    `removePoLineItem(${newPoIndex}, this)`);
+            });
+            newItem.querySelector('.po-header-vat').setAttribute('oninput', `calculatePoTotals(${newPoIndex})`);
+            newItem.querySelector('.add-po-line-item').setAttribute('onclick', `addPoLineItem(${newPoIndex})`);
+
+            // Clear all values
             newItem.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
                 if (!input.readOnly) {
                     input.value = '';
@@ -554,13 +684,18 @@
                     input.value = '0.00';
                 }
             });
-
-            // Reset select dropdowns
             newItem.querySelectorAll('select').forEach(select => {
                 select.value = '';
             });
 
-            // Show remove button for all items
+            // Reset line items to one
+            const lineItems = newItem.querySelectorAll('.po-line-item');
+            for (let i = 1; i < lineItems.length; i++) {
+                lineItems[i].remove();
+            }
+            newItem.querySelector('.remove-po-line-item').style.display = 'none';
+
+            // Show remove button for all POs
             container.querySelectorAll('.remove-po').forEach(btn => {
                 btn.style.display = 'inline-block';
             });
@@ -569,6 +704,7 @@
             poIndex++;
         }
 
+        // Remove PO
         function removePoItem(button) {
             const container = document.getElementById('po-container');
             const items = container.querySelectorAll('.po-item');
@@ -583,19 +719,66 @@
             }
         }
 
-        function calculatePoAmounts(element) {
-            const poItem = element.closest('.po-item');
-            const qty = parseFloat(poItem.querySelector('.po-qty').value) || 0;
-            const unitCost = parseFloat(poItem.querySelector('.po-unitCost').value) || 0;
-            const vat = parseFloat(poItem.querySelector('.po-vat').value) || 0;
+        // Add line item to a PO
+        function addPoLineItem(poIndex) {
+            const poItem = document.querySelector(`.po-item[data-po-index="${poIndex}"]`);
+            const itemsContainer = poItem.querySelector('.po-items-container');
+            const firstLineItem = itemsContainer.querySelector('.po-line-item');
+            const newLineItem = firstLineItem.cloneNode(true);
 
-            const subcost = qty * unitCost;
-            const vatAmount = subcost * (vat / 100);
-            const subnet = subcost + vatAmount;
+            const itemIndex = itemsContainer.querySelectorAll('.po-line-item').length;
+            newLineItem.setAttribute('data-item-index', itemIndex);
 
-            poItem.querySelector('.po-subcost').value = subcost.toFixed(2);
-            poItem.querySelector('.po-vatAmount').value = vatAmount.toFixed(2);
-            poItem.querySelector('.po-subnet').value = subnet.toFixed(2);
+            // Update field names
+            newLineItem.querySelectorAll('input, select').forEach(input => {
+                if (input.name) {
+                    input.name = input.name.replace(/\[(\d+)\]\[(\d+)\]/, `[${poIndex}][${itemIndex}]`);
+                }
+            });
+
+            // Update function calls
+            newLineItem.querySelectorAll('.po-item-qty, .po-item-unitCost').forEach(input => {
+                input.setAttribute('oninput', `calculatePoItemAmount(${poIndex}, ${itemIndex})`);
+            });
+            newLineItem.querySelector('.remove-po-line-item').setAttribute('onclick', `removePoLineItem(${poIndex}, this)`);
+
+            // Clear values
+            newLineItem.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
+                if (!input.readOnly) {
+                    input.value = '';
+                } else {
+                    input.value = '0.00';
+                }
+            });
+            newLineItem.querySelectorAll('select').forEach(select => {
+                select.value = '';
+            });
+
+            // Show remove buttons for all line items
+            itemsContainer.querySelectorAll('.remove-po-line-item').forEach(btn => {
+                btn.style.display = 'inline-block';
+            });
+
+            itemsContainer.appendChild(newLineItem);
+        }
+
+        // Remove line item from a PO
+        function removePoLineItem(poIndex, button) {
+            const poItem = document.querySelector(`.po-item[data-po-index="${poIndex}"]`);
+            const itemsContainer = poItem.querySelector('.po-items-container');
+            const lineItems = itemsContainer.querySelectorAll('.po-line-item');
+
+            if (lineItems.length > 1) {
+                button.closest('.po-line-item').remove();
+
+                // Hide remove button if only one item remains
+                if (itemsContainer.querySelectorAll('.po-line-item').length === 1) {
+                    itemsContainer.querySelector('.remove-po-line-item').style.display = 'none';
+                }
+
+                // Recalculate totals
+                calculatePoTotals(poIndex);
+            }
         }
     </script>
 @endsection
