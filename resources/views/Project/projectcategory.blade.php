@@ -16,6 +16,11 @@
                             <li class="breadcrumb-item active">Project Category Setup</li>
                         </ul>
                     </div>
+                    <div class="col-auto">
+                        <a href="{{ url('/project-setup') }}" class="btn btn-primary">
+                            <i class="fe fe-arrow-left"></i> Go to Project
+                        </a>
+                    </div>
                 </div>
             </div>
             <!-- /Page Header -->
@@ -46,6 +51,7 @@
 
                                 <div class="text-right">
                                     <button type="submit" class="btn btn-primary" name="addnew">Create</button>
+
                                 </div>
                             </form>
                         </div>
@@ -88,6 +94,16 @@
                                                     <a class="btn btn-sm bg-success-light"
                                                         href="javascript: editfunc('{{ $list->id }}','{{ $list->category }}')">
                                                         <i class="fe fe-pencil"></i>
+                                                    </a>
+                                                    <a class="btn btn-sm bg-info-light"
+                                                        href="{{ url('/project-category-payment-milestone?projectCategoryId=' . $list->id) }}"
+                                                        title="Milestone">
+                                                        <i class="fe fe-calendar"></i> Milestone
+                                                    </a>
+                                                    <a class="btn btn-sm bg-warning-light"
+                                                        href="{{ url('/project-category-expense-classification?projectCategoryId=' . $list->id) }}"
+                                                        title="Expense Classification">
+                                                        <i class="fe fe-list"></i> Expense Classification
                                                     </a>
                                                     <a class="btn btn-sm bg-danger-light"
                                                         href="javascript: deletefunc('{{ $list->id }}')">
@@ -166,7 +182,6 @@
         <!-- /Delete Modal -->
 
     </div>
-
 @endsection
 @section('styles')
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
@@ -199,7 +214,3 @@
     </script>
 @endsection
 <!-- /Page Wrapper -->
-
-
-
-

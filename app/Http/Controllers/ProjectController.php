@@ -504,6 +504,26 @@ class ProjectController extends Basefunction {
                 ->orderBy('budgets.name', 'asc')
                 ->get();
         }
+        $data['budgetSummary'] = collect();
+        $data['totalAmount'] = 0;
+        
+        if (!empty($data['projectId'])) {
+            $data['budgetSummary'] = DB::table('project_budget')
+                ->leftJoin('budgets', 'project_budget.budgetId', '=', 'budgets.id')
+                ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
+                ->where('project_budget.projectId', $data['projectId'])
+                ->select(
+                    'budget_classifications.id as categoryId',
+                    'budget_classifications.category as categoryName',
+                    DB::raw('SUM(project_budget.amount) as totalAmount')
+                )
+                ->groupBy('budget_classifications.id', 'budget_classifications.category')
+                ->orderBy('budget_classifications.category', 'asc')
+                ->get();
+            
+            // Calculate grand total
+            $data['totalAmount'] = $data['budgetSummary']->sum('totalAmount');
+        }
         
         return view('Project.projectbudget', $data);
     }
@@ -1517,6 +1537,73 @@ class ProjectController extends Basefunction {
         }
         
         return view('Project.projectcategorypaymentmilestone', $data);
+    }
+
+    public function projectCategoryExpenseClassification(Request $request)
+    {
+        $data['projectCategoryId'] = $request->input('projectCategoryId');
+        
+        // Handle project category selection - reload page with selected category
+        if ($request->has('select_category')) {
+            $data['projectCategoryId'] = $request->input('projectCategoryId');
+            Session(['selected_project_category_expense_classification_id' => $data['projectCategoryId']]);
+        }
+        
+        // Get selected project category from session if not in request
+        if (empty($data['projectCategoryId'])) {
+            $data['projectCategoryId'] = Session::get('selected_project_category_expense_classification_id');
+        }
+        
+        if (isset($_POST['assign'])) {
+            $this->validate($request, [
+                'projectCategoryId' => 'required|integer',
+            ]);
+            
+            $projectCategoryId = $request->input('projectCategoryId');
+            
+            // Delete existing expense classifications for this project category
+            DB::table('project_categories_expense_classification')
+                ->where('project_categoryId', $projectCategoryId)
+                ->delete();
+            
+            // Insert new expense classifications
+            if ($request->has('expense_classifications')) {
+                $expenseClassifications = $request->input('expense_classifications');
+                if (is_array($expenseClassifications)) {
+                    foreach ($expenseClassifications as $expenseClassificationId) {
+                        DB::table('project_categories_expense_classification')->insert([
+                            'project_categoryId' => $projectCategoryId,
+                            'expense_classificationId' => $expenseClassificationId,
+                        ]);
+                    }
+                }
+            }
+            
+            return back()->with('message', 'Expense classifications successfully assigned.');
+        }
+        
+        // Fetch project categories list
+        $data['projectCategories'] = DB::table('project_categories')
+            ->select('id', 'category')
+            ->orderBy('category', 'asc')
+            ->get();
+        
+        // Fetch budget classifications (expense classifications)
+        $data['expenseClassifications'] = DB::table('budget_classifications')
+            ->select('id', 'category', 'isMeasure', 'isMilestone', 'isSubContrator')
+            ->orderBy('category', 'asc')
+            ->get();
+        
+        // Fetch assigned expense classifications for selected project category
+        $data['assignedClassifications'] = collect();
+        if (!empty($data['projectCategoryId'])) {
+            $data['assignedClassifications'] = DB::table('project_categories_expense_classification')
+                ->where('project_categoryId', $data['projectCategoryId'])
+                ->pluck('expense_classificationId')
+                ->toArray();
+        }
+        
+        return view('Project.projectcategoryexpenseclassification', $data);
     }
 
     public function projectInvoice(Request $request)

@@ -1,7 +1,7 @@
 <!-- Page Wrapper -->
 @extends('layouts.layout')
 @section('pageTitle')
-    Budget Classification Setup
+    Expense Classification
 @endsection
 @section('content')
     <div class="page-wrapper">
@@ -13,7 +13,7 @@
                         <h3 class="page-title">Setup</h3>
                         <ul class="breadcrumb">
                             <li class="breadcrumb-item"><a href="/">Home</a></li>
-                            <li class="breadcrumb-item active">Budget Classification Setup</li>
+                            <li class="breadcrumb-item active">Expense Classification</li>
                         </ul>
                     </div>
                 </div>
@@ -60,7 +60,7 @@
                     <!-- List of budget classifications -->
                     <div class="card card-table">
                         <div class="card-header">
-                            <h4 class="card-title">Budget Classifications</h4>
+                            <h4 class="card-title">Expense Classifications</h4>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -116,7 +116,7 @@
             <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Edit Budget Classification</h5>
+                        <h5 class="modal-title">Edit Expense Classification</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -127,7 +127,7 @@
                             <div class="row ">
                                 <div class="col-12 col-sm-12">
                                     <div class="form-group">
-                                        <label>Category</label>
+                                        <label>Expense Classification</label>
                                         <input type="text" id="category" name="category" class="form-control"
                                             style="text-align: left;" autocomplete="off">
                                     </div>

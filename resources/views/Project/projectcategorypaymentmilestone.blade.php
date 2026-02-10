@@ -16,6 +16,11 @@
                             <li class="breadcrumb-item active">Project Category Payment Milestone Setup</li>
                         </ul>
                     </div>
+                    <div class="col-auto">
+                        <a href="{{ url('/project-category') }}" class="btn btn-primary">
+                            <i class="fe fe-arrow-left"></i> Back to category
+                        </a>
+                    </div>
                 </div>
             </div>
             <!-- /Page Header -->
@@ -38,8 +43,8 @@
                                             <?php if ($projectCategoryId == '') {
                                                 $projectCategoryId = old('projectCategoryId');
                                             } ?>
-                                            <select class="select2 form-control" name="projectCategoryId" id="projectCategoryId" required
-                                                onchange="selectCategory()">
+                                            <select class="select2 form-control" name="projectCategoryId"
+                                                id="projectCategoryId" required onchange="selectCategory()">
                                                 <option value="">--Select Project Category--</option>
                                                 @foreach ($projectCategories as $category)
                                                     <option value="{{ $category->id }}"
@@ -192,7 +197,8 @@
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-body">
-                                <p class="text-center text-muted">Please select a project category to view and manage its payment
+                                <p class="text-center text-muted">Please select a project category to view and manage its
+                                    payment
                                     milestones.</p>
                             </div>
                         </div>
@@ -399,4 +405,3 @@
     </script>
 @endsection
 <!-- /Page Wrapper -->
-

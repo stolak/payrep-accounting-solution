@@ -60,6 +60,76 @@
             @if (!empty($projectId))
                 <div class="row">
                     <div class="col-md-12">
+                        <!-- Budget Summary by Classification -->
+                        <div class="card card-table">
+                            <div class="card-header">
+                                <h4 class="card-title">Budget Summary by Classification</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-center mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th rowspan="1">S/N</th>
+                                                <th rowspan="1">Budget Classification</th>
+                                                <th rowspan="1">Total Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @php
+                                                $i = 1;
+                                            @endphp
+
+                                            @if ($budgetSummary->count() > 0)
+                                                @foreach ($budgetSummary as $summary)
+                                                    <tr>
+                                                        <td>
+                                                            {{ $i++ }}
+                                                        </td>
+                                                        <td>
+                                                            {{ $summary->categoryName ?? 'Uncategorized' }}
+                                                        </td>
+                                                        <td style="text-align: right;">
+                                                            {{ number_format($summary->totalAmount, 2, '.', ',') }}
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                                <tr style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
+                                                    <td></td>
+                                                    <td class="text-right"><strong>Grand Total:</strong></td>
+                                                    <td style="text-align: right;">
+                                                        <strong>{{ number_format($totalAmount, 2, '.', ',') }}</strong>
+                                                    </td>
+                                                </tr>
+                                            @else
+                                                <tr>
+                                                    <td colspan="3" class="text-center">No budgets assigned to this
+                                                        project yet.</td>
+                                                </tr>
+                                            @endif
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- /Budget Summary by Classification -->
+                    </div>
+                </div>
+            @else
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="text-center text-muted">Please select a project to view budget summary by
+                                    category.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+            @if (!empty($projectId))
+                <div class="row">
+                    <div class="col-md-12">
                         <div class="card">
                             <div class="card-header">
                                 <h4 class="card-title">Add Budget to Project</h4>
@@ -131,7 +201,8 @@
                                         </div>
                                         <div class="col-md-3" id="amountFieldContainer">
                                             <div class="form-group">
-                                                <label>Amount <span id="amountRequired" class="text-danger">*</span></label>
+                                                <label>Amount <span id="amountRequired"
+                                                        class="text-danger">*</span></label>
                                                 <?php if ($amount == '') {
                                                     $amount = old('amount');
                                                 } ?>
