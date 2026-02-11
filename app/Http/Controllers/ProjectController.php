@@ -532,13 +532,41 @@ class ProjectController extends Basefunction {
         
         // Fetch projects list
         $data['projects'] = DB::table('projects')
-            ->select('id', 'name', 'projectCode')
+            ->select('id', 'name', 'projectCode', 'categoryId')
             ->orderBy('name', 'asc')
             ->get();
         
         // Fetch budget classifications for dropdown
-        $data['budgetCategories'] = DB::table('budget_classifications')
-            ->select('id', 'category')
+        // Filter by project category's associated expense classifications if project is selected
+        $budgetCategoriesQuery = DB::table('budget_classifications')
+            ->select('id', 'category');
+        
+        // If a project is selected, filter classifications by project category
+        if (!empty($data['projectId'])) {
+            // Get the project's categoryId
+            $project = DB::table('projects')
+                ->select('categoryId')
+                ->where('id', $data['projectId'])
+                ->first();
+            
+            if ($project && !empty($project->categoryId)) {
+                // Get expense classification IDs associated with this project category
+                $expenseClassificationIds = DB::table('project_categories_expense_classification')
+                    ->where('project_categoryId', $project->categoryId)
+                    ->pluck('expense_classificationId')
+                    ->toArray();
+                
+                // Filter budget classifications to only show those associated with the project category
+                if (!empty($expenseClassificationIds)) {
+                    $budgetCategoriesQuery->whereIn('id', $expenseClassificationIds);
+                } else {
+                    // If no classifications are associated, return empty result
+                    $budgetCategoriesQuery->whereRaw('1 = 0');
+                }
+            }
+        }
+        
+        $data['budgetCategories'] = $budgetCategoriesQuery
             ->orderBy('category', 'asc')
             ->get();
         
