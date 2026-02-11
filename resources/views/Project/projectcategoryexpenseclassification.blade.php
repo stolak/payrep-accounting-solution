@@ -94,6 +94,10 @@
                                                                 </label>
                                                             </div>
                                                         @endforeach
+                                                        <a href="{{ url('/budget-category' . (!empty($projectCategoryId) ? '?projectCategoryId=' . $projectCategoryId : '')) }}"
+                                                            class="btn btn-primary">
+                                                            <i class="fe fe-plus"></i> Add New
+                                                        </a>
                                                     @else
                                                         <p class="text-muted">No expense classifications available.</p>
                                                     @endif

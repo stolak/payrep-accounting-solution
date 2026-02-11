@@ -16,6 +16,13 @@
                             <li class="breadcrumb-item active">Expense Classification</li>
                         </ul>
                     </div>
+                    @if (!empty(request('projectCategoryId')))
+                        <div class="col-auto">
+                            <a href="{{ url('/project-category-expense-classification?projectCategoryId=' . request('projectCategoryId')) }}" class="btn btn-primary">
+                                <i class="fe fe-arrow-left"></i> Back to Expense Classification
+                            </a>
+                        </div>
+                    @endif
                 </div>
             </div>
             <!-- /Page Header -->
