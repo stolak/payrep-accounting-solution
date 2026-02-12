@@ -86,6 +86,18 @@
                                                 </select>
                                             </div>
                                         </div>
+                                        <div class="col-md-7">
+                                            <div class="form-group">
+                                                <label>Description</label>
+                                                <?php if ($description == '') {
+                                                    $description = old('description');
+                                                } ?>
+                                                <input type="text" class="form-control" value="{{ $description }}"
+                                                    name="description" id="description">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
                                         <div class="col-md-2">
                                             <div class="form-group">
                                                 <label>Quantity <span class="text-danger">*</span></label>
@@ -143,6 +155,7 @@
                                             <tr>
                                                 <th rowspan="1">S/N</th>
                                                 <th rowspan="1">Vendor</th>
+                                                <th rowspan="1">Description</th>
                                                 <th rowspan="1">Quantity</th>
                                                 <th rowspan="1">Unit Cost</th>
                                                 <th rowspan="1">Amount</th>
@@ -165,6 +178,9 @@
                                                         </td>
                                                         <td>
                                                             <strong>{{ $vendorProject->vendorName }}</strong>
+                                                        </td>
+                                                        <td>
+                                                            {{ $vendorProject->description ?? 'N/A' }}
                                                         </td>
                                                         <td style="text-align: right;">
                                                             {{ number_format($vendorProject->quantity, 2, '.', ',') }}
@@ -193,7 +209,7 @@
                                                         <td>
                                                             @if ($vendorProject->status != 'Approved')
                                                                 <a class="btn btn-sm bg-success-light"
-                                                                    href="javascript: editfunc('{{ $vendorProject->id }}','{{ $vendorProject->vendorId }}','{{ $vendorProject->quantity }}','{{ $vendorProject->unitCost }}','{{ $vendorProject->status }}')">
+                                                                    href="javascript: editfunc('{{ $vendorProject->id }}','{{ $vendorProject->vendorId }}','{{ addslashes($vendorProject->description ?? '') }}','{{ $vendorProject->quantity }}','{{ $vendorProject->unitCost }}','{{ $vendorProject->status }}')">
                                                                     <i class="fe fe-pencil"></i>
                                                                 </a>
                                                                 <a class="btn btn-sm bg-info-light"
@@ -212,7 +228,7 @@
                                                 @endforeach
                                             @else
                                                 <tr>
-                                                    <td colspan="9" class="text-center">No vendor projects added for
+                                                    <td colspan="10" class="text-center">No vendor projects added for
                                                         this
                                                         project yet.</td>
                                                 </tr>
@@ -265,6 +281,15 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Description</label>
+                                        <input type="text" id="edit_description" name="description"
+                                            class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label>Quantity <span class="text-danger">*</span></label>
@@ -393,9 +418,10 @@
             document.getElementById('edit_amount').value = amount.toFixed(2);
         }
 
-        function editfunc(id, vendorId, quantity, unitCost, status) {
+        function editfunc(id, vendorId, description, quantity, unitCost, status) {
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_vendorId').value = vendorId;
+            document.getElementById('edit_description').value = description || '';
             document.getElementById('edit_quantity').value = quantity;
             document.getElementById('edit_unitCost').value = unitCost;
             document.getElementById('edit_status').value = status || 'Pending';

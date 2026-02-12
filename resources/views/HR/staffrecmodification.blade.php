@@ -353,6 +353,76 @@
                                                         value="{{ $accountno }}" name="accountno">
                                                 </div>
                                             </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label>Bank Account Name</label>
+                                                    @php
+                                                        if ($bank_account_name == '') {
+                                                            $bank_account_name = old('bank_account_name');
+                                                        }
+                                                    @endphp
+                                                    @php
+                                                        if ($bank_account_name == '') {
+                                                            $bank_account_name = $StaffProfile->bank_account_name;
+                                                        }
+                                                    @endphp
+                                                    <input type="text" class="form-control"
+                                                        value="{{ $bank_account_name }}" name="bank_account_name">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label>Pension Number</label>
+                                                    @php
+                                                        if ($pension_number == '') {
+                                                            $pension_number = old('pension_number');
+                                                        }
+                                                    @endphp
+                                                    @php
+                                                        if ($pension_number == '') {
+                                                            $pension_number = $StaffProfile->pension_number;
+                                                        }
+                                                    @endphp
+                                                    <input type="text" class="form-control"
+                                                        value="{{ $pension_number }}" name="pension_number">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label>PAYEE Number</label>
+                                                    @php
+                                                        if ($payee_number == '') {
+                                                            $payee_number = old('payee_number');
+                                                        }
+                                                    @endphp
+                                                    @php
+                                                        if ($payee_number == '') {
+                                                            $payee_number = $StaffProfile->payee_number;
+                                                        }
+                                                    @endphp
+                                                    <input type="text" class="form-control"
+                                                        value="{{ $payee_number }}" name="payee_number">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label>NHF Number</label>
+                                                    @php
+                                                        if ($nhf_number == '') {
+                                                            $nhf_number = old('nhf_number');
+                                                        }
+                                                    @endphp
+                                                    @php
+                                                        if ($nhf_number == '') {
+                                                            $nhf_number = $StaffProfile->nhf_number;
+                                                        }
+                                                    @endphp
+                                                    <input type="text" class="form-control"
+                                                        value="{{ $nhf_number }}" name="nhf_number">
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

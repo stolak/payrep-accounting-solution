@@ -44,6 +44,35 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
+                                            <label>Client Code</label>
+                                            <?php if ($clientCode == '') {
+                                                $clientCode = old('client_code');
+                                            } ?>
+                                            <input type="text" class="form-control" value="{{ $clientCode }}" required
+                                                name="client_code">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Client Type</label>
+                                            <?php if ($clientType == '') {
+                                                $clientType = old('client_type');
+                                            } ?>
+                                            <select class="select2 form-control" name="client_type" required>
+                                                <option value="">--Select--</option>
+                                                @foreach ($clientTypes as $type)
+                                                    <option value="{{ $type->id }}"
+                                                        {{ $clientType == $type->id ? 'selected' : '' }}>
+                                                        {{ $type->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
                                             <label>Client Account</label>
                                             <?php if ($clientAccountId == '') {
                                                 $clientAccountId = old('clientAccountId');
@@ -57,6 +86,38 @@
                                                     </option>
                                                 @endforeach
                                             </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Contact Address</label>
+                                            <?php if ($contactAddress == '') {
+                                                $contactAddress = old('contact_address');
+                                            } ?>
+                                            <input type="text" class="form-control" value="{{ $contactAddress }}"
+                                                name="contact_address">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Contact Phone Number</label>
+                                            <?php if ($contactPhoneNumber == '') {
+                                                $contactPhoneNumber = old('contact_phone_number');
+                                            } ?>
+                                            <input type="text" class="form-control" value="{{ $contactPhoneNumber }}"
+                                                name="contact_phone_number">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Contact Email Address</label>
+                                            <?php if ($contactEmailAddress == '') {
+                                                $contactEmailAddress = old('contact_email_address');
+                                            } ?>
+                                            <input type="email" class="form-control" value="{{ $contactEmailAddress }}"
+                                                name="contact_email_address">
                                         </div>
                                     </div>
                                 </div>
@@ -102,7 +163,11 @@
                                         <tr>
                                             <th rowspan="1">S/N</th>
                                             <th rowspan="1">Name</th>
+                                            <th rowspan="1">Client Code</th>
+                                            <th rowspan="1">Client Type</th>
+                                            <th rowspan="1">Status</th>
                                             <th rowspan="1">Client Account</th>
+                                            <th rowspan="1">Contact</th>
                                             <th rowspan="1">Project Categories</th>
                                             <th rowspan="1">Action</th>
                                         </tr>
@@ -121,7 +186,21 @@
                                                     {{ $list->name }}
                                                 </td>
                                                 <td>
+                                                    {{ $list->client_code ?? 'N/A' }}
+                                                </td>
+                                                <td>
+                                                    {{ $list->clientTypeName ?? 'N/A' }}
+                                                </td>
+                                                <td>
+                                                    {{ $list->status ?? 'N/A' }}
+                                                </td>
+                                                <td>
                                                     {{ $list->accountName ?? 'N/A' }}
+                                                </td>
+                                                <td>
+                                                    {{ $list->contact_phone_number ?? 'N/A' }}
+                                                    <br>
+                                                    <small>{{ $list->contact_email_address ?? '' }}</small>
                                                 </td>
                                                 <td>
                                                     @if ($list->projectCategories && count($list->projectCategories) > 0)
@@ -139,7 +218,18 @@
                                                             : [];
                                                     @endphp
                                                     <a class="btn btn-sm bg-success-light"
-                                                        href="javascript: editfunc('{{ $list->id }}','{{ addslashes($list->name) }}','{{ $list->clientAccountId ?? '' }}',{{ json_encode($categoryIds) }})">
+                                                        href="javascript: editfunc(
+                                                            '{{ $list->id }}',
+                                                            '{{ addslashes($list->name) }}',
+                                                            '{{ addslashes($list->client_code ?? '') }}',
+                                                            '{{ $list->client_type ?? '' }}',
+                                                            '{{ $list->clientAccountId ?? '' }}',
+                                                            '{{ $list->status ?? 'Active' }}',
+                                                            '{{ addslashes($list->contact_address ?? '') }}',
+                                                            '{{ addslashes($list->contact_phone_number ?? '') }}',
+                                                            '{{ addslashes($list->contact_email_address ?? '') }}',
+                                                            {{ json_encode($categoryIds) }}
+                                                        )">
                                                         <i class="fe fe-pencil"></i>
                                                     </a>
                                                     <a class="btn btn-sm bg-danger-light"
@@ -181,6 +271,24 @@
                                             style="text-align: left;" autocomplete="off">
                                     </div>
                                 </div>
+                                <div class="col-12 col-sm-6">
+                                    <div class="form-group">
+                                        <label>Client Code</label>
+                                        <input type="text" id="client_code" name="client_code" class="form-control"
+                                            style="text-align: left;" autocomplete="off">
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    <div class="form-group">
+                                        <label>Client Type</label>
+                                        <select class="select2 form-control" id="client_type" name="client_type">
+                                            <option value="">--Select--</option>
+                                            @foreach ($clientTypes as $type)
+                                                <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
                                 <div class="col-12 col-sm-12">
                                     <div class="form-group">
                                         <label>Client Account</label>
@@ -192,6 +300,37 @@
                                                 </option>
                                             @endforeach
                                         </select>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm-4">
+                                    <div class="form-group">
+                                        <label>Status</label>
+                                        <select class="form-control" id="status" name="status" required>
+                                            <option value="Active">Active</option>
+                                            <option value="On Hold">On Hold</option>
+                                            <option value="Inactive">Inactive</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm-8">
+                                    <div class="form-group">
+                                        <label>Contact Address</label>
+                                        <input type="text" id="contact_address" name="contact_address"
+                                            class="form-control" style="text-align: left;" autocomplete="off">
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    <div class="form-group">
+                                        <label>Contact Phone Number</label>
+                                        <input type="text" id="contact_phone_number" name="contact_phone_number"
+                                            class="form-control" style="text-align: left;" autocomplete="off">
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    <div class="form-group">
+                                        <label>Contact Email Address</label>
+                                        <input type="email" id="contact_email_address" name="contact_email_address"
+                                            class="form-control" style="text-align: left;" autocomplete="off">
                                     </div>
                                 </div>
                                 <div class="col-12 col-sm-12">
@@ -263,10 +402,17 @@
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
     <script>
-        function editfunc(id, name, clientAccountId, projectCategoryIds) {
+        function editfunc(id, name, clientCode, clientType, clientAccountId, status, contactAddress,
+            contactPhoneNumber, contactEmailAddress, projectCategoryIds) {
             document.getElementById('id').value = id;
             document.getElementById('name').value = name;
+            document.getElementById('client_code').value = clientCode || '';
+            document.getElementById('client_type').value = clientType || '';
             document.getElementById('clientAccountId').value = clientAccountId || '';
+            document.getElementById('status').value = status || 'Active';
+            document.getElementById('contact_address').value = contactAddress || '';
+            document.getElementById('contact_phone_number').value = contactPhoneNumber || '';
+            document.getElementById('contact_email_address').value = contactEmailAddress || '';
 
             // Clear previous selections
             $('#projectCategoryIds').val(null).trigger('change');

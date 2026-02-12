@@ -189,6 +189,37 @@
                                                         name="accountno">
                                                 </div>
                                             </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label>Bank Account Name</label>
+                                                    <input type="text" class="form-control"
+                                                        value="{{ old('bank_account_name') }}"
+                                                        name="bank_account_name">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label>Pension Number</label>
+                                                    <input type="text" class="form-control"
+                                                        value="{{ old('pension_number') }}" name="pension_number">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label>PAYEE Number</label>
+                                                    <input type="text" class="form-control"
+                                                        value="{{ old('payee_number') }}" name="payee_number">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label>NHF Number</label>
+                                                    <input type="text" class="form-control"
+                                                        value="{{ old('nhf_number') }}" name="nhf_number">
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

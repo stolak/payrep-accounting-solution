@@ -29,6 +29,10 @@ class HR extends Basefunction
    	$data['offer_amount']=$request->input('offer_amount');
    	$data['bank']=$request->input('bank');
    	$data['accountno']=$request->input('accountno');
+  	$data['bank_account_name']=$request->input('bank_account_name');
+  	$data['pension_number']=$request->input('pension_number');
+  	$data['payee_number']=$request->input('payee_number');
+  	$data['nhf_number']=$request->input('nhf_number');
 
    	$data['id']=$request->input('id');
    	if ( isset( $_POST['submit'] ) ) {
@@ -38,6 +42,10 @@ class HR extends Basefunction
               'lname'      => 'required|string',
               'grade'      => 'required|string',
               'offer_amount' => 'nullable|numeric|min:0',
+              'bank_account_name' => 'nullable|string',
+              'pension_number' => 'nullable|string',
+              'payee_number' => 'nullable|string',
+              'nhf_number' => 'nullable|string',
               // 'bank'      => 'required|string',
               // 'phoneno'      => 'required|string',
             ]);
@@ -69,6 +77,10 @@ class HR extends Basefunction
     	          'grade' => $data['grade'] ,
     	          'bankid' => $data['bank'] ,
     	          'account_no' => $data['accountno'] ,
+    	          'bank_account_name' => $data['bank_account_name'] ,
+    	          'pension_number' => $data['pension_number'] ,
+    	          'payee_number' => $data['payee_number'] ,
+    	          'nhf_number' => $data['nhf_number'] ,
     	          'department' => $data['department']!=''? $data['department']:0 ,
     	          'offer_amount' => $data['offer_amount'] ? $data['offer_amount'] : 0,
     	          'status' => 'Active',
@@ -161,6 +173,10 @@ class HR extends Basefunction
        	$data['offer_amount']='';
        	$data['bank']='';
        	$data['accountno']='';
+       	$data['bank_account_name']='';
+       	$data['pension_number']='';
+       	$data['payee_number']='';
+       	$data['nhf_number']='';
        	$data['status']='';
        $data['staffid']=$request->input('staffid');
        if($data['staffid']==''){$data['staffid']=Session::get('staffid');}
@@ -178,6 +194,10 @@ class HR extends Basefunction
        	$data['offer_amount']=$request->input('offer_amount');
        	$data['bank']=$request->input('bank');
        	$data['accountno']=$request->input('accountno');
+       	$data['bank_account_name']=$request->input('bank_account_name');
+       	$data['pension_number']=$request->input('pension_number');
+       	$data['payee_number']=$request->input('payee_number');
+       	$data['nhf_number']=$request->input('nhf_number');
        	$data['status']=$request->input('status');
    	}
    	Session(['prevstaffid' => $data['staffid']]);
@@ -192,6 +212,10 @@ class HR extends Basefunction
             'phoneno'      => 'required|string',
             'staffid'      => 'required|string',
             'offer_amount' => 'nullable|numeric|min:0',
+            'bank_account_name' => 'nullable|string',
+            'pension_number' => 'nullable|string',
+            'payee_number' => 'nullable|string',
+            'nhf_number' => 'nullable|string',
         ]);
         
         // Validate offer_amount against grade's salary range
@@ -221,6 +245,10 @@ class HR extends Basefunction
             'grade' => $data['grade'] ,
             'bankid' => $data['bank'] ,
     	    'account_no' => $data['accountno'] ,
+            'bank_account_name' => $data['bank_account_name'] ,
+            'pension_number' => $data['pension_number'] ,
+            'payee_number' => $data['payee_number'] ,
+            'nhf_number' => $data['nhf_number'] ,
             'department' => $data['department']!=''? $data['department']:0 ,
             'status' => $data['status'] ? $data['status'] : 'Active',
             'offer_amount' => $data['offer_amount'] ? $data['offer_amount'] : 0,

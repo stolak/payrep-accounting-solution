@@ -744,6 +744,12 @@ class ProjectController extends Basefunction {
     {
         $data['name'] = $request->input('name');
         $data['clientAccountId'] = $request->input('clientAccountId');
+        $data['clientCode'] = $request->input('client_code');
+        $data['clientType'] = $request->input('client_type');
+        $data['status'] = $request->input('status');
+        $data['contactAddress'] = $request->input('contact_address');
+        $data['contactPhoneNumber'] = $request->input('contact_phone_number');
+        $data['contactEmailAddress'] = $request->input('contact_email_address');
         $data['projectCategoryIds'] = $request->input('projectCategoryIds', []);
         $data['id'] = $request->input('id');
         
@@ -751,6 +757,11 @@ class ProjectController extends Basefunction {
             $this->validate($request, [
                 'name' => 'required|string|unique:clients,name',
                 'clientAccountId' => 'nullable|integer',
+                'client_code' => 'required|string|unique:clients,client_code',
+                'client_type' => 'required|integer|exists:client_type,id',
+                'contact_address' => 'nullable|string',
+                'contact_phone_number' => 'nullable|string',
+                'contact_email_address' => 'nullable|email',
                 'projectCategoryIds' => 'nullable|array',
                 'projectCategoryIds.*' => 'integer|exists:project_categories,id',
             ]);
@@ -758,6 +769,13 @@ class ProjectController extends Basefunction {
             $clientId = DB::table('clients')->insertGetId([
                 'name' => $data['name'],
                 'clientAccountId' => $data['clientAccountId'] ?? null,
+                'client_code' => $data['clientCode'],
+                'client_type' => $data['clientType'],
+                'contact_address' => $data['contactAddress'] ?? null,
+                'contact_phone_number' => $data['contactPhoneNumber'] ?? null,
+                'contact_email_address' => $data['contactEmailAddress'] ?? null,
+                'createdBy' => Auth::user()->id,
+                'createdAt' => now(),
             ]);
 
             // Insert project categories
@@ -777,6 +795,12 @@ class ProjectController extends Basefunction {
             $this->validate($request, [
                 'name' => 'required|string|unique:clients,name,' . $request->input('id'),
                 'clientAccountId' => 'nullable|integer',
+                'client_code' => 'required|string|unique:clients,client_code,' . $request->input('id'),
+                'client_type' => 'required|integer|exists:client_type,id',
+                'status' => 'required|in:Active,On Hold,Inactive',
+                'contact_address' => 'nullable|string',
+                'contact_phone_number' => 'nullable|string',
+                'contact_email_address' => 'nullable|email',
                 'id' => 'required|integer',
                 'projectCategoryIds' => 'nullable|array',
                 'projectCategoryIds.*' => 'integer|exists:project_categories,id',
@@ -785,6 +809,12 @@ class ProjectController extends Basefunction {
             DB::table('clients')->where('id', $data['id'])->update([
                 'name' => $data['name'],
                 'clientAccountId' => $data['clientAccountId'] ?? null,
+                'client_code' => $data['clientCode'],
+                'client_type' => $data['clientType'],
+                'status' => $data['status'],
+                'contact_address' => $data['contactAddress'] ?? null,
+                'contact_phone_number' => $data['contactPhoneNumber'] ?? null,
+                'contact_email_address' => $data['contactEmailAddress'] ?? null,
             ]);
 
             // Delete existing project categories
@@ -821,7 +851,20 @@ class ProjectController extends Basefunction {
         // Fetch clients list with account information and project categories
         $clients = DB::table('clients')
             ->leftJoin('account_charts', 'clients.clientAccountId', '=', 'account_charts.id')
-            ->select('clients.id', 'clients.name', 'clients.clientAccountId', 'account_charts.accountdescription as accountName')
+            ->leftJoin('client_type', 'clients.client_type', '=', 'client_type.id')
+            ->select(
+                'clients.id',
+                'clients.name',
+                'clients.clientAccountId',
+                'clients.client_code',
+                'clients.client_type',
+                'clients.status',
+                'clients.contact_address',
+                'clients.contact_phone_number',
+                'clients.contact_email_address',
+                'account_charts.accountdescription as accountName',
+                'client_type.name as clientTypeName'
+            )
             ->orderBy('clients.name', 'asc')
             ->get();
 
@@ -843,6 +886,12 @@ class ProjectController extends Basefunction {
         $data['projectCategories'] = DB::table('project_categories')
             ->select('id', 'category')
             ->orderBy('category', 'asc')
+            ->get();
+
+        // Fetch client types for dropdown
+        $data['clientTypes'] = DB::table('client_type')
+            ->select('id', 'name')
+            ->orderBy('name', 'asc')
             ->get();
         
         return view('Project.client', $data);
@@ -1762,6 +1811,18 @@ class ProjectController extends Basefunction {
         $data['name'] = $request->input('name');
         $data['description'] = $request->input('description');
         $data['accountId'] = $request->input('accountId');
+        $data['vendorId'] = $request->input('vendorId');
+        $data['tradeName'] = $request->input('trade_name');
+        $data['vendorType'] = $request->input('vendor_type');
+        $data['taxNumber'] = $request->input('tax_number');
+        $data['vendorCategory'] = $request->input('vendor_category');
+        $data['address'] = $request->input('address');
+        $data['email'] = $request->input('email');
+        $data['contactPhoneNumber'] = $request->input('contact_phone_number');
+        $data['bankid'] = $request->input('bankid');
+        $data['bankAccountName'] = $request->input('bank_account_name');
+        $data['bankAccountNumber'] = $request->input('bank_account_number');
+        $data['currency'] = $request->input('currency');
         $data['status'] = $request->input('status');
         $data['id'] = $request->input('id');
         
@@ -1769,8 +1830,19 @@ class ProjectController extends Basefunction {
             $this->validate($request, [
                 'name' => 'required|string|unique:budgets,name',
                 'description' => 'nullable|string',
+                'vendorId' => 'required|string|unique:budgets,vendorId',
+                'trade_name' => 'nullable|string',
+                'vendor_type' => 'nullable|integer|exists:vendor_type,id',
+                'tax_number' => 'nullable|string',
+                'vendor_category' => 'nullable|integer|exists:vendor_catogory,id',
+                'address' => 'nullable|string',
+                'email' => 'nullable|email',
+                'contact_phone_number' => 'nullable|string',
+                'bankid' => 'nullable|integer|exists:tblbanklist,bankID',
+                'bank_account_name' => 'nullable|string',
+                'bank_account_number' => 'nullable|string',
+                'currency' => 'nullable|string|max:10',
                 'accountId' => 'nullable|integer',
-                'status' => 'nullable|string',
             ]);
 
             DB::table('budgets')->insert([
@@ -1778,8 +1850,20 @@ class ProjectController extends Basefunction {
                 'description' => $data['description'] ?? null,
                 'classificationId' => 1,
                 'isVendor' => 1,
+                'vendorId' => $data['vendorId'],
+                'trade_name' => $data['tradeName'] ?? null,
+                'vendor_type' => $data['vendorType'] ?? null,
+                'tax_number' => $data['taxNumber'] ?? null,
+                'vendor_category' => $data['vendorCategory'] ?? null,
+                'address' => $data['address'] ?? null,
+                'email' => $data['email'] ?? null,
+                'contact_phone_number' => $data['contactPhoneNumber'] ?? null,
+                'bankid' => $data['bankid'] ?? null,
+                'bank_account_name' => $data['bankAccountName'] ?? null,
+                'bank_account_number' => $data['bankAccountNumber'] ?? null,
+                'currency' => $data['currency'] ?? null,
                 'accountId' => $data['accountId'] ?? null,
-                'status' => $data['status'] ?? 'Active',
+                'status' => 'Active',
                 'createdAt' => now(),
                 'updatedAt' => now(),
             ]);
@@ -1790,16 +1874,40 @@ class ProjectController extends Basefunction {
             $this->validate($request, [
                 'name' => 'required|string|unique:budgets,name,' . $request->input('id'),
                 'description' => 'nullable|string',
+                'vendorId' => 'required|string|unique:budgets,vendorId,' . $request->input('id'),
+                'trade_name' => 'nullable|string',
+                'vendor_type' => 'nullable|integer|exists:vendor_type,id',
+                'tax_number' => 'nullable|string',
+                'vendor_category' => 'nullable|integer|exists:vendor_catogory,id',
+                'address' => 'nullable|string',
+                'email' => 'nullable|email',
+                'contact_phone_number' => 'nullable|string',
+                'bankid' => 'nullable|integer|exists:tblbanklist,bankID',
+                'bank_account_name' => 'nullable|string',
+                'bank_account_number' => 'nullable|string',
+                'currency' => 'nullable|string|max:10',
                 'accountId' => 'nullable|integer',
-                'status' => 'nullable|string',
+                'status' => 'required|in:Active,On Hold,Inactive',
                 'id' => 'required|integer',
             ]);
 
             DB::table('budgets')->where('id', $data['id'])->update([
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
+                'vendorId' => $data['vendorId'],
+                'trade_name' => $data['tradeName'] ?? null,
+                'vendor_type' => $data['vendorType'] ?? null,
+                'tax_number' => $data['taxNumber'] ?? null,
+                'vendor_category' => $data['vendorCategory'] ?? null,
+                'address' => $data['address'] ?? null,
+                'email' => $data['email'] ?? null,
+                'contact_phone_number' => $data['contactPhoneNumber'] ?? null,
+                'bankid' => $data['bankid'] ?? null,
+                'bank_account_name' => $data['bankAccountName'] ?? null,
+                'bank_account_number' => $data['bankAccountNumber'] ?? null,
+                'currency' => $data['currency'] ?? null,
                 'accountId' => $data['accountId'] ?? null,
-                'status' => $data['status'] ?? 'Active',
+                'status' => $data['status'],
                 'updatedAt' => now(),
             ]);
             return back()->with('message', 'Vendor successfully updated.');
@@ -1819,22 +1927,56 @@ class ProjectController extends Basefunction {
         // Fetch vendors list (classificationId = 1 and isVendor = 1)
         $data['vendors'] = DB::table('budgets')
             ->leftJoin('account_charts', 'budgets.accountId', '=', 'account_charts.id')
+            ->leftJoin('vendor_type', 'budgets.vendor_type', '=', 'vendor_type.id')
+            ->leftJoin('vendor_catogory', 'budgets.vendor_category', '=', 'vendor_catogory.id')
+            ->leftJoin('tblbanklist', 'budgets.bankid', '=', 'tblbanklist.bankID')
             ->where('budgets.classificationId', 1)
             ->where('budgets.isVendor', 1)
             ->select(
                 'budgets.id',
                 'budgets.name',
                 'budgets.description',
+                'budgets.vendorId',
+                'budgets.trade_name',
+                'budgets.vendor_type',
+                'budgets.tax_number',
+                'budgets.vendor_category',
+                'budgets.address',
+                'budgets.email',
+                'budgets.contact_phone_number',
+                'budgets.bankid',
+                'budgets.bank_account_name',
+                'budgets.bank_account_number',
+                'budgets.currency',
                 'budgets.accountId',
                 'budgets.status',
                 'account_charts.accountdescription as accountName',
-                'account_charts.accountno as accountNo'
+                'account_charts.accountno as accountNo',
+                'vendor_type.name as vendorTypeName',
+                'vendor_catogory.name as vendorCategoryName',
+                'tblbanklist.bank as bankName'
             )
             ->orderBy('budgets.name', 'asc')
             ->get();
         
         // Fetch account charts for dropdown
         $data['accountLookUp'] = $this->AccountLookUpByHeadId(6);
+
+        // Fetch vendor type, category and banks for dropdowns
+        $data['vendorTypes'] = DB::table('vendor_type')
+            ->select('id', 'name')
+            ->orderBy('name', 'asc')
+            ->get();
+
+        $data['vendorCategories'] = DB::table('vendor_catogory')
+            ->select('id', 'name')
+            ->orderBy('name', 'asc')
+            ->get();
+
+        $data['banks'] = DB::table('tblbanklist')
+            ->select('bankID', 'bankCode', 'bank')
+            ->orderBy('bank', 'asc')
+            ->get();
         
         return view('Project.vendor', $data);
     }
@@ -2234,6 +2376,7 @@ class ProjectController extends Basefunction {
     {
         $data['projectId'] = $request->input('projectId');
         $data['vendorId'] = $request->input('vendorId');
+        $data['description'] = $request->input('description');
         $data['quantity'] = $request->input('quantity');
         $data['unitCost'] = $request->input('unitCost');
         $data['amount'] = $request->input('amount');
@@ -2255,6 +2398,7 @@ class ProjectController extends Basefunction {
             $this->validate($request, [
                 'projectId' => 'required|integer',
                 'vendorId' => 'required|integer',
+                'description' => 'nullable|string',
                 'quantity' => 'required|numeric|min:0',
                 'unitCost' => 'required|numeric|min:0',
                 'status' => 'nullable|string',
@@ -2268,6 +2412,7 @@ class ProjectController extends Basefunction {
             DB::table('vendor_projects')->insert([
                 'projectId' => $data['projectId'],
                 'vendorId' => $data['vendorId'],
+                'description' => $data['description'] ?? null,
                 'quantity' => $quantity,
                 'unitCost' => $unitCost,
                 'amount' => $calculatedAmount,
@@ -2283,6 +2428,7 @@ class ProjectController extends Basefunction {
             $this->validate($request, [
                 'projectId' => 'required|integer',
                 'vendorId' => 'required|integer',
+                'description' => 'nullable|string',
                 'quantity' => 'required|numeric|min:0',
                 'unitCost' => 'required|numeric|min:0',
                 'status' => 'nullable|string',
@@ -2296,6 +2442,7 @@ class ProjectController extends Basefunction {
 
             DB::table('vendor_projects')->where('id', $data['id'])->update([
                 'vendorId' => $data['vendorId'],
+                'description' => $data['description'] ?? null,
                 'quantity' => $quantity,
                 'unitCost' => $unitCost,
                 'amount' => $calculatedAmount,
@@ -2354,6 +2501,7 @@ class ProjectController extends Basefunction {
                     'vendor_projects.id',
                     'vendor_projects.projectId',
                     'vendor_projects.vendorId',
+                    'vendor_projects.description',
                     'vendor_projects.quantity',
                     'vendor_projects.unitCost',
                     'vendor_projects.amount',
