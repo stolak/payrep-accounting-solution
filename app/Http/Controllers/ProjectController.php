@@ -1405,6 +1405,179 @@ class ProjectController extends Basefunction {
         return view('Project.funddisbursement', $data);
     }
 
+    public function fieldExpense(Request $request)
+    {
+        $data['projectId'] = $request->input('projectId');
+        $data['budgetId'] = $request->input('budgetId');
+        $data['paymentMilestoneId'] = $request->input('paymentMilestoneId');
+        $data['amount'] = $request->input('amount');
+        $data['transactionDate'] = $request->input('transactionDate');
+        $data['description'] = $request->input('description');
+        $data['id'] = $request->input('id');
+
+        // Handle project selection - reload page with selected project
+        if ($request->has('select_project')) {
+            $data['projectId'] = $request->input('projectId');
+            Session(['selected_field_expense_project_id' => $data['projectId']]);
+        }
+
+        // Get selected project from session if not in request
+        if (empty($data['projectId'])) {
+            $data['projectId'] = Session::get('selected_field_expense_project_id');
+        }
+
+        if (isset($_POST['addnew'])) {
+            $this->validate($request, [
+                'projectId' => 'required|integer',
+                'budgetId' => 'required|integer',
+                'paymentMilestoneId' => 'nullable|integer',
+                'amount' => 'required|numeric|min:0',
+                'transactionDate' => 'required|date',
+                'description' => 'required|string',
+            ]);
+
+            DB::table('project_expense')->insert([
+                'projectId' => $data['projectId'],
+                'budgetId' => $data['budgetId'],
+                'paymentMilestoneId' => $data['paymentMilestoneId'] ?? null,
+                'debit' => $data['amount'],
+                'credit' => 0,
+                'description' => $data['description'],
+                'transactionDate' => $data['transactionDate'],
+                'status' => 'Pending',
+                'createdBy' => Auth::user()->id,
+                'createdAt' => now(),
+                'updatedAt' => now(),
+            ]);
+            return back()->with('message', 'New field expense successfully added.');
+        }
+
+        if (isset($_POST['update'])) {
+            $this->validate($request, [
+                'projectId' => 'required|integer',
+                'budgetId' => 'required|integer',
+                'paymentMilestoneId' => 'nullable|integer',
+                'amount' => 'required|numeric|min:0',
+                'transactionDate' => 'required|date',
+                'description' => 'required|string',
+                'id' => 'required|integer',
+            ]);
+
+            DB::table('project_expense')->where('id', $data['id'])->update([
+                'budgetId' => $data['budgetId'],
+                'paymentMilestoneId' => $data['paymentMilestoneId'] ?? null,
+                'debit' => $data['amount'],
+                'description' => $data['description'],
+                'transactionDate' => $data['transactionDate'],
+                'updatedAt' => now(),
+            ]);
+            return back()->with('message', 'Field expense successfully updated.');
+        }
+
+        if (isset($_POST['approve'])) {
+            $approveId = $request->input('approveid');
+            DB::table('project_expense')->where('id', $approveId)->update([
+                'status' => 'Approved',
+                'approvedBy' => Auth::user()->id,
+                'approvedAt' => now(),
+                'updatedAt' => now(),
+            ]);
+            return back()->with('message', 'Field expense successfully approved.');
+        }
+
+        if (isset($_POST['del'])) {
+            $del = $request->input('deleteid');
+            DB::table('project_expense')->where('id', $del)->delete();
+            return back()->with('message', 'Field expense successfully deleted.');
+        }
+
+        // Fetch projects list
+        $data['projects'] = DB::table('projects')
+            ->select('id', 'name', 'projectCode', 'categoryId')
+            ->orderBy('name', 'asc')
+            ->get();
+
+        // Fetch budgets for selected project from mapped classifications where:
+        // budgets.isVendor = 0 and budget_classifications.isSubContrator = 0
+        $data['budgets'] = collect();
+        if (!empty($data['projectId'])) {
+            $project = DB::table('projects')
+                ->select('id', 'categoryId')
+                ->where('id', $data['projectId'])
+                ->first();
+
+            if ($project && !empty($project->categoryId)) {
+                $classificationIds = DB::table('project_categories_expense_classification')
+                    ->where('project_categoryId', $project->categoryId)
+                    ->pluck('expense_classificationId')
+                    ->toArray();
+
+                if (!empty($classificationIds)) {
+                    $data['budgets'] = DB::table('budgets')
+                        ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
+                        ->where('budgets.isVendor', 0)
+                        ->where('budget_classifications.isSubContrator', 0)
+                        ->whereIn('budgets.classificationId', $classificationIds)
+                        ->select(
+                            'budgets.id',
+                            'budgets.name as budgetName',
+                            'budgets.classificationId',
+                            'budget_classifications.category as budgetCategoryName'
+                        )
+                        ->orderBy('budget_classifications.category', 'asc')
+                        ->orderBy('budgets.name', 'asc')
+                        ->get();
+                }
+            }
+        }
+
+        // Fetch payment milestones for selected project (optional field in form)
+        $data['paymentMilestones'] = collect();
+        if (!empty($data['projectId'])) {
+            $data['paymentMilestones'] = DB::table('payment_milestone')
+                ->where('projectId', $data['projectId'])
+                ->select('id', 'milestone', 'percentage', 'rank', 'projectId')
+                ->orderBy('rank', 'asc')
+                ->get();
+        }
+
+        // Fetch field expenses for selected project
+        $data['fieldExpenses'] = collect();
+        $data['totalFieldExpense'] = 0;
+        if (!empty($data['projectId'])) {
+            $data['fieldExpenses'] = DB::table('project_expense')
+                ->leftJoin('budgets', 'project_expense.budgetId', '=', 'budgets.id')
+                ->leftJoin('payment_milestone', 'project_expense.paymentMilestoneId', '=', 'payment_milestone.id')
+                ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
+                ->where('project_expense.projectId', $data['projectId'])
+                ->where('budgets.isVendor', 0)
+                ->where('budget_classifications.isSubContrator', 0)
+                ->select(
+                    'project_expense.id',
+                    'project_expense.projectId',
+                    'project_expense.budgetId',
+                    'project_expense.paymentMilestoneId',
+                    'project_expense.debit',
+                    'project_expense.description',
+                    'project_expense.status',
+                    'project_expense.transactionDate',
+                    'project_expense.createdAt',
+                    'project_expense.approvedAt',
+                    'budgets.name as budgetName',
+                    'budget_classifications.category as budgetCategoryName',
+                    'payment_milestone.milestone',
+                    'payment_milestone.rank as milestoneRank'
+                )
+                ->orderBy('project_expense.transactionDate', 'desc')
+                ->orderBy('budgets.name', 'asc')
+                ->get();
+
+            $data['totalFieldExpense'] = $data['fieldExpenses']->sum('debit');
+        }
+
+        return view('Project.fieldexpense', $data);
+    }
+
     public function budgetUtilizationReport(Request $request)
     {
         $data['projectId'] = $request->input('projectId');
