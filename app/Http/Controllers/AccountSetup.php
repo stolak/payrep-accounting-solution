@@ -451,6 +451,58 @@ class AccountSetup extends Controller {
 
     }
 
+    public function UserLedgerAssignment(Request $request) {
+        $data['userId'] = $request->input('userId');
+        $data['ledgerId'] = $request->input('ledgerId');
+        $data['id'] = $request->input('id');
+
+        if (isset($_POST['addnew'])) {
+            $this->validate($request, [
+                'userId' => 'required|integer|exists:users,id',
+                'ledgerId' => 'required|integer|exists:account_charts,id',
+            ]);
+
+            DB::table('users')->where('id', $data['userId'])->update([
+                'ledgerId' => $data['ledgerId'],
+            ]);
+
+            return back()->with('message', 'Ledger successfully assigned to user.');
+        }
+
+        if (isset($_POST['update'])) {
+            $this->validate($request, [
+                'id' => 'required|integer|exists:users,id',
+                'ledgerId' => 'required|integer|exists:account_charts,id',
+            ]);
+
+            DB::table('users')->where('id', $data['id'])->update([
+                'ledgerId' => $data['ledgerId'],
+            ]);
+
+            return back()->with('message', 'User ledger assignment successfully updated.');
+        }
+
+        $data['users'] = DB::table('users')
+            ->leftJoin('account_charts', 'users.ledgerId', '=', 'account_charts.id')
+            ->select(
+                'users.id',
+                'users.name',
+                'users.ledgerId',
+                'account_charts.accountno as ledgerNo',
+                'account_charts.accountdescription as ledgerName'
+            )
+            ->orderBy('users.name', 'asc')
+            ->get();
+
+        $data['ledgers'] = DB::table('account_charts')->where('status', 1)
+        ->where('headid', 1)
+            ->select('id', 'accountno', 'accountdescription', 'status')
+            ->orderBy('accountdescription', 'asc')
+            ->get();
+
+        return view('AccountSetup.userledgerassignment', $data);
+    }
+
 
 
 

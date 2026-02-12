@@ -81,7 +81,7 @@
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label>Category</label>
                                             <?php if ($categoryId == '') {
@@ -99,7 +99,7 @@
                                     </div>
 
 
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label>Expense Account</label>
                                             <?php if ($expenseAccountId == '') {
@@ -117,7 +117,25 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Revenue Account</label>
+                                            <?php if ($revenue_accountId == '') {
+                                                $revenue_accountId = old('revenue_accountId');
+                                            } ?>
+                                            <select class="select2 form-control" name="revenue_accountId">
+                                                <option value="">--Select--</option>
+                                                @foreach ($revenueLookUp as $account)
+                                                    <option value="{{ $account->id }}"
+                                                        {{ $revenue_accountId == $account->id ? 'selected' : '' }}>
+                                                        {{ $account->accountdescription }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label>Location</label>
                                             <?php if ($location == '') {
@@ -353,6 +371,7 @@
                                             <th rowspan="1">Client</th>
                                             <th rowspan="1">Category</th>
                                             <th rowspan="1">Expense Account</th>
+                                            <th rowspan="1">Revenue Account</th>
                                             <th rowspan="1">Description</th>
                                             <th rowspan="1">Location</th>
                                             <th rowspan="1">Status</th>
@@ -385,6 +404,9 @@
                                                     {{ $list->expenseAccountName ?? 'N/A' }}
                                                 </td>
                                                 <td>
+                                                    {{ $list->revenueAccountName ?? 'N/A' }}
+                                                </td>
+                                                <td>
                                                     {{ Str::limit($list->description ?? 'N/A', 50) }}
                                                 </td>
                                                 <td>
@@ -399,7 +421,7 @@
                                                 </td>
                                                 <td>
                                                     <a class="btn btn-sm bg-success-light"
-                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->projectCode }}','{{ $list->name }}','{{ $list->description }}','{{ $list->categoryId }}','{{ $list->location }}','{{ $list->status }}','{{ $list->clientId ?? '' }}','{{ $list->expenseAccountId ?? '' }}')">
+                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->projectCode }}','{{ $list->name }}','{{ $list->description }}','{{ $list->categoryId }}','{{ $list->location }}','{{ $list->status }}','{{ $list->clientId ?? '' }}','{{ $list->expenseAccountId ?? '' }}','{{ $list->revenue_accountId ?? '' }}')">
                                                         <i class="fe fe-pencil"></i>
                                                     </a>
                                                     <a class="btn btn-sm bg-info-light"
@@ -479,12 +501,24 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label>Expense Account</label>
                                         <select class="form-control" id="expenseAccountId" name="expenseAccountId">
                                             <option value="">--Select--</option>
                                             @foreach ($accountLookUp as $account)
+                                                <option value="{{ $account->id }}">{{ $account->accountdescription }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Revenue Account</label>
+                                        <select class="form-control" id="revenue_accountId" name="revenue_accountId">
+                                            <option value="">--Select--</option>
+                                            @foreach ($revenueLookUp as $account)
                                                 <option value="{{ $account->id }}">{{ $account->accountdescription }}
                                                 </option>
                                             @endforeach
@@ -571,7 +605,8 @@
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
     <script>
-        function editfunc(id, projectCode, name, description, categoryId, location, status, clientId, expenseAccountId) {
+        function editfunc(id, projectCode, name, description, categoryId, location, status, clientId, expenseAccountId,
+            revenueAccountId) {
             document.getElementById('id').value = id;
             document.getElementById('projectCode').value = projectCode || '';
             document.getElementById('name').value = name;
@@ -581,6 +616,7 @@
             document.getElementById('status').value = status || 1;
             document.getElementById('clientId').value = clientId || '';
             document.getElementById('expenseAccountId').value = expenseAccountId || '';
+            document.getElementById('revenue_accountId').value = revenueAccountId || '';
 
             $("#edit_details").modal('show')
         }

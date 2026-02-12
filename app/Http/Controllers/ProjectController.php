@@ -19,6 +19,7 @@ class ProjectController extends Basefunction {
         $data['status'] = $request->input('status');
         $data['id'] = $request->input('id');
         $data['expenseAccountId'] = $request->input('expenseAccountId');
+        $data['revenue_accountId'] = $request->input('revenue_accountId');
         $data['clientId'] = $request->input('clientId');
         
         if (isset($_POST['addnew'])) {
@@ -31,6 +32,7 @@ class ProjectController extends Basefunction {
                 'location' => 'nullable|string',
                 'status' => 'nullable|string',
                 'clientId' => 'nullable|integer',
+                'revenue_accountId' => 'nullable|integer',
                 'po_poNumber' => 'required|array|min:1',
                 'po_poNumber.*' => 'required|string|distinct',
                 'po_description' => 'required|array|min:1',
@@ -74,6 +76,7 @@ class ProjectController extends Basefunction {
                 'location' => $data['location'] ?? null,
                 'status' => $data['status'] ?? "Active",
                 'expenseAccountId' => $data['expenseAccountId'] ?? null,
+                'revenue_accountId' => $data['revenue_accountId'] ?? null,
                 'clientId' => $data['clientId'] ?? null,
                 'createdAt' => now(),
                 'updatedAt' => now(),
@@ -183,6 +186,7 @@ class ProjectController extends Basefunction {
                 'location' => 'nullable|string',
                 'status' => 'nullable|string',
                 'clientId' => 'nullable|integer',
+                'revenue_accountId' => 'nullable|integer',
                 'id' => 'required|integer',
             ]);
 
@@ -208,6 +212,7 @@ class ProjectController extends Basefunction {
                 'location' => $data['location'] ?? null,
                 'status' => $data['status'] ?? "Active",
                 'expenseAccountId' => $data['expenseAccountId'] ?? null,
+                'revenue_accountId' => $data['revenue_accountId'] ?? null,
                 'clientId' => $data['clientId'] ?? null,
                 // 'incomeAccountId' => $data['incomeAccountId'] ?? null,
                 'updatedAt' => now(),
@@ -228,8 +233,27 @@ class ProjectController extends Basefunction {
         
         // Fetch projects list
         $data['projects'] = DB::table('projects')
-            ->select('projects.id', 'projectCode', 'projects.clientId', 'projects.expenseAccountId', 'projects.name', 'description', 'categoryId', 'location', 'projects.status', 'createdAt', 'updatedAt', 'createdBy', 'account_charts.accountdescription as expenseAccountName', 'project_categories.category as categoryName', 'clients.name as clientName')
-            ->leftJoin('account_charts', 'projects.expenseAccountId', '=', 'account_charts.id')
+            ->select(
+                'projects.id',
+                'projectCode',
+                'projects.clientId',
+                'projects.expenseAccountId',
+                'projects.revenue_accountId',
+                'projects.name',
+                'description',
+                'categoryId',
+                'location',
+                'projects.status',
+                'projects.createdAt',
+                'projects.updatedAt',
+                'projects.createdBy',
+                'expense_account.accountdescription as expenseAccountName',
+                'revenue_account.accountdescription as revenueAccountName',
+                'project_categories.category as categoryName',
+                'clients.name as clientName'
+            )
+            ->leftJoin('account_charts as expense_account', 'projects.expenseAccountId', '=', 'expense_account.id')
+            ->leftJoin('account_charts as revenue_account', 'projects.revenue_accountId', '=', 'revenue_account.id')
             ->leftJoin('project_categories', 'projects.categoryId', '=', 'project_categories.id')
             ->leftJoin('clients', 'projects.clientId', '=', 'clients.id')
             ->orderBy('createdAt', 'desc')
@@ -240,7 +264,8 @@ class ProjectController extends Basefunction {
             ->select('id', 'category')
             ->orderBy('category', 'asc')
             ->get();
-        $data['accountLookUp'] = $this->AccountLookUpByHeadId(1);
+        $data['accountLookUp'] = $this->AccountLookUpByHeadId(6);
+        $data['revenueLookUp'] = $this->AccountLookUpByHeadId(7);
         
         // Fetch clients list for dropdown
         $data['clients'] = DB::table('clients')
@@ -1336,7 +1361,7 @@ class ProjectController extends Basefunction {
                 'projectId' => 'required|integer',
                 'budgetId' => 'required|integer',
                 'paymentMilestoneId' => 'required|integer',
-                'reference_number' => 'required|string',
+                'reference_number' => 'required|string|unique:project_expense,reference_number',
                 'debit' => 'required|numeric|min:0',
                 'transactionDate' => 'required|date',
             ]);
@@ -1364,7 +1389,7 @@ class ProjectController extends Basefunction {
                 'projectId' => 'required|integer',
                 'budgetId' => 'required|integer',
                 'paymentMilestoneId' => 'required|integer',
-                'reference_number' => 'required|string',
+                'reference_number' => 'required|string|unique:project_expense,reference_number,' . $request->input('id'),
                 'debit' => 'required|numeric|min:0',
                 'transactionDate' => 'required|date',
                 'id' => 'required|integer',
@@ -1493,7 +1518,7 @@ class ProjectController extends Basefunction {
                 'projectId' => 'required|integer',
                 'budgetId' => 'required|integer',
                 'paymentMilestoneId' => 'nullable|integer',
-                'reference_number' => 'required|string',
+                'reference_number' => 'required|string|unique:project_expense,reference_number',
                 'amount' => 'required|numeric|min:0',
                 'transactionDate' => 'required|date',
                 'description' => 'required|string',
@@ -1523,7 +1548,7 @@ class ProjectController extends Basefunction {
                 'projectId' => 'required|integer',
                 'budgetId' => 'required|integer',
                 'paymentMilestoneId' => 'nullable|integer',
-                'reference_number' => 'required|string',
+                'reference_number' => 'required|string|unique:project_expense,reference_number,' . $request->input('id'),
                 'amount' => 'required|numeric|min:0',
                 'transactionDate' => 'required|date',
                 'description' => 'required|string',

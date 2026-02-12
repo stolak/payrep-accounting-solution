@@ -10,7 +10,7 @@
             <div class="page-header">
                 <div class="row">
                     <div class="col">
-                        <h3 class="page-title">Setup</h3>
+                        <h3 class="page-title">Fund Disbursement</h3>
                         <ul class="breadcrumb">
                             <li class="breadcrumb-item"><a href="/">Home</a></li>
                             <li class="breadcrumb-item active">Fund Disbursement</li>
@@ -114,9 +114,8 @@
                                                 <?php if ($reference_number == '') {
                                                     $reference_number = old('reference_number');
                                                 } ?>
-                                                <input type="text" class="form-control"
-                                                    value="{{ $reference_number }}" name="reference_number"
-                                                    id="reference_number" required>
+                                                <input type="text" class="form-control" value="{{ $reference_number }}"
+                                                    name="reference_number" id="reference_number" required>
                                             </div>
                                         </div>
                                         <div class="col-md-2">

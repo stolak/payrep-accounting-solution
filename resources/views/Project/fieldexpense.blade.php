@@ -10,7 +10,7 @@
             <div class="page-header">
                 <div class="row">
                     <div class="col">
-                        <h3 class="page-title">Setup</h3>
+                        <h3 class="page-title">Fund disbursement</h3>
                         <ul class="breadcrumb">
                             <li class="breadcrumb-item"><a href="/">Home</a></li>
                             <li class="breadcrumb-item active">Field Expense</li>
@@ -75,7 +75,7 @@
                                     <div class="row">
                                         <div class="col-md-3">
                                             <div class="form-group">
-                                                <label>Budget <span class="text-danger">*</span></label>
+                                                <label>Expense Type <span class="text-danger">*</span></label>
                                                 <?php if ($budgetId == '') {
                                                     $budgetId = old('budgetId');
                                                 } ?>
@@ -115,9 +115,8 @@
                                                 <?php if ($reference_number == '') {
                                                     $reference_number = old('reference_number');
                                                 } ?>
-                                                <input type="text" class="form-control"
-                                                    value="{{ $reference_number }}" name="reference_number"
-                                                    id="reference_number" required>
+                                                <input type="text" class="form-control" value="{{ $reference_number }}"
+                                                    name="reference_number" id="reference_number" required>
                                             </div>
                                         </div>
                                         <div class="col-md-2">
