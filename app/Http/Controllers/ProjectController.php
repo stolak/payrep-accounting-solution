@@ -1315,6 +1315,7 @@ class ProjectController extends Basefunction {
         $data['projectId'] = $request->input('projectId');
         $data['budgetId'] = $request->input('budgetId');
         $data['paymentMilestoneId'] = $request->input('paymentMilestoneId');
+        $data['reference_number'] = $request->input('reference_number');
         $data['debit'] = $request->input('debit');
         $data['transactionDate'] = $request->input('transactionDate');
         $data['id'] = $request->input('id');
@@ -1335,14 +1336,17 @@ class ProjectController extends Basefunction {
                 'projectId' => 'required|integer',
                 'budgetId' => 'required|integer',
                 'paymentMilestoneId' => 'required|integer',
+                'reference_number' => 'required|string',
                 'debit' => 'required|numeric|min:0',
                 'transactionDate' => 'required|date',
             ]);
-
+            $refno=$this->RefNo();
             DB::table('project_expense')->insert([
+                'system_ref' => $refno,
                 'projectId' => $data['projectId'],
                 'budgetId' => $data['budgetId'],
                 'paymentMilestoneId' => $data['paymentMilestoneId'],
+                'reference_number' => $data['reference_number'],
                 'debit' => $data['debit'],
                 'credit' => 0,
                 'transactionDate' => $data['transactionDate'],
@@ -1350,6 +1354,7 @@ class ProjectController extends Basefunction {
                 'createdBy' => Auth::user()->id,
                 'createdAt' => now(),
                 'updatedAt' => now(),
+                'isVendor' => 1,
             ]);
             return back()->with('message', 'New fund disbursement successfully added.');
         }
@@ -1359,6 +1364,7 @@ class ProjectController extends Basefunction {
                 'projectId' => 'required|integer',
                 'budgetId' => 'required|integer',
                 'paymentMilestoneId' => 'required|integer',
+                'reference_number' => 'required|string',
                 'debit' => 'required|numeric|min:0',
                 'transactionDate' => 'required|date',
                 'id' => 'required|integer',
@@ -1367,6 +1373,7 @@ class ProjectController extends Basefunction {
             DB::table('project_expense')->where('id', $data['id'])->update([
                 'budgetId' => $data['budgetId'],
                 'paymentMilestoneId' => $data['paymentMilestoneId'],
+                'reference_number' => $data['reference_number'],
                 'debit' => $data['debit'],
                 'transactionDate' => $data['transactionDate'],
                 'updatedAt' => now(),
@@ -1397,16 +1404,19 @@ class ProjectController extends Basefunction {
             ->orderBy('name', 'asc')
             ->get();
         
-        // Fetch budgets associated with projectId where classification isMilestone = 1
+        // Fetch unique vendors associated with selected project from vendor_projects
         $data['budgets'] = collect();
         if (!empty($data['projectId'])) {
-            $data['budgets'] = DB::table('project_budget')
-                ->leftJoin('budgets', 'project_budget.budgetId', '=', 'budgets.id')
-                ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
-                ->where('project_budget.projectId', $data['projectId'])
-                ->where('budget_classifications.isMilestone', 1)
-                ->select('budgets.id', 'budgets.name as budgetName', 'budget_classifications.category as budgetCategoryName')
-                ->orderBy('budget_classifications.category', 'asc')
+            $data['budgets'] = DB::table('vendor_projects')
+                ->leftJoin('budgets', 'vendor_projects.vendorId', '=', 'budgets.id')
+                ->where('vendor_projects.projectId', $data['projectId'])
+                ->whereNotNull('vendor_projects.vendorId')
+                ->select(
+                    'budgets.id',
+                    'budgets.name as budgetName',
+                    DB::raw("'Vendor' as budgetCategoryName")
+                )
+                ->distinct()
                 ->orderBy('budgets.name', 'asc')
                 ->get();
         }
@@ -1430,10 +1440,12 @@ class ProjectController extends Basefunction {
                 ->leftJoin('payment_milestone', 'project_expense.paymentMilestoneId', '=', 'payment_milestone.id')
                 ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
                 ->where('project_expense.projectId', $data['projectId'])
+                ->where('project_expense.isVendor', 1)
                 ->select(
                     'project_expense.id',
                     'project_expense.budgetId',
                     'project_expense.paymentMilestoneId',
+                    'project_expense.reference_number',
                     'project_expense.debit',
                     'project_expense.status',
                     'project_expense.transactionDate',
@@ -1459,6 +1471,7 @@ class ProjectController extends Basefunction {
         $data['projectId'] = $request->input('projectId');
         $data['budgetId'] = $request->input('budgetId');
         $data['paymentMilestoneId'] = $request->input('paymentMilestoneId');
+        $data['reference_number'] = $request->input('reference_number');
         $data['amount'] = $request->input('amount');
         $data['transactionDate'] = $request->input('transactionDate');
         $data['description'] = $request->input('description');
@@ -1480,15 +1493,18 @@ class ProjectController extends Basefunction {
                 'projectId' => 'required|integer',
                 'budgetId' => 'required|integer',
                 'paymentMilestoneId' => 'nullable|integer',
+                'reference_number' => 'required|string',
                 'amount' => 'required|numeric|min:0',
                 'transactionDate' => 'required|date',
                 'description' => 'required|string',
             ]);
-
+            $refno=$this->RefNo();
             DB::table('project_expense')->insert([
+                'system_ref' => $refno,
                 'projectId' => $data['projectId'],
                 'budgetId' => $data['budgetId'],
                 'paymentMilestoneId' => $data['paymentMilestoneId'] ?? null,
+                'reference_number' => $data['reference_number'],
                 'debit' => $data['amount'],
                 'credit' => 0,
                 'description' => $data['description'],
@@ -1497,6 +1513,7 @@ class ProjectController extends Basefunction {
                 'createdBy' => Auth::user()->id,
                 'createdAt' => now(),
                 'updatedAt' => now(),
+                'isVendor' => 0,
             ]);
             return back()->with('message', 'New field expense successfully added.');
         }
@@ -1506,6 +1523,7 @@ class ProjectController extends Basefunction {
                 'projectId' => 'required|integer',
                 'budgetId' => 'required|integer',
                 'paymentMilestoneId' => 'nullable|integer',
+                'reference_number' => 'required|string',
                 'amount' => 'required|numeric|min:0',
                 'transactionDate' => 'required|date',
                 'description' => 'required|string',
@@ -1515,6 +1533,7 @@ class ProjectController extends Basefunction {
             DB::table('project_expense')->where('id', $data['id'])->update([
                 'budgetId' => $data['budgetId'],
                 'paymentMilestoneId' => $data['paymentMilestoneId'] ?? null,
+                'reference_number' => $data['reference_number'],
                 'debit' => $data['amount'],
                 'description' => $data['description'],
                 'transactionDate' => $data['transactionDate'],
@@ -1601,11 +1620,13 @@ class ProjectController extends Basefunction {
                 ->where('project_expense.projectId', $data['projectId'])
                 ->where('budgets.isVendor', 0)
                 ->where('budget_classifications.isSubContrator', 0)
+                ->where('project_expense.isVendor', 0)
                 ->select(
                     'project_expense.id',
                     'project_expense.projectId',
                     'project_expense.budgetId',
                     'project_expense.paymentMilestoneId',
+                    'project_expense.reference_number',
                     'project_expense.debit',
                     'project_expense.description',
                     'project_expense.status',

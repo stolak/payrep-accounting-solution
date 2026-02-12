@@ -61,8 +61,12 @@
                 <div class="row">
                     <div class="col-md-12">
                         <div class="card">
-                            <div class="card-header">
-                                <h4 class="card-title">Add Field Expense</h4>
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h4 class="card-title mb-0">Field Expense</h4>
+                                <a href="{{ url('/fund-disbursement' . (!empty($projectId) ? '?projectId=' . $projectId : '')) }}"
+                                    class="btn btn-sm btn-primary">
+                                    <i class="fe fe-external-link"></i> Goto Vendor Disbursement
+                                </a>
                             </div>
                             <div class="card-body">
                                 <form method="post">
@@ -75,7 +79,8 @@
                                                 <?php if ($budgetId == '') {
                                                     $budgetId = old('budgetId');
                                                 } ?>
-                                                <select class="select2 form-control" name="budgetId" id="budgetId" required>
+                                                <select class="select2 form-control" name="budgetId" id="budgetId"
+                                                    required>
                                                     <option value="">--Select Budget--</option>
                                                     @foreach ($budgets as $budget)
                                                         <option value="{{ $budget->id }}"
@@ -102,6 +107,17 @@
                                                         </option>
                                                     @endforeach
                                                 </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label>Reference Number <span class="text-danger">*</span></label>
+                                                <?php if ($reference_number == '') {
+                                                    $reference_number = old('reference_number');
+                                                } ?>
+                                                <input type="text" class="form-control"
+                                                    value="{{ $reference_number }}" name="reference_number"
+                                                    id="reference_number" required>
                                             </div>
                                         </div>
                                         <div class="col-md-2">
@@ -136,8 +152,8 @@
                                         </div>
                                     </div>
                                     <div class="text-right">
-                                        <button type="submit" class="btn btn-primary" name="addnew">Add Field
-                                            Expense</button>
+                                        <button type="submit" class="btn btn-primary" name="addnew">Save
+                                        </button>
                                     </div>
                                 </form>
                             </div>
@@ -166,6 +182,7 @@
                                                 <th>S/N</th>
                                                 <th>Budget</th>
                                                 <th>Milestone</th>
+                                                <th>Reference Number</th>
                                                 <th>Amount</th>
                                                 <th>Transaction Date</th>
                                                 <th>Description</th>
@@ -181,6 +198,7 @@
                                                         <td>{{ $i++ }}</td>
                                                         <td>{{ $expense->budgetName }}</td>
                                                         <td>{{ $expense->milestone ?? 'N/A' }}</td>
+                                                        <td>{{ $expense->reference_number }}</td>
                                                         <td style="text-align: right;">
                                                             {{ number_format($expense->debit, 2, '.', ',') }}</td>
                                                         <td>{{ date('Y-m-d', strtotime($expense->transactionDate)) }}</td>
@@ -195,7 +213,7 @@
                                                         <td>
                                                             @if ($expense->status != 'Approved')
                                                                 <a class="btn btn-sm bg-success-light"
-                                                                    href="javascript: editfunc('{{ $expense->id }}','{{ $expense->budgetId }}','{{ $expense->paymentMilestoneId }}','{{ $expense->debit }}','{{ $expense->transactionDate }}','{{ addslashes($expense->description) }}')">
+                                                                    href="javascript: editfunc('{{ $expense->id }}','{{ $expense->budgetId }}','{{ $expense->paymentMilestoneId }}','{{ addslashes($expense->reference_number) }}','{{ $expense->debit }}','{{ $expense->transactionDate }}','{{ addslashes($expense->description) }}')">
                                                                     <i class="fe fe-pencil"></i>
                                                                 </a>
                                                                 <a class="btn btn-sm bg-info-light"
@@ -212,7 +230,7 @@
                                                 @endforeach
                                             @else
                                                 <tr>
-                                                    <td colspan="8" class="text-center">No field expense records found
+                                                    <td colspan="9" class="text-center">No field expense records found
                                                         for this project.</td>
                                                 </tr>
                                             @endif
@@ -277,6 +295,11 @@
                                 <label>Amount <span class="text-danger">*</span></label>
                                 <input type="number" id="edit_amount" name="amount" class="form-control"
                                     step="0.01" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Reference Number <span class="text-danger">*</span></label>
+                                <input type="text" id="edit_reference_number" name="reference_number"
+                                    class="form-control" required>
                             </div>
                             <div class="form-group">
                                 <label>Transaction Date <span class="text-danger">*</span></label>
@@ -368,10 +391,11 @@
             }
         }
 
-        function editfunc(id, budgetId, paymentMilestoneId, amount, transactionDate, description) {
+        function editfunc(id, budgetId, paymentMilestoneId, referenceNumber, amount, transactionDate, description) {
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_budgetId').value = budgetId || '';
             document.getElementById('edit_paymentMilestoneId').value = paymentMilestoneId || '';
+            document.getElementById('edit_reference_number').value = referenceNumber || '';
             document.getElementById('edit_amount').value = amount || '';
             document.getElementById('edit_transactionDate').value = transactionDate || '';
             document.getElementById('edit_description').value = description || '';
@@ -390,4 +414,3 @@
     </script>
 @endsection
 <!-- /Page Wrapper -->
-
