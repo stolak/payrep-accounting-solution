@@ -1093,6 +1093,49 @@ class ProjectController extends Basefunction {
         
         if (isset($_POST['approve'])) {
             $approveId = $request->input('approveid');
+            $refno=$this->RefNo();
+            $poProjectData = DB::table('project_po')
+                ->join('projects', 'project_po.projectId', '=', 'projects.id')
+                ->leftJoin('clients', 'projects.clientId', '=', 'clients.id')
+                ->where('project_po.id', $approveId)
+                ->select(
+                    'project_po.id as poId',
+                    'projects.id as projectId',
+                    'projects.name as projectName',
+                    'projects.clientId',
+                    'projects.revenue_accountId',
+                    'clients.name as clientName',
+                    'clients.clientAccountId',
+                    'project_po.subnet'
+                )
+                ->first();
+
+            if (!$poProjectData) {
+                return back()->with('error_message', 'Selected PO record was not found.');
+            }
+
+            if (empty($poProjectData->clientId)) {
+                return back()->with('error_message', 'The project has no client assigned. Kindly update the project before approving this PO.');
+            }
+
+            if (empty($poProjectData->clientAccountId)) {
+                return back()->with('error_message', "The selected client '{$poProjectData->clientName}' does not have a client account assigned.");
+            }
+
+            if (empty($poProjectData->revenue_accountId)) {
+                return back()->with('error_message', "The project '{$poProjectData->projectName}' does not have a revenue account assigned.");
+            }
+
+            if (!$this->FetchAccountCodes($poProjectData->clientAccountId)) {
+                return back()->with('error_message', "Client account ID '{$poProjectData->clientAccountId}' was not found in chart of accounts.");
+            }
+
+            if (!$this->FetchAccountCodes($poProjectData->revenue_accountId)) {
+                return back()->with('error_message', "Project revenue account ID '{$poProjectData->revenue_accountId}' was not found in chart of accounts.");
+            }
+            $this->DebitAccount($poProjectData->clientAccountId, $poProjectData->subnet, $refno, now(), 'PO Approved', Auth::user()->id, $refno, $poProjectData->projectId);
+            $this->CreditAccount($poProjectData->revenue_accountId, $poProjectData->subnet, $refno, now(), 'PO Approved', Auth::user()->id, $refno, $poProjectData->projectId);
+
             DB::table('project_po')->where('id', $approveId)->update([
                 'status' => 'Approved',
                 'approvedBy' => Auth::user()->id,

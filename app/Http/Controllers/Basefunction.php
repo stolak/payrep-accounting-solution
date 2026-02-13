@@ -220,12 +220,12 @@ class Basefunction extends Controller
 		}
 
 		function FetchAccountCodes($id) {
-			return DB::table('tblaccountchart')->where('id', '=', $id)->first();
+			return DB::table('account_charts')->where('id', '=', $id)->first();
 		}
 
 		Public function CreditAccount($accountid, $amount,$ref,$transdate,$remark,$userid,$manual_ref, $account=null) {
 			$accountdetails=$this->FetchAccountCodes($accountid);
-			return DB::table('tblaccount_transaction')->insertGetId([
+			return DB::table('account_transactions')->insertGetId([
 					'groupid' => $accountdetails->groupid ,
 					'headid' => $accountdetails->headid ,
 					'subheadid' => $accountdetails->subheadid ,
@@ -246,7 +246,7 @@ class Basefunction extends Controller
 
 		Public function DebitAccount($accountid, $amount,$ref,$transdate,$remark,$userid,$manual_ref, $account=null) {
 			$accountdetails=$this->FetchAccountCodes($accountid);
-			return DB::table('tblaccount_transaction')->insertGetId([
+			return DB::table('account_transactions')->insertGetId([
 					'groupid' => $accountdetails->groupid ,
 					'headid' => $accountdetails->headid ,
 					'subheadid' => $accountdetails->subheadid ,

@@ -94,6 +94,7 @@ Route::middleware('auth')->group(function () {
         Route::any('/account-statement',    [AccountReport::class, 'AccountStatements']);
         Route::any('/account-statement-pdf',[PDFReport::class, 'AccountStatements']);
         Route::any('/petty-cash',           [AccountSetup::class, 'PettyCashHandling']);
+        Route::any('/date-range-setup',     [AccountSetup::class, 'DateRangeSetup']);
         Route::any('/project-account-setup',       [AccountSetup::class, 'ProjectExpense']);
         Route::any('/user-ledger-assignment',      [AccountSetup::class, 'UserLedgerAssignment']);
         Route::any('/particular-setup',     [AccountSetup::class, 'DefaultAccountSetup']);

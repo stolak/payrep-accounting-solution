@@ -1031,6 +1031,45 @@ class AccountSetup  extends Basefunction {
 
     }
 
+    public function DateRangeSetup(Request $request) {
+        $data['date_from'] = $request->input('date_from');
+        $data['date_to'] = $request->input('date_to');
+
+        if (isset($_POST['update'])) {
+            $this->validate($request, [
+                'date_from' => 'required|date',
+                'date_to' => 'required|date|after_or_equal:date_from',
+            ]);
+
+            DB::table('tbldaterange')->where('id', 1)->update([
+                'date_from' => $data['date_from'],
+                'date_to' => $data['date_to'],
+            ]);
+
+            return back()->with('message', 'Date range successfully updated.');
+        }
+
+        $data['daterange'] = DB::table('tbldaterange')->where('id', 1)->first();
+
+        if (!$data['daterange']) {
+            DB::table('tbldaterange')->insert([
+                'id' => 1,
+                'date_from' => date('Y-m-d'),
+                'date_to' => date('Y-m-d'),
+            ]);
+            $data['daterange'] = DB::table('tbldaterange')->where('id', 1)->first();
+        }
+
+        if (empty($data['date_from'])) {
+            $data['date_from'] = $data['daterange']->date_from ?? date('Y-m-d');
+        }
+        if (empty($data['date_to'])) {
+            $data['date_to'] = $data['daterange']->date_to ?? date('Y-m-d');
+        }
+
+        return view('AccountSetup.daterange', $data);
+    }
+
 
     public function DefaultProductSetup(Request $request) {
         //if (!$this->AuthenticateRoute("new-brand")) return view('lock.index');
