@@ -1382,6 +1382,7 @@ class ProjectController extends Basefunction {
     {
         $data['projectId'] = $request->input('projectId');
         $data['budgetId'] = $request->input('budgetId');
+        $data['accountId'] = $request->input('accountId');
         $data['paymentMilestoneId'] = $request->input('paymentMilestoneId');
         $data['reference_number'] = $request->input('reference_number');
         $data['debit'] = $request->input('debit');
@@ -1403,6 +1404,7 @@ class ProjectController extends Basefunction {
             $this->validate($request, [
                 'projectId' => 'required|integer',
                 'budgetId' => 'required|integer',
+                'accountId' => 'required|integer|exists:account_charts,id',
                 'paymentMilestoneId' => 'required|integer',
                 'reference_number' => 'required|string|unique:project_expense,reference_number',
                 'debit' => 'required|numeric|min:0',
@@ -1413,6 +1415,7 @@ class ProjectController extends Basefunction {
                 'system_ref' => $refno,
                 'projectId' => $data['projectId'],
                 'budgetId' => $data['budgetId'],
+                'accountId' => $data['accountId'],
                 'paymentMilestoneId' => $data['paymentMilestoneId'],
                 'reference_number' => $data['reference_number'],
                 'debit' => $data['debit'],
@@ -1431,6 +1434,7 @@ class ProjectController extends Basefunction {
             $this->validate($request, [
                 'projectId' => 'required|integer',
                 'budgetId' => 'required|integer',
+                'accountId' => 'required|integer|exists:account_charts,id',
                 'paymentMilestoneId' => 'required|integer',
                 'reference_number' => 'required|string|unique:project_expense,reference_number,' . $request->input('id'),
                 'debit' => 'required|numeric|min:0',
@@ -1440,6 +1444,7 @@ class ProjectController extends Basefunction {
 
             DB::table('project_expense')->where('id', $data['id'])->update([
                 'budgetId' => $data['budgetId'],
+                'accountId' => $data['accountId'],
                 'paymentMilestoneId' => $data['paymentMilestoneId'],
                 'reference_number' => $data['reference_number'],
                 'debit' => $data['debit'],
@@ -1451,6 +1456,83 @@ class ProjectController extends Basefunction {
         
         if (isset($_POST['approve'])) {
             $approveId = $request->input('approveid');
+            $refno = $this->RefNo();
+
+            $approvalData = DB::table('project_expense')
+                ->leftJoin('budgets', 'project_expense.budgetId', '=', 'budgets.id')
+                ->where('project_expense.id', $approveId)
+                ->where('project_expense.isVendor', 1)
+                ->select(
+                    'project_expense.id',
+                    'project_expense.projectId',
+                    'project_expense.accountId',
+                    'project_expense.budgetId',
+                    'project_expense.debit',
+                    'project_expense.transactionDate',
+                    'project_expense.reference_number',
+                    'project_expense.status',
+                    'budgets.accountId as vendorAccountId',
+                    'budgets.name as vendorName'
+                )
+                ->first();
+
+            if (!$approvalData) {
+                return back()->with('error_message', 'Fund disbursement record was not found.');
+            }
+
+            if ($approvalData->status === 'Approved') {
+                return back()->with('error_message', 'This fund disbursement has already been approved.');
+            }
+
+            if (empty($approvalData->accountId)) {
+                return back()->with('error_message', 'Drawn ledger is missing on this fund disbursement record.');
+            }
+
+            if (empty($approvalData->vendorAccountId)) {
+                return back()->with('error_message', "Vendor account is not configured for '{$approvalData->vendorName}'.");
+            }
+
+            if (!$this->FetchAccountCodes($approvalData->accountId)) {
+                return back()->with('error_message', "Drawn ledger account ID '{$approvalData->accountId}' was not found in chart of accounts.");
+            }
+
+            if (!$this->FetchAccountCodes($approvalData->vendorAccountId)) {
+                return back()->with('error_message', "Vendor account ID '{$approvalData->vendorAccountId}' was not found in chart of accounts.");
+            }
+
+            if ((float) $approvalData->debit <= 0) {
+                return back()->with('error_message', 'Fund disbursement amount must be greater than zero before approval.');
+            }
+
+            $transDate = !empty($approvalData->transactionDate)
+                ? date('Y-m-d', strtotime($approvalData->transactionDate))
+                : date('Y-m-d');
+            $manualRef = $approvalData->reference_number ?: $refno;
+            $remark = 'Fund disbursement approved';
+            $userId = Auth::user()->id;
+
+            // Fund source gets credited, vendor account gets debited.
+            $this->CreditAccount(
+                $approvalData->accountId,
+                $approvalData->debit,
+                $refno,
+                $transDate,
+                $remark,
+                $userId,
+                $manualRef,
+                $approvalData->projectId
+            );
+            $this->DebitAccount(
+                $approvalData->vendorAccountId,
+                $approvalData->debit,
+                $refno,
+                $transDate,
+                $remark,
+                $userId,
+                $manualRef,
+                $approvalData->projectId
+            );
+
             DB::table('project_expense')->where('id', $approveId)->update([
                 'status' => 'Approved',
                 'approvedBy' => Auth::user()->id,
@@ -1498,6 +1580,13 @@ class ProjectController extends Basefunction {
                 ->orderBy('rank', 'asc')
                 ->get();
         }
+
+        // Fetch source accounts (fund drawn from)
+        $data['accounts'] = DB::table('account_charts')
+            ->where('status', 1)
+            ->select('id', 'accountno', 'accountdescription')
+            ->orderBy('accountdescription', 'asc')
+            ->get();
         
         // Fetch fund disbursements for selected project
         $data['fundDisbursements'] = collect();
@@ -1505,6 +1594,7 @@ class ProjectController extends Basefunction {
         if (!empty($data['projectId'])) {
             $data['fundDisbursements'] = DB::table('project_expense')
                 ->leftJoin('budgets', 'project_expense.budgetId', '=', 'budgets.id')
+                ->leftJoin('account_charts', 'project_expense.accountId', '=', 'account_charts.id')
                 ->leftJoin('payment_milestone', 'project_expense.paymentMilestoneId', '=', 'payment_milestone.id')
                 ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
                 ->where('project_expense.projectId', $data['projectId'])
@@ -1512,6 +1602,7 @@ class ProjectController extends Basefunction {
                 ->select(
                     'project_expense.id',
                     'project_expense.budgetId',
+                    'project_expense.accountId',
                     'project_expense.paymentMilestoneId',
                     'project_expense.reference_number',
                     'project_expense.debit',
@@ -1520,6 +1611,8 @@ class ProjectController extends Basefunction {
                     'project_expense.createdAt',
                     'project_expense.approvedAt',
                     'budgets.name as budgetName',
+                    'account_charts.accountdescription as accountName',
+                    'account_charts.accountno as accountNo',
                     'budget_classifications.category as budgetCategoryName',
                     'payment_milestone.milestone',
                     'payment_milestone.rank as milestoneRank'
@@ -1567,9 +1660,18 @@ class ProjectController extends Basefunction {
                 'description' => 'required|string',
             ]);
             $refno=$this->RefNo();
+            // validate accountId using $this->FetchAccountCodes($data['accountId'])
+            // dd(Auth::user()->ledgerId);
+            if (empty(Auth::user()->ledgerId)) {
+                return back()->with('error_message', "You are not authorized to add field expense.");
+            }
+            if (!$this->FetchAccountCodes(Auth::user()->ledgerId)) {
+                return back()->with('error_message', "You are not authorized to add field expense.");
+            }
             DB::table('project_expense')->insert([
                 'system_ref' => $refno,
                 'projectId' => $data['projectId'],
+                'accountId' => Auth::user()->ledgerId,
                 'budgetId' => $data['budgetId'],
                 'paymentMilestoneId' => $data['paymentMilestoneId'] ?? null,
                 'reference_number' => $data['reference_number'],
@@ -1612,6 +1714,79 @@ class ProjectController extends Basefunction {
 
         if (isset($_POST['approve'])) {
             $approveId = $request->input('approveid');
+            $refno=$this->RefNo();
+            $approvalData = DB::table('project_expense')
+                ->leftJoin('projects', 'project_expense.projectId', '=', 'projects.id')
+                ->where('project_expense.id', $approveId)
+                ->select(
+                    'project_expense.id',
+                    'project_expense.projectId',
+                    'project_expense.accountId',
+                    'project_expense.debit',
+                    'project_expense.transactionDate',
+                    'project_expense.reference_number',
+                    'project_expense.status',
+                    'projects.expenseAccountId as expenseAccountId',
+                    'projects.name as projectName'
+                )
+                ->first();
+
+            if (!$approvalData) {
+                return back()->with('error_message', 'Fund disbursement record was not found.');
+            }
+
+            if ($approvalData->status === 'Approved') {
+                return back()->with('error_message', 'This fund disbursement has already been approved.');
+            }
+
+            if (empty($approvalData->accountId)) {
+                return back()->with('error_message', 'Drawn ledger is missing on this fund disbursement record.');
+            }
+
+            if (empty($approvalData->expenseAccountId)) {
+                return back()->with('error_message', "Expense account is not configured for '{$approvalData->projectName}'.");
+            }
+
+            if (!$this->FetchAccountCodes($approvalData->accountId)) {
+                return back()->with('error_message', "Drawn ledger account ID '{$approvalData->accountId}' was not found in chart of accounts.");
+            }
+
+            if (!$this->FetchAccountCodes($approvalData->expenseAccountId)) {
+                return back()->with('error_message', "Expense account ID '{$approvalData->expenseAccountId}' was not found in chart of accounts.");
+            }
+
+            if ((float) $approvalData->debit <= 0) {
+                return back()->with('error_message', 'Fund disbursement amount must be greater than zero before approval.');
+            }
+
+            $transDate = !empty($approvalData->transactionDate)
+                ? date('Y-m-d', strtotime($approvalData->transactionDate))
+                : date('Y-m-d');
+            $manualRef = $approvalData->reference_number ?: $refno;
+            $remark = 'Fund disbursement approved';
+            $userId = Auth::user()->id;
+
+            // Fund source gets credited, vendor account gets debited.
+            $this->CreditAccount(
+                $approvalData->accountId,
+                $approvalData->debit,
+                $refno,
+                $transDate,
+                $remark,
+                $userId,
+                $manualRef,
+                $approvalData->projectId
+            );
+            $this->DebitAccount(
+                $approvalData->expenseAccountId,
+                $approvalData->debit,
+                $refno,
+                $transDate,
+                $remark,
+                $userId,
+                $manualRef,
+                $approvalData->projectId
+            );
             DB::table('project_expense')->where('id', $approveId)->update([
                 'status' => 'Approved',
                 'approvedBy' => Auth::user()->id,
@@ -2543,6 +2718,78 @@ class ProjectController extends Basefunction {
         
         if (isset($_POST['approve'])) {
             $approveId = $request->input('approveid');
+            $refno=$this->RefNo();
+
+            $approvalData = DB::table('vendor_projects')
+                ->leftJoin('budgets', 'vendor_projects.vendorId', '=', 'budgets.id')
+                ->leftJoin('projects', 'vendor_projects.projectId', '=', 'projects.id')
+                ->where('vendor_projects.id', $approveId)
+                ->select(
+                    'vendor_projects.id',
+                    'vendor_projects.status',
+                    'vendor_projects.projectId',
+                    'vendor_projects.amount',
+                    'budgets.accountId',
+                    'budgets.name as vendorName',
+                    'projects.expenseAccountId',
+                    'projects.name as projectName'
+                )
+                ->first();
+
+            if (!$approvalData) {
+                return back()->with('error_message', 'Vendor project record was not found.');
+            }
+
+            if ($approvalData->status === 'Approved') {
+                return back()->with('error_message', 'This vendor project has already been approved.');
+            }
+
+            if (empty($approvalData->accountId)) {
+                return back()->with('error_message', "No account is configured for vendor budget '{$approvalData->vendorName}'.");
+            }
+
+            if (empty($approvalData->expenseAccountId)) {
+                return back()->with('error_message', "No expense account is configured for project '{$approvalData->projectName}'.");
+            }
+
+            if (!$this->FetchAccountCodes($approvalData->accountId)) {
+                return back()->with('error_message', "Vendor account ID '{$approvalData->accountId}' was not found in chart of accounts.");
+            }
+
+            if (!$this->FetchAccountCodes($approvalData->expenseAccountId)) {
+                return back()->with('error_message', "Project expense account ID '{$approvalData->expenseAccountId}' was not found in chart of accounts.");
+            }
+
+            if ((float) $approvalData->amount <= 0) {
+                return back()->with('error_message', 'Vendor project amount must be greater than zero before approval.');
+            }
+
+            $transDate = now()->format('Y-m-d');
+            $remark = 'Vendor project approved';
+            $userId = Auth::user()->id;
+
+            $this->CreditAccount(
+                $approvalData->accountId,
+                $approvalData->amount,
+                $refno,
+                $transDate,
+                $remark,
+                $userId,
+                $refno,
+                $approvalData->projectId
+            );
+
+            $this->DebitAccount(
+                $approvalData->expenseAccountId,
+                $approvalData->amount,
+                $refno,
+                $transDate,
+                $remark,
+                $userId,
+                $refno,
+                $approvalData->projectId
+            );
+
             DB::table('vendor_projects')->where('id', $approveId)->update([
                 'status' => 'Approved',
                 'approvedBy' => Auth::user()->id,

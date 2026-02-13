@@ -73,7 +73,7 @@
                                     {{ csrf_field() }}
                                     <input type="hidden" name="projectId" value="{{ $projectId }}">
                                     <div class="row">
-                                        <div class="col-md-3">
+                                        <div class="col-md-2">
                                             <div class="form-group">
                                                 <label>Vendor <span class="text-danger">*</span></label>
                                                 <?php if ($budgetId == '') {
@@ -90,7 +90,7 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-2">
                                             <div class="form-group">
                                                 <label>Payment Milestone <span class="text-danger">*</span></label>
                                                 <?php if ($paymentMilestoneId == '') {
@@ -103,6 +103,25 @@
                                                         <option value="{{ $milestone->id }}"
                                                             {{ $paymentMilestoneId == $milestone->id ? 'selected' : '' }}>
                                                             {{ $milestone->milestone }} ({{ $milestone->percentage }}%)
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label>Drawn Ledger <span class="text-danger">*</span></label>
+                                                <?php if ($accountId == '') {
+                                                    $accountId = old('accountId');
+                                                } ?>
+                                                <select class="select2 form-control" name="accountId" id="accountId"
+                                                    required>
+                                                    <option value="">--Select Account--</option>
+                                                    @foreach ($accounts as $account)
+                                                        <option value="{{ $account->id }}"
+                                                            {{ $accountId == $account->id ? 'selected' : '' }}>
+                                                            {{ $account->accountdescription }}
+                                                            ({{ $account->accountno }})
                                                         </option>
                                                     @endforeach
                                                 </select>
@@ -171,6 +190,7 @@
                                             <tr>
                                                 <th rowspan="1">S/N</th>
                                                 <th rowspan="1">Beneficiary</th>
+                                                <th rowspan="1">Drawn Ledger</th>
                                                 <th rowspan="1">Milestone</th>
                                                 <th rowspan="1">Reference Number</th>
                                                 <th rowspan="1">Amount</th>
@@ -216,6 +236,12 @@
                                                                 @endif
                                                             </td>
                                                             <td>
+                                                                {{ $disbursement->accountName ?? 'N/A' }}
+                                                                @if (!empty($disbursement->accountNo))
+                                                                    ({{ $disbursement->accountNo }})
+                                                                @endif
+                                                            </td>
+                                                            <td>
                                                                 {{ $disbursement->milestone }}
                                                             </td>
                                                             <td>
@@ -237,7 +263,7 @@
                                                             <td>
                                                                 @if ($disbursement->status != 'Approved')
                                                                     <a class="btn btn-sm bg-success-light"
-                                                                        href="javascript: editfunc('{{ $disbursement->id }}','{{ $disbursement->budgetId }}','{{ $disbursement->paymentMilestoneId }}','{{ addslashes($disbursement->reference_number) }}','{{ $disbursement->debit }}','{{ $disbursement->transactionDate }}')">
+                                                                        href="javascript: editfunc('{{ $disbursement->id }}','{{ $disbursement->budgetId }}','{{ $disbursement->accountId }}','{{ $disbursement->paymentMilestoneId }}','{{ addslashes($disbursement->reference_number) }}','{{ $disbursement->debit }}','{{ $disbursement->transactionDate }}')">
                                                                         <i class="fe fe-pencil"></i>
                                                                     </a>
                                                                     <a class="btn btn-sm bg-info-light"
@@ -254,7 +280,7 @@
                                                     @endforeach
                                                     <tr style="background-color: #e8e8e8; font-weight: bold;">
                                                         <td></td>
-                                                        <td colspan="2" class="text-right">
+                                                        <td colspan="3" class="text-right">
                                                             <strong>{{ $budgetName }} Subtotal:</strong>
                                                         </td>
                                                         <td style="text-align: right;">
@@ -268,7 +294,7 @@
                                                 <tr
                                                     style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
                                                     <td></td>
-                                                    <td colspan="3" class="text-right"><strong>Total
+                                                    <td colspan="4" class="text-right"><strong>Total
                                                             Disbursed:</strong></td>
                                                     <td style="text-align: right;">
                                                         <strong>{{ number_format($totalDisbursed, 2, '.', ',') }}</strong>
@@ -279,7 +305,7 @@
                                                 </tr>
                                             @else
                                                 <tr>
-                                                    <td colspan="8" class="text-center">No fund disbursements recorded
+                                                    <td colspan="9" class="text-center">No fund disbursements recorded
                                                         for this project yet.</td>
                                                 </tr>
                                             @endif
@@ -336,6 +362,17 @@
                                     @foreach ($paymentMilestones as $milestone)
                                         <option value="{{ $milestone->id }}">{{ $milestone->milestone }}
                                             ({{ $milestone->percentage }}%)
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Drawn Ledger <span class="text-danger">*</span></label>
+                                <select class="form-control" id="edit_accountId" name="accountId" required>
+                                    <option value="">--Select Account--</option>
+                                    @foreach ($accounts as $account)
+                                        <option value="{{ $account->id }}">{{ $account->accountdescription }}
+                                            ({{ $account->accountno }})
                                         </option>
                                     @endforeach
                                 </select>
@@ -435,9 +472,10 @@
             }
         }
 
-        function editfunc(id, budgetId, paymentMilestoneId, referenceNumber, debit, transactionDate) {
+        function editfunc(id, budgetId, accountId, paymentMilestoneId, referenceNumber, debit, transactionDate) {
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_budgetId').value = budgetId;
+            document.getElementById('edit_accountId').value = accountId || '';
             document.getElementById('edit_paymentMilestoneId').value = paymentMilestoneId;
             document.getElementById('edit_debit').value = debit;
             document.getElementById('edit_reference_number').value = referenceNumber || '';
