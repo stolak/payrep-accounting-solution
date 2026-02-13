@@ -26,7 +26,7 @@
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-header">
-                            <h4 class="card-title">Project Account Setup</h4>
+                            <h4 class="card-title">Administrative Expense Setup</h4>
                         </div>
                         <div class="card-body">
                             <form method="post" name="mainform" id="mainform">
@@ -34,7 +34,7 @@
                                 <div class="row">
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label>Particular</label>
+                                            <label>Administrative Expense</label>
                                             <?php if ($particular == '') {
                                                 $particular = old('particular');
                                             } ?>
@@ -73,7 +73,7 @@
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-header">
-                            <h4 class="card-title">Project Account List</h4>
+                            <h4 class="card-title">Administrative Expense List</h4>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive" style="font-size: 11px;">
@@ -81,8 +81,8 @@
                                     <thead>
                                         <tr>
                                             <th>S/N</th>
-                                            <th>Particular</th>
-                                            <th>Lookup Account</th>
+                                            <th>Administrative Expense</th>
+                                            <th>Lookup Expense Account</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
@@ -100,11 +100,12 @@
                                                         onclick="editfunc('{{ $list->id }}','{{ $list->expensenid }}','{{ $list->particular }}')"><i
                                                             class="fe fe-pencil"></i>
                                                     </a>&nbsp;
-                                                    <a class="btn btn-sm bg-danger-light" onclick="deletefunc('{{ $list->id }}')" ">
-                                                            <i class="fe fe-trash"></i>
-                                                        </a>
-                                                    </td>
-                                                </tr>
+                                                    <a class="btn btn-sm bg-danger-light"
+                                                        onclick="deletefunc('{{ $list->id }}')" ">
+                                                                        <i class="fe fe-trash"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
      @endforeach
                                     </tbody>
                                 </table>

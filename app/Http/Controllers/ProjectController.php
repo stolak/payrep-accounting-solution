@@ -264,8 +264,8 @@ class ProjectController extends Basefunction {
             ->select('id', 'category')
             ->orderBy('category', 'asc')
             ->get();
-        $data['accountLookUp'] = $this->AccountLookUpByHeadId(6);
-        $data['revenueLookUp'] = $this->AccountLookUpByHeadId(7);
+        $data['accountLookUp'] = $this->AccountLookUpBysubHeadId(env('PROJECT_EXPENSE_ID'));
+        $data['revenueLookUp'] = $this->AccountLookUpBysubHeadId(env('PROJECT_REVENUE_ID'));
         
         // Fetch clients list for dropdown
         $data['clients'] = DB::table('clients')
@@ -905,7 +905,7 @@ class ProjectController extends Basefunction {
         $data['clients'] = $clients;
         
         // Fetch account charts for dropdown (using headId 6 as default, adjust if needed)
-        $data['accountLookUp'] = $this->AccountLookUpByHeadId(6);
+        $data['accountLookUp'] = $this->AccountLookUpBysubHeadId(env('CLIENT_ID'));
         
         // Fetch project categories for dropdown
         $data['projectCategories'] = DB::table('project_categories')
@@ -2006,7 +2006,7 @@ class ProjectController extends Basefunction {
             ->get();
         
         // Fetch account charts for dropdown
-        $data['accountLookUp'] = $this->AccountLookUpByHeadId(6);
+        $data['accountLookUp'] = $this->AccountLookUpBysubHeadId(env('VENDOR_ID'));
 
         // Fetch vendor type, category and banks for dropdowns
         $data['vendorTypes'] = DB::table('vendor_type')

@@ -11,9 +11,10 @@ use Illuminate\Support\Facades\URL;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Support\Facades\Input;
+use App\Http\Controllers\Basefunction;
 use Session;
 use App\Http\Traits\AccountTrait;
-class AccountSetup extends Controller {
+class AccountSetup  extends Basefunction {
 
     public function SubAccount(Request $request)
     {
@@ -494,11 +495,7 @@ class AccountSetup extends Controller {
             ->orderBy('users.name', 'asc')
             ->get();
 
-        $data['ledgers'] = DB::table('account_charts')->where('status', 1)
-        ->where('headid', 1)
-            ->select('id', 'accountno', 'accountdescription', 'status')
-            ->orderBy('accountdescription', 'asc')
-            ->get();
+        $data['ledgers'] =$this->AccountLookUpBysubHeadId(env('FIELD_LEDGER_ID'));;
 
         return view('AccountSetup.userledgerassignment', $data);
     }
