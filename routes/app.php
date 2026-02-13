@@ -101,6 +101,7 @@ Route::middleware('auth')->group(function () {
 
         Route::any('/trans-summary',      	[AccountReport::class, 'Transaction_Summary']);
         Route::any('/trans-ref',      		[AccountReport::class, 'RefTransactionPost']);
+        Route::any('/petty-cash-report',   [AccountReport::class, 'PettyReport']);
         Route::any('/trans-summary-pdf',    [PDFReport::class, 'Transaction_Summary']);
         //Project route
         Route::any('/project-setup',      	[ProjectController::class, 'project']);

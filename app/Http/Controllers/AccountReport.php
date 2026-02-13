@@ -13,6 +13,8 @@ use Session;
 
 class AccountReport extends Controller
 {
+    use AccountTrait;
+
 
     public function TrialBalance(Request $request)
     {
@@ -128,15 +130,40 @@ class AccountReport extends Controller
 
     public function PettyReport(Request $request)
     {
-        $data['branch'] = $request->input('branch');
         $data['particular'] = $request->input('particular');
         $data['fromdate'] = $request->input('fromdate');
         $data['todate'] = $request->input('todate');
         if ($data['todate'] == "") {$data['todate'] = date("Y-m-d");}
         if ($data['fromdate'] == "") {$data['fromdate'] = date("Y-m-d");}
+        if ($data['fromdate'] > $data['todate']) {
+            [$data['fromdate'], $data['todate']] = [$data['todate'], $data['fromdate']];
+        }
+
         $data['ProjectAccount'] = $this->ProjectAccount();
-        $data['Branches'] = DB::table('tblbranch')->get();
-        $data['PettyTransaction'] = $this->PettyTransaction($data['particular'], $data['branch']);
+        $data['PettyTransaction'] = DB::table('pettyhandling_transactions as p')
+            ->leftJoin('petty_expenses as pe', 'p.projectid', '=', 'pe.id')
+            ->leftJoin('account_charts as ac', 'p.accountid', '=', 'ac.id')
+            ->leftJoin('users as u', 'p.postby', '=', 'u.id')
+            ->select(
+                'p.id',
+                'p.transdate',
+                'p.remark',
+                'p.amount',
+                'p.manual_ref',
+                'pe.particular as Particular',
+                DB::raw("CONCAT(COALESCE(ac.accountdescription, ''), '(', COALESCE(ac.accountno, ''), ')') as AccountName"),
+                'u.name as Postedby',
+                DB::raw("'' as FPost")
+            )
+            ->when(!empty($data['particular']), function ($query) use ($data) {
+                $query->where('p.projectid', $data['particular']);
+            })
+            ->whereDate('p.transdate', '>=', $data['fromdate'])
+            ->whereDate('p.transdate', '<=', $data['todate'])
+            ->orderBy('p.transdate', 'desc')
+            ->orderBy('p.id', 'desc')
+            ->get();
+
         return view('AccountReport.pettycashreport', $data);
     }
 
