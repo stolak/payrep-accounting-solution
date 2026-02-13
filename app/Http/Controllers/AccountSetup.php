@@ -965,7 +965,7 @@ class AccountSetup  extends Basefunction {
 
                 $refno= AccountTrait::RefNo();
                 $userid=Auth::user()->id;
-try {
+            try {
                 AccountTrait::DebitAccount($data['particular_accountid'],$data['amount'],$refno,$data['transdate'] !== null ? $data['transdate'] : date("Y-m-d"),$data['remark'],$userid,$data['manual_ref']);
                 AccountTrait::CreditAccount($data['petty_accountid'],$data['amount'],$refno, $data['transdate'] !== null ? $data['transdate'] : date("Y-m-d"), $data['remark'],$userid,$data['manual_ref']);
 
@@ -1001,7 +1001,7 @@ try {
                     return back()->with('message','record successfully updated.'  );
             }
             $data['ProjectAccount'] = AccountTrait::ProjectAccount();
-            $data['PettyTransaction'] = AccountTrait::PettyTransaction();
+            $data['PettyTransaction'] = AccountTrait::PettyTransaction($data['particular']);
             return view('AccountSetup.pettycash', $data);
     }
 

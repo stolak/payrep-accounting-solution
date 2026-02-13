@@ -28,7 +28,7 @@
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-header">
-                            <h4 class="card-title">Petty Cash Handling</h4>
+                            <h4 class="card-title">Operational Expense</h4>
                         </div>
                         <div class="card-body">
                             <form method="post" name="mainform" id="mainform">
@@ -37,8 +37,9 @@
                                     <div class="row">
                                         <div class="col-sm-3">
                                             <div class="form-group">
-                                                <label class="control-label">Project Type</label>
-                                                <select class="form-control" name="particular">
+                                                <label class="control-label">Administrative Expense</label>
+                                                <select class="form-control" name="particular" id="particular"
+                                                    onchange="reloadByParticular()">
                                                     <option value="">--Select--</option>
                                                     @foreach ($ProjectAccount as $list)
                                                         <option value="{{ $list->id }}"
@@ -99,18 +100,19 @@
                                 </div>
                             </form>
 
-                            <h5>Recent Transactions on petty cash handling</h1>
+                            <h5>Operational Expense Report</h1>
                                 <div class="table-responsive" style="font-size: 11px; padding:10px;">
                                     <table id="mytable" class="table table-bordered table-striped table-highlight">
                                         <thead>
                                             <tr bgcolor="#c7c7c7">
                                                 <th>S/N</th>
                                                 <th>Transaction Date</th>
-                                                <th>Project Type</th>
-                                                <th>Project Description</th>
-                                                <th>Account</th>
+                                                <th>Administrative Expense</th>
+                                                <th>Description</th>
+                                                <th>Ledger Account</th>
                                                 <th>Amount</th>
-                                                <th>Posted by</th>
+                                                <th>Reference Number</th>
+                                                <th>Posted By</th>
                                             </tr>
                                         </thead>
 
@@ -127,7 +129,7 @@
                                                     <td>{{ $list->Particular }}</td>
                                                     <td>{{ $list->remark }} </td>
                                                     <td>{{ $list->AccountName }}</td>
-                                                    <td>{{ $list->amount }} </td>
+                                                    <td>{{ number_format($list->amount, 2) }} </td>
                                                     <td>{{ $list->Postedby }} </td>
                                                 </tr>
                                             @endforeach
@@ -177,10 +179,23 @@
                 $("#deleteModal").modal('show')
             }
 
-            function Reload() {
+            function reloadByParticular() {
+                const form = document.getElementById('mainform');
+                const url = new URL(window.location.href);
+                const formData = new FormData(form);
 
-                document.forms["mainform"].submit();
-                return;
+                // Keep all current form values in the query string during reload.
+                for (const [key, value] of formData.entries()) {
+                    if (value !== null && String(value).trim() !== '') {
+                        url.searchParams.set(key, value);
+                    } else {
+                        url.searchParams.delete(key);
+                    }
+                }
+
+                // Ensure this is only a filter refresh, not a posting action.
+                url.searchParams.delete('post');
+                window.location.href = url.toString();
             }
         </script>
 
