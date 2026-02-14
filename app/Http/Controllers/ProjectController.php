@@ -1925,17 +1925,24 @@ class ProjectController extends Basefunction {
             $approveId = $request->input('approveid');
             $refno=$this->RefNo();
             $approvalData = DB::table('project_expense')
+                ->leftJoin('budgets', 'project_expense.budgetId', '=', 'budgets.id')
                 ->leftJoin('projects', 'project_expense.projectId', '=', 'projects.id')
+                ->leftJoin('project_expense_ledger', function ($join) {
+                    $join->on('project_expense.projectId', '=', 'project_expense_ledger.projectId')
+                        ->on('budgets.classificationId', '=', 'project_expense_ledger.classificationId');
+                })
                 ->where('project_expense.id', $approveId)
                 ->select(
                     'project_expense.id',
                     'project_expense.projectId',
+                    'project_expense.budgetId',
                     'project_expense.accountId',
                     'project_expense.debit',
                     'project_expense.transactionDate',
                     'project_expense.reference_number',
                     'project_expense.status',
-                    'projects.expenseAccountId as expenseAccountId',
+                    'budgets.classificationId',
+                    'project_expense_ledger.expenseAccountId',
                     'projects.name as projectName'
                 )
                 ->first();
@@ -1953,7 +1960,7 @@ class ProjectController extends Basefunction {
             }
 
             if (empty($approvalData->expenseAccountId)) {
-                return back()->with('error_message', "Expense account is not configured for '{$approvalData->projectName}'.");
+                return back()->with('error_message', "No expense ledger is configured for '{$approvalData->projectName}' on classification '{$approvalData->classificationId}'.");
             }
 
             if (!$this->FetchAccountCodes($approvalData->accountId)) {
