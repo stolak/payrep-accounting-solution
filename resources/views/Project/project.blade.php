@@ -122,25 +122,7 @@
 
                                     <div class="col-md-3">
                                         <div class="form-group">
-                                            <label>Expense Account</label>
-                                            <?php if ($expenseAccountId == '') {
-                                                $expenseAccountId = old('expenseAccountId');
-                                            } ?>
-                                            <select class="select2 form-control" name="expenseAccountId">
-                                                <option value="">--Select--</option>
-                                                @foreach ($accountLookUp as $account)
-                                                    <option value="{{ $account->id }}"
-                                                        {{ $expenseAccountId == $account->id ? 'selected' : '' }}>
-                                                        {{ $account->accountdescription }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label>Revenue Account</label>
+                                            <label>Revenue Ledger</label>
                                             <?php if ($revenue_accountId == '') {
                                                 $revenue_accountId = old('revenue_accountId');
                                             } ?>
@@ -176,7 +158,8 @@
                                                 <h6 class="mb-0">Project Expense Classification Ledgers</h6>
                                             </div>
                                             <div class="card-body" id="create_expenseClassificationLedgerContainer">
-                                                <p class="text-muted mb-0">Select project category to load expense classifications.</p>
+                                                <p class="text-muted mb-0">Select project category to load expense
+                                                    classifications.</p>
                                             </div>
                                         </div>
                                     </div>
@@ -232,8 +215,9 @@
                                                             <div class="col-md-3">
                                                                 <div class="form-group">
                                                                     <label>VAT %</label>
-                                                                    <input type="number" class="form-control po-header-vat"
-                                                                        name="po_vat[]" step="0.01" min="0"
+                                                                    <input type="number"
+                                                                        class="form-control po-header-vat" name="po_vat[]"
+                                                                        step="0.01" min="0"
                                                                         value="{{ $oldPoVats[$i] ?? '' }}" max="100"
                                                                         oninput="calculatePoTotals({{ $i }})">
                                                                 </div>
@@ -405,8 +389,7 @@
                                             <th rowspan="1">Client</th>
                                             <th rowspan="1">Client Ledger</th>
                                             <th rowspan="1">Category</th>
-                                            <th rowspan="1">Expense Account</th>
-                                            <th rowspan="1">Revenue Account</th>
+                                            <th rowspan="1">Revenue Ledger</th>
                                             <th rowspan="1">Description</th>
                                             <th rowspan="1">Location</th>
                                             <th rowspan="1">Status</th>
@@ -439,9 +422,6 @@
                                                     {{ $list->categoryName ?? 'N/A' }}
                                                 </td>
                                                 <td>
-                                                    {{ $list->expenseAccountName ?? 'N/A' }}
-                                                </td>
-                                                <td>
                                                     {{ $list->revenueAccountName ?? 'N/A' }}
                                                 </td>
                                                 <td>
@@ -459,7 +439,7 @@
                                                 </td>
                                                 <td>
                                                     <a class="btn btn-sm bg-success-light"
-                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->projectCode }}','{{ addslashes($list->name) }}','{{ addslashes($list->description ?? '') }}','{{ $list->categoryId }}','{{ addslashes($list->location ?? '') }}','{{ $list->status }}','{{ $list->clientId ?? '' }}','{{ $list->clientAccountId ?? '' }}','{{ $list->expenseAccountId ?? '' }}','{{ $list->revenue_accountId ?? '' }}',{{ json_encode($list->expenseClassificationLedger ?? []) }})">
+                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->projectCode }}','{{ addslashes($list->name) }}','{{ addslashes($list->description ?? '') }}','{{ $list->categoryId }}','{{ addslashes($list->location ?? '') }}','{{ $list->status }}','{{ $list->clientId ?? '' }}','{{ $list->clientAccountId ?? '' }}','{{ $list->revenue_accountId ?? '' }}',{{ json_encode($list->expenseClassificationLedger ?? []) }})">
                                                         <i class="fe fe-pencil"></i>
                                                     </a>
                                                     <a class="btn btn-sm bg-info-light"
@@ -555,7 +535,8 @@
                                             <h6 class="mb-0">Project Expense Classification Ledgers</h6>
                                         </div>
                                         <div class="card-body" id="edit_expenseClassificationLedgerContainer">
-                                            <p class="text-muted mb-0">Select project category to load expense classifications.</p>
+                                            <p class="text-muted mb-0">Select project category to load expense
+                                                classifications.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -563,19 +544,7 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>Expense Account</label>
-                                        <select class="form-control" id="expenseAccountId" name="expenseAccountId">
-                                            <option value="">--Select--</option>
-                                            @foreach ($accountLookUp as $account)
-                                                <option value="{{ $account->id }}">{{ $account->accountdescription }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Revenue Account</label>
+                                        <label>Revenue Ledger</label>
                                         <select class="form-control" id="revenue_accountId" name="revenue_accountId">
                                             <option value="">--Select--</option>
                                             @foreach ($revenueLookUp as $account)
@@ -677,13 +646,16 @@
 
             container.innerHTML = '';
             if (!categoryId) {
-                container.innerHTML = '<p class="text-muted mb-0">Select project category to load expense classifications.</p>';
+                container.innerHTML =
+                    '<p class="text-muted mb-0">Select project category to load expense classifications.</p>';
                 return;
             }
 
-            const classifications = categoryExpenseClassifications.filter(item => String(item.project_categoryId) === String(categoryId));
+            const classifications = categoryExpenseClassifications.filter(item => String(item.project_categoryId) ===
+                String(categoryId));
             if (classifications.length === 0) {
-                container.innerHTML = '<p class="text-muted mb-0">No expense classification is mapped to this project category.</p>';
+                container.innerHTML =
+                    '<p class="text-muted mb-0">No expense classification is mapped to this project category.</p>';
                 return;
             }
 
@@ -694,9 +666,9 @@
                 const col = document.createElement('div');
                 col.className = 'col-md-6';
 
-                const selectedValue = selectedMap && selectedMap[classification.classificationId]
-                    ? selectedMap[classification.classificationId]
-                    : '';
+                const selectedValue = selectedMap && selectedMap[classification.classificationId] ?
+                    selectedMap[classification.classificationId] :
+                    '';
 
                 const options = ['<option value="">--Select Expense Ledger--</option>']
                     .concat(expenseLedgerLookUp.map(ledger => {
@@ -751,7 +723,7 @@
         }
 
         function editfunc(id, projectCode, name, description, categoryId, location, status, clientId, clientAccountId,
-            expenseAccountId, revenueAccountId, expenseClassificationLedgerMap) {
+            revenueAccountId, expenseClassificationLedgerMap) {
             document.getElementById('id').value = id;
             document.getElementById('projectCode').value = projectCode || '';
             document.getElementById('name').value = name;
@@ -761,7 +733,6 @@
             document.getElementById('status').value = status || 1;
             document.getElementById('clientId').value = clientId || '';
             loadClientLedgers(clientId || '', 'clientAccountId', clientAccountId || '');
-            document.getElementById('expenseAccountId').value = expenseAccountId || '';
             document.getElementById('revenue_accountId').value = revenueAccountId || '';
             currentEditExpenseClassificationLedgerMap = expenseClassificationLedgerMap || {};
             renderExpenseClassificationLedgers(categoryId || '', 'edit_expenseClassificationLedgerContainer',
@@ -781,7 +752,8 @@
         // Recalculate all PO amounts on page load for old input values
         document.addEventListener('DOMContentLoaded', function() {
             loadClientLedgers('{{ $clientId ?? '' }}', 'create_clientAccountId', '{{ $clientAccountId ?? '' }}');
-            renderExpenseClassificationLedgers('{{ $categoryId ?? '' }}', 'create_expenseClassificationLedgerContainer',
+            renderExpenseClassificationLedgers('{{ $categoryId ?? '' }}',
+                'create_expenseClassificationLedgerContainer',
                 oldExpenseClassificationLedgerMap);
 
             const poItems = document.querySelectorAll('.po-item');

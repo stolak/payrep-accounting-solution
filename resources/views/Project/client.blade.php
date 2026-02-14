@@ -425,11 +425,11 @@
             document.getElementById('id').value = id;
             document.getElementById('name').value = name;
             document.getElementById('client_code').value = clientCode || '';
-            document.getElementById('client_type').value = clientType || '';
             document.getElementById('status').value = status || 'Active';
             document.getElementById('contact_address').value = contactAddress || '';
             document.getElementById('contact_phone_number').value = contactPhoneNumber || '';
             document.getElementById('contact_email_address').value = contactEmailAddress || '';
+            $('#client_type').val(clientType || '').trigger('change');
 
             // Set selected client ledgers
             $('#clientAccountIds').val(null).trigger('change');
