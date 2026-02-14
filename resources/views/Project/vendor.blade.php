@@ -515,19 +515,20 @@
             document.getElementById('name').value = name || '';
             document.getElementById('vendorId').value = vendorId || '';
             document.getElementById('trade_name').value = tradeName || '';
-            document.getElementById('vendor_type').value = vendorType || '';
             document.getElementById('tax_number').value = taxNumber || '';
-            document.getElementById('vendor_category').value = vendorCategory || '';
             document.getElementById('address').value = address || '';
             document.getElementById('email').value = email || '';
             document.getElementById('contact_phone_number').value = contactPhoneNumber || '';
-            document.getElementById('bankid').value = bankid || '';
             document.getElementById('bank_account_name').value = bankAccountName || '';
             document.getElementById('bank_account_number').value = bankAccountNumber || '';
             document.getElementById('currency').value = currency || '';
             document.getElementById('description').value = description || '';
-            document.getElementById('accountId').value = accountId || '';
             document.getElementById('status').value = status || 'Active';
+
+            $('#vendor_type').val(vendorType || '').trigger('change');
+            $('#vendor_category').val(vendorCategory || '').trigger('change');
+            $('#bankid').val(bankid || '').trigger('change');
+            $('#accountId').val(accountId || '').trigger('change');
 
             $("#edit_details").modal('show');
         }
@@ -539,4 +540,3 @@
     </script>
 @endsection
 <!-- /Page Wrapper -->
-
