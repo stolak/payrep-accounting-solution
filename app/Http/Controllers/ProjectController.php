@@ -2855,7 +2855,7 @@ class ProjectController extends Basefunction {
         $data['amount'] = $request->input('amount');
         $data['status'] = $request->input('status');
         $data['id'] = $request->input('id');
-        
+        $data['projectClassification'] = null;
         // Handle project selection - reload page with selected project
         if ($request->has('select_project')) {
             $data['projectId'] = $request->input('projectId');
@@ -2866,8 +2866,28 @@ class ProjectController extends Basefunction {
         if (empty($data['projectId'])) {
             $data['projectId'] = Session::get('selected_vendor_project_id');
         }
+
+        // Check that selected project category has expense_classificationId = 1
+        
         
         if (isset($_POST['addnew'])) {
+            if (!empty($data['projectId'])) {
+                $projectClassification = DB::table('projects')
+                    ->join('project_categories_expense_classification', 'projects.categoryId', '=', 'project_categories_expense_classification.project_categoryId')
+                    ->where('projects.id', $data['projectId'])
+                    ->where('project_categories_expense_classification.expense_classificationId', 1)
+                    ->select(
+                        'projects.categoryId as projectCategoryId',
+                        'project_categories_expense_classification.expense_classificationId'
+                    )
+                    ->first();
+    
+                if (!$projectClassification) {
+                    return back()->with('error_message', 'Project category is not configured  for  vendor delivery.');
+                }
+    
+                $data['projectClassification'] = $projectClassification->projectCategoryId;
+            }
             $this->validate($request, [
                 'projectId' => 'required|integer',
                 'vendorId' => 'required|integer',
@@ -2932,6 +2952,10 @@ class ProjectController extends Basefunction {
             $approvalData = DB::table('vendor_projects')
                 ->leftJoin('budgets', 'vendor_projects.vendorId', '=', 'budgets.id')
                 ->leftJoin('projects', 'vendor_projects.projectId', '=', 'projects.id')
+                ->leftJoin('project_expense_ledger', function ($join) {
+                    $join->on('vendor_projects.projectId', '=', 'project_expense_ledger.projectId')
+                        ->where('project_expense_ledger.classificationId', 1);
+                })
                 ->where('vendor_projects.id', $approveId)
                 ->select(
                     'vendor_projects.id',
@@ -2940,7 +2964,7 @@ class ProjectController extends Basefunction {
                     'vendor_projects.amount',
                     'budgets.accountId',
                     'budgets.name as vendorName',
-                    'projects.expenseAccountId',
+                    'project_expense_ledger.expenseAccountId',
                     'projects.name as projectName'
                 )
                 ->first();
@@ -2958,7 +2982,7 @@ class ProjectController extends Basefunction {
             }
 
             if (empty($approvalData->expenseAccountId)) {
-                return back()->with('error_message', "No expense account is configured for project '{$approvalData->projectName}'.");
+                return back()->with('error_message', "No  expense ledger is configured for SCB Delivery '{$approvalData->projectName}'.");
             }
 
             if (!$this->FetchAccountCodes($approvalData->accountId)) {
