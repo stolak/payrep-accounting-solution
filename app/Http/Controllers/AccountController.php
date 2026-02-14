@@ -20,6 +20,7 @@ use App\Models\AccountHead;
 use App\Models\AccountChart;
 use App\Http\Traits\SessionTrait;
 use App\Http\Traits\AccountTrait;
+use Illuminate\Validation\Rule;
 
 class AccountController extends Controller
 {
@@ -97,7 +98,12 @@ public function newaccount(Request $request)
         $this->validate($request, [
             'subaccount'          => 'required',
             'accountHead'    => 'required',
-            'account'    => 'required|unique:account_charts,accountdescription',
+            'account'    => [
+                'required',
+                Rule::unique('account_charts', 'accountdescription')->where(function ($query) use ($request) {
+                    return $query->where('subheadid', $request->input('subaccount'));
+                }),
+            ],
             'accountno'    => 'nullable|unique:account_charts,accountno',
           ]);
     $subhead=DB::table('account_subheads')->where('id', $request->input('subaccount'))->first();
@@ -123,9 +129,25 @@ public function newaccount(Request $request)
     }
 
     if (isset ($_POST['update'])) {
+        $accountChart = DB::table('account_charts')->where('id', $request->input('id'))->first();
+        if (!$accountChart) {
+            return back()->with('error_message', 'Invalid account record.');
+        }
+
         $this->validate($request, [
-        'accountdescription'          => 'required',
-        'accountno'    => 'required',
+        'id' => 'required|integer|exists:account_charts,id',
+        'accountdescription' => [
+            'required',
+            Rule::unique('account_charts', 'accountdescription')
+                ->where(function ($query) use ($accountChart) {
+                    return $query->where('subheadid', $accountChart->subheadid);
+                })
+                ->ignore($request->input('id')),
+        ],
+        'accountno' => [
+            'required',
+            Rule::unique('account_charts', 'accountno')->ignore($request->input('id')),
+        ],
       ]);
 
       DB::table('account_charts')->where('id',$request->input('id'))->update([
