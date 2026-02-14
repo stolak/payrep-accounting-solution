@@ -175,7 +175,7 @@ class ProjectController extends Basefunction {
             $poPoNumbers = $request->input('po_poNumber', []);
             $poDescriptions = $request->input('po_description', []);
             $poVats = $request->input('po_vat', []);
-            
+
             // Get line items for each PO
             $poItemDescriptions = $request->input('po_item_description', []);
             $poItemUomIds = $request->input('po_item_uomId', []);
@@ -967,7 +967,7 @@ class ProjectController extends Basefunction {
 
             DB::transaction(function () use ($data) {
                 $clientId = DB::table('clients')->insertGetId([
-                    'name' => $data['name'],
+                'name' => $data['name'],
                     'client_code' => $data['clientCode'],
                     'client_type' => $data['clientType'],
                     'contact_address' => $data['contactAddress'] ?? null,
@@ -990,7 +990,7 @@ class ProjectController extends Basefunction {
                         DB::table('client_project_categories')->insert([
                             'clientId' => $clientId,
                             'project_categoryId' => $categoryId,
-                        ]);
+            ]);
                     }
                 }
             });
@@ -1023,8 +1023,8 @@ class ProjectController extends Basefunction {
             }
 
             DB::transaction(function () use ($data) {
-                DB::table('clients')->where('id', $data['id'])->update([
-                    'name' => $data['name'],
+            DB::table('clients')->where('id', $data['id'])->update([
+                'name' => $data['name'],
                     'client_code' => $data['clientCode'],
                     'client_type' => $data['clientType'],
                     'status' => $data['status'],
@@ -1415,7 +1415,7 @@ class ProjectController extends Basefunction {
                         'uom.measurement as uomMeasurement'
                     )
                     ->orderBy('project_po_item.id', 'asc')
-                    ->get();
+                ->get();
             }
             
             $data['projectPos'] = $projectPos;
@@ -2968,11 +2968,23 @@ class ProjectController extends Basefunction {
                     'vendor_projects.id',
                     'vendor_projects.status',
                     'vendor_projects.projectId',
+                    'vendor_projects.vendorId',
+                    'vendor_projects.description',
+                    'vendor_projects.quantity',
+                    'vendor_projects.unitCost',
                     'vendor_projects.amount',
+                    'vendor_projects.createdAt',
                     'budgets.accountId',
                     'budgets.name as vendorName',
+                    'budgets.trade_name as vendorTradeName',
+                    'budgets.address as vendorAddress',
+                    'budgets.email as vendorEmail',
+                    'budgets.contact_phone_number as vendorPhone',
+                    'budgets.tax_number as vendorTaxNumber',
                     'project_expense_ledger.expenseAccountId',
-                    'projects.name as projectName'
+                    'projects.name as projectName',
+                    'projects.projectCode',
+                    'projects.location as projectLocation'
                 )
                 ->first();
 
@@ -3035,7 +3047,8 @@ class ProjectController extends Basefunction {
                 'approvedBy' => Auth::user()->id,
                 'updateAt' => now(),
             ]);
-            return back()->with('message', 'Vendor project successfully approved.');
+
+            return redirect('/vendor-project-purchase-order?vendorProjectId=' . $approveId);
         }
         
         if (isset($_POST['del'])) {
@@ -3095,6 +3108,101 @@ class ProjectController extends Basefunction {
         }
         
         return view('Project.vendorproject', $data);
+    }
+
+    public function vendorProjectPurchaseOrder(Request $request)
+    {
+        $vendorProjectId = $request->input('vendorProjectId');
+
+        if (empty($vendorProjectId)) {
+            return redirect('/vendor-project')->with('error_message', 'Vendor project ID is required.');
+        }
+
+        $data = $this->buildVendorProjectPurchaseOrderData($vendorProjectId);
+        if (!$data) {
+            return redirect('/vendor-project')->with('error_message', 'Vendor project record was not found.');
+        }
+
+        if ($data['status'] !== 'Approved') {
+            return redirect('/vendor-project')->with('error_message', 'Purchase order can only be viewed after vendor project approval.');
+        }
+
+        unset($data['status']);
+        return view('Project.vendorprojectpurchaseorder', $data);
+    }
+
+    private function buildVendorProjectPurchaseOrderData($vendorProjectId)
+    {
+        $poData = DB::table('vendor_projects')
+            ->leftJoin('budgets', 'vendor_projects.vendorId', '=', 'budgets.id')
+            ->leftJoin('projects', 'vendor_projects.projectId', '=', 'projects.id')
+            ->where('vendor_projects.id', $vendorProjectId)
+            ->select(
+                'vendor_projects.id',
+                'vendor_projects.status',
+                'vendor_projects.vendorId',
+                'vendor_projects.description',
+                'vendor_projects.quantity',
+                'vendor_projects.unitCost',
+                'vendor_projects.amount',
+                'vendor_projects.createdAt',
+                'vendor_projects.updateAt',
+                'budgets.name as vendorName',
+                'budgets.trade_name as vendorTradeName',
+                'budgets.address as vendorAddress',
+                'budgets.email as vendorEmail',
+                'budgets.contact_phone_number as vendorPhone',
+                'budgets.tax_number as vendorTaxNumber',
+                'projects.name as projectName',
+                'projects.location as projectLocation'
+            )
+            ->first();
+
+        if (!$poData) {
+            return null;
+        }
+
+        $baseDate = $poData->updateAt ?: $poData->createdAt ?: now();
+        $poDate = date('d M, Y', strtotime($baseDate));
+        $completeBy = date('d M, Y', strtotime($baseDate . ' +7 days'));
+
+        return [
+            'status' => $poData->status,
+            'poNumber' => 'VP-' . str_pad((string) $poData->id, 6, '0', STR_PAD_LEFT),
+            'poDate' => $poDate,
+            'completeBy' => $completeBy,
+            'vendorReference' => $poData->vendorTaxNumber ?: ('VENDOR-' . $poData->vendorId),
+            'termsLabel' => 'Attached',
+            'subtotal' => (float) $poData->amount,
+            'vatPercent' => 0,
+            'vatAmount' => 0,
+            'total' => (float) $poData->amount,
+            'lineItems' => [[
+                'qty' => (float) $poData->quantity,
+                'description' => $poData->description ?: ('Vendor delivery for ' . ($poData->projectName ?: 'project')),
+                'unitPrice' => (float) $poData->unitCost,
+                'amount' => (float) $poData->amount,
+            ]],
+            'vendorInfo' => [
+                'attention' => 'Vendor Main Contact',
+                'name' => $poData->vendorTradeName ?: $poData->vendorName,
+                'address1' => $poData->vendorAddress ?: 'Vendor Address Line 1',
+                'address2' => '',
+                'address3' => '',
+                'email' => $poData->vendorEmail ?: 'Vendor Email address',
+                'phone' => $poData->vendorPhone ?: 'Vendor Phone Number',
+            ],
+            'shipTo' => [
+                'attention' => "Seller's Main Contact",
+                'name' => env('Coy_Name', 'McEmtol Consulting Limited'),
+                'address1' => env('Coy_Address', $poData->projectLocation ?: 'Address Line 1'),
+                'address2' => env('Coy_Address_2', ''),
+                'address3' => env('Coy_City', ''),
+                'email' => env('Coy_Email', 'Contact email address'),
+                'phone' => env('Coy_Phone', 'Contact Phone Number'),
+            ],
+            'comments' => $poData->description ?: '',
+        ];
     }
 
     public function vendorProjectReport(Request $request)

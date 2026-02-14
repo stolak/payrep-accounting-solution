@@ -111,8 +111,8 @@
                                                                 @if ($itemIdx == 0)
                                                                     <td rowspan="{{ $itemCount }}"
                                                                         style="vertical-align: middle;">
-                                                                        {{ $i++ }}
-                                                                    </td>
+                                                            {{ $i++ }}
+                                                        </td>
                                                                     <td rowspan="{{ $itemCount }}"
                                                                         style="vertical-align: middle;">
                                                                         <strong>{{ $list->poNumber }}</strong>
@@ -138,11 +138,11 @@
                                                                     <td rowspan="{{ $itemCount }}"
                                                                         style="vertical-align: middle; text-align: right;">
                                                                         <strong>{{ number_format($list->vatAmount, 2, '.', ',') }}</strong>
-                                                                    </td>
+                                                        </td>
                                                                     <td rowspan="{{ $itemCount }}"
                                                                         style="vertical-align: middle; text-align: right;">
                                                                         <strong>{{ number_format($list->subnet, 2, '.', ',') }}</strong>
-                                                                    </td>
+                                                        </td>
                                                                     <td rowspan="{{ $itemCount }}"
                                                                         style="vertical-align: middle;">
                                                                         @if ($list->status == 'Approved')
@@ -150,15 +150,15 @@
                                                                         @else
                                                                             <span class="badge bg-warning">Pending</span>
                                                                         @endif
-                                                                    </td>
+                                                        </td>
                                                                     <td rowspan="{{ $itemCount }}"
                                                                         style="vertical-align: middle;">
                                                                         {{ $list->createdByName ?? 'N/A' }}
-                                                                    </td>
+                                                        </td>
                                                                     <td rowspan="{{ $itemCount }}"
                                                                         style="vertical-align: middle;">
                                                                         {{ $list->approvedByName ?? 'N/A' }}
-                                                                    </td>
+                                                        </td>
                                                                     <td rowspan="{{ $itemCount }}"
                                                                         style="vertical-align: middle;">
                                                                         @if ($list->status != 'Approved')
@@ -175,7 +175,7 @@
                                                                             href="javascript: deletefunc('{{ $list->id }}')">
                                                                             <i class="fe fe-trash"></i>
                                                                         </a>
-                                                                    </td>
+                                                        </td>
                                                                 @endif
                                                             </tr>
                                                         @endforeach
@@ -186,41 +186,41 @@
                                                             <td><strong>{{ $list->description }}</strong></td>
                                                             <td colspan="3" class="text-center text-muted">No line
                                                                 items</td>
-                                                            <td style="text-align: right;">
+                                                        <td style="text-align: right;">
                                                                 <strong>{{ $list->vat ? number_format($list->vat, 2, '.', ',') . '%' : '0%' }}</strong>
-                                                            </td>
-                                                            <td style="text-align: right;">
+                                                        </td>
+                                                        <td style="text-align: right;">
                                                                 <strong>{{ number_format($list->vatAmount, 2, '.', ',') }}</strong>
-                                                            </td>
-                                                            <td style="text-align: right;">
+                                                        </td>
+                                                        <td style="text-align: right;">
                                                                 <strong>{{ number_format($list->subnet, 2, '.', ',') }}</strong>
-                                                            </td>
-                                                            <td>
-                                                                @if ($list->status == 'Approved')
-                                                                    <span class="badge bg-success">Approved</span>
-                                                                @else
-                                                                    <span class="badge bg-warning">Pending</span>
-                                                                @endif
-                                                            </td>
+                                                        </td>
+                                                        <td>
+                                                            @if ($list->status == 'Approved')
+                                                                <span class="badge bg-success">Approved</span>
+                                                            @else
+                                                                <span class="badge bg-warning">Pending</span>
+                                                            @endif
+                                                        </td>
                                                             <td>{{ $list->createdByName ?? 'N/A' }}</td>
                                                             <td>{{ $list->approvedByName ?? 'N/A' }}</td>
-                                                            <td>
-                                                                @if ($list->status != 'Approved')
-                                                                    <a class="btn btn-sm bg-success-light"
+                                                        <td>
+                                                            @if ($list->status != 'Approved')
+                                                                <a class="btn btn-sm bg-success-light"
                                                                         href="javascript: editfunc('{{ $list->id }}','{{ $list->poNumber }}','{{ addslashes($list->description) }}','{{ $list->vat ?? 0 }}',[])">
-                                                                        <i class="fe fe-pencil"></i>
-                                                                    </a>
-                                                                    <a class="btn btn-sm bg-info-light"
-                                                                        href="javascript: approvefunc('{{ $list->id }}')">
-                                                                        <i class="fe fe-check"></i>
-                                                                    </a>
-                                                                @endif
-                                                                <a class="btn btn-sm bg-danger-light"
-                                                                    href="javascript: deletefunc('{{ $list->id }}')">
-                                                                    <i class="fe fe-trash"></i>
+                                                                    <i class="fe fe-pencil"></i>
                                                                 </a>
-                                                            </td>
-                                                        </tr>
+                                                                <a class="btn btn-sm bg-info-light"
+                                                                    href="javascript: approvefunc('{{ $list->id }}')">
+                                                                    <i class="fe fe-check"></i>
+                                                                </a>
+                                                            @endif
+                                                            <a class="btn btn-sm bg-danger-light"
+                                                                href="javascript: deletefunc('{{ $list->id }}')">
+                                                                <i class="fe fe-trash"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
                                                     @endif
                                                 @endforeach
                                                 <tr
