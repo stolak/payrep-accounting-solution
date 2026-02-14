@@ -23,7 +23,7 @@ use App\Http\Traits\AccountTrait;
 
 class AccountController extends Controller
 {
-    public function subaccount(Request $request){
+public function subaccount(Request $request){
 
     if(!(URL::previous()==URL::current() )){
         $request->session()->forget('category');
@@ -40,39 +40,39 @@ class AccountController extends Controller
           ]);
     $head=DB::table('account_heads')->where('id',$request->input('accountHead'))->first();
     if (!$head) {
-        return back()->with('error_message','Invalid Account head!'  );
+            return back()->with('error_message','Invalid Account head!'  );
+        }
+        DB::table('account_subheads')->insertGetId([
+            'groupid' => $head->groupid,
+            'headid' => $request->input('accountHead'),
+            'subheadcode' => 0,// resolve later
+            'subhead' => $request->input('subaccount'),
+            'status' => 1,
+            'rank' => 0,
+
+        ]);
+
+        SessionTrait::forget($request, [
+            'accountHead',
+            'subaccount',
+        ]);
+        return back()->with('message', 'New record successfully added.');
     }
-     DB::table('account_subheads')->insertGetId([
-        'groupid' => $head->groupid,
-        'headid' => $request->input('accountHead'),
-        'subheadcode' => 0,// resolve later
-        'subhead' => $request->input('subaccount'),
-        'status' => 1,
-        'rank' => 0,
-
-    ]);
-
-    SessionTrait::forget($request, [
-        'accountHead',
-        'subaccount',
-    ]);
-    return back()->with('message', 'New record successfully added.');
-}
 
 
-if ( isset($_POST['delete']) ) {
+    if ( isset($_POST['delete']) ) {
 
-    if (DB::table('account_charts')->where('subheadid',$request->input('id'))->first()) {
-        return back()->with('error_message','This account already exist in an account. Hence, record cannot be deleted!'  );
+        if (DB::table('account_charts')->where('subheadid',$request->input('id'))->first()) {
+            return back()->with('error_message','This account already exist in an account. Hence, record cannot be deleted!'  );
+        }
+        DB::table('account_subheads')->where('id', '=', $request->input('id'))->delete();
+
+        if (Loan::where('customer_id',$request->input('id'))->first()) {
+            return back()->with('error_message','Client Already exist with transaction. Hence, record cannot be deleted!'  );
+        }
+        Customer::destroy($request->input('id'));
+        return back()->with('message', ' Record successfully trashed.');
     }
-    DB::table('account_subheads')->where('id', '=', $request->input('id'))->delete();
-
-    if (Loan::where('customer_id',$request->input('id'))->first()) {
-        return back()->with('error_message','Client Already exist with transaction. Hence, record cannot be deleted!'  );
-    }
-    Customer::destroy($request->input('id'));
-    return back()->with('message', ' Record successfully trashed.');
-}
 
 
 
@@ -83,10 +83,10 @@ if ( isset($_POST['delete']) ) {
     // dd($data['subaccounts']);
 	return view('account.subaccount', $data);
 
-   }
+}
 
-   public function newaccount(Request $request)
-    {
+public function newaccount(Request $request)
+{
 
     $data['accountHead'] = SessionTrait::validate($request, 'accountHead');
     $data['subaccount'] = SessionTrait::validate($request, 'subaccount');
@@ -120,34 +120,34 @@ if ( isset($_POST['delete']) ) {
         'subaccount',
     ]);
     return back()->with('message', 'New record successfully added.');
-}
+    }
 
-if (isset ($_POST['update'])) {
-    $this->validate($request, [
+    if (isset ($_POST['update'])) {
+        $this->validate($request, [
         'accountdescription'          => 'required',
         'accountno'    => 'required',
       ]);
 
       DB::table('account_charts')->where('id',$request->input('id'))->update([
-        'accountno' => $request->input('accountno'),
-    'accountdescription' => $request->input('accountdescription'),
-    'rank' =>$request->input('rank'),
-      ]);
+            'accountno' => $request->input('accountno'),
+        'accountdescription' => $request->input('accountdescription'),
+        'rank' =>$request->input('rank'),
+        ]);
 
 
-    return back()->with('message', 'record successfully updated.');
-}
-
-
-if ( isset($_POST['delete']) ) {
-    if (DB::table('account_transactions')->where('accountid',$request->input('id'))->first()) {
-        return back()->with('error_message','This account already exist in a transaction. Hence, record cannot be deleted!'  );
+        return back()->with('message', 'record successfully updated.');
     }
-    DB::table('account_charts')->where('id', '=', $request->input('id'))->delete();
 
-    
-    return back()->with('message', ' Record successfully trashed.');
-}
+
+    if ( isset($_POST['delete']) ) {
+        if (DB::table('account_transactions')->where('accountid',$request->input('id'))->first()) {
+        return back()->with('error_message','This account already exist in a transaction. Hence, record cannot be deleted!'  );
+        }
+        DB::table('account_charts')->where('id', '=', $request->input('id'))->delete();
+
+
+        return back()->with('message', ' Record successfully trashed.');
+    }
 
     $data['accountHeads']= AccountHead::all();
     $data['subaccounts']= AccountSubhead::where('headid', $data['accountHead'])
@@ -162,8 +162,8 @@ if ( isset($_POST['delete']) ) {
     // dd( $data['accounts']);
 	return view('account.account', $data);
 
-   }
-   public function NewAccSubCode($head) {
+}
+public function NewAccSubCode($head) {
     $data=0;
     $hcode =$this->FetchAccHeadCode($head);
     $dt=DB::Select("SELECT * FROM `tblaccountsubhead` WHERE `headid`='$head' order by `subheadcode` DESC  LIMIT 1");
