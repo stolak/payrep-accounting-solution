@@ -22,6 +22,7 @@ class ProjectController extends Basefunction {
         $data['revenue_accountId'] = $request->input('revenue_accountId');
         $data['clientId'] = $request->input('clientId');
         $data['clientAccountId'] = $request->input('clientAccountId');
+        $data['expenseClassificationLedger'] = $request->input('expenseClassificationLedger', []);
         
         if (isset($_POST['addnew'])) {
             // Validate project fields
@@ -84,6 +85,34 @@ class ProjectController extends Basefunction {
                 }
             }
 
+            // Validate project category expense classifications and their selected ledgers
+            $categoryClassifications = collect();
+            if (!empty($data['categoryId'])) {
+                $categoryClassifications = DB::table('project_categories_expense_classification')
+                    ->where('project_categoryId', $data['categoryId'])
+                    ->pluck('expense_classificationId')
+                    ->unique()
+                    ->values();
+            }
+
+            if ($categoryClassifications->count() > 0) {
+                if (!is_array($data['expenseClassificationLedger'])) {
+                    return back()->withInput()->with('error_message', 'Expense classification ledgers are required.');
+                }
+
+                foreach ($categoryClassifications as $classificationId) {
+                    $expenseLedgerId = $data['expenseClassificationLedger'][$classificationId] ?? null;
+                    if (empty($expenseLedgerId)) {
+                        $classificationName = DB::table('budget_classifications')->where('id', $classificationId)->value('category');
+                        return back()->withInput()->with('error_message', "Please select expense ledger for '{$classificationName}'.");
+                    }
+
+                    if (!DB::table('account_charts')->where('id', $expenseLedgerId)->exists()) {
+                        return back()->withInput()->with('error_message', "Invalid expense ledger selected for classification ID {$classificationId}.");
+                    }
+                }
+            }
+
             // Create project first
             $projectId = DB::table('projects')->insertGetId([
                 'projectCode' => $data['projectCode'],
@@ -100,6 +129,27 @@ class ProjectController extends Basefunction {
                 'updatedAt' => now(),
                 'createdBy' => Auth::user()->id,
             ]);
+
+            // Insert project expense ledgers based on selected category classifications
+            if (!empty($data['categoryId']) && !empty($data['expenseClassificationLedger']) && is_array($data['expenseClassificationLedger'])) {
+                $allowedClassifications = DB::table('project_categories_expense_classification')
+                    ->where('project_categoryId', $data['categoryId'])
+                    ->pluck('expense_classificationId')
+                    ->unique()
+                    ->toArray();
+
+                foreach ($allowedClassifications as $classificationId) {
+                    $expenseLedgerId = $data['expenseClassificationLedger'][$classificationId] ?? null;
+                    if (!empty($expenseLedgerId)) {
+                        DB::table('project_expense_ledger')->insert([
+                            'projectId' => $projectId,
+                            'project_categoryId' => $data['categoryId'],
+                            'classificationId' => $classificationId,
+                            'expenseAccountId' => $expenseLedgerId,
+                        ]);
+                    }
+                }
+            }
 
             // Automatically create payment milestones based on project category
             if (!empty($data['categoryId'])) {
@@ -238,6 +288,34 @@ class ProjectController extends Basefunction {
                 }
             }
 
+            // Validate project category expense classifications and their selected ledgers
+            $categoryClassifications = collect();
+            if (!empty($data['categoryId'])) {
+                $categoryClassifications = DB::table('project_categories_expense_classification')
+                    ->where('project_categoryId', $data['categoryId'])
+                    ->pluck('expense_classificationId')
+                    ->unique()
+                    ->values();
+            }
+
+            if ($categoryClassifications->count() > 0) {
+                if (!is_array($data['expenseClassificationLedger'])) {
+                    return back()->withInput()->with('error_message', 'Expense classification ledgers are required.');
+                }
+
+                foreach ($categoryClassifications as $classificationId) {
+                    $expenseLedgerId = $data['expenseClassificationLedger'][$classificationId] ?? null;
+                    if (empty($expenseLedgerId)) {
+                        $classificationName = DB::table('budget_classifications')->where('id', $classificationId)->value('category');
+                        return back()->withInput()->with('error_message', "Please select expense ledger for '{$classificationName}'.");
+                    }
+
+                    if (!DB::table('account_charts')->where('id', $expenseLedgerId)->exists()) {
+                        return back()->withInput()->with('error_message', "Invalid expense ledger selected for classification ID {$classificationId}.");
+                    }
+                }
+            }
+
             DB::table('projects')->where('id', $data['id'])->update([
                 'projectCode' => $data['projectCode'],
                 'name' => $data['name'],
@@ -252,6 +330,27 @@ class ProjectController extends Basefunction {
                 // 'incomeAccountId' => $data['incomeAccountId'] ?? null,
                 'updatedAt' => now(),
             ]);
+
+            DB::table('project_expense_ledger')->where('projectId', $data['id'])->delete();
+            if (!empty($data['categoryId']) && !empty($data['expenseClassificationLedger']) && is_array($data['expenseClassificationLedger'])) {
+                $allowedClassifications = DB::table('project_categories_expense_classification')
+                    ->where('project_categoryId', $data['categoryId'])
+                    ->pluck('expense_classificationId')
+                    ->unique()
+                    ->toArray();
+
+                foreach ($allowedClassifications as $classificationId) {
+                    $expenseLedgerId = $data['expenseClassificationLedger'][$classificationId] ?? null;
+                    if (!empty($expenseLedgerId)) {
+                        DB::table('project_expense_ledger')->insert([
+                            'projectId' => $data['id'],
+                            'project_categoryId' => $data['categoryId'],
+                            'classificationId' => $classificationId,
+                            'expenseAccountId' => $expenseLedgerId,
+                        ]);
+                    }
+                }
+            }
             return back()->with('message', 'Record successfully updated.');
         }
         
@@ -296,6 +395,14 @@ class ProjectController extends Basefunction {
             ->leftJoin('clients', 'projects.clientId', '=', 'clients.id')
             ->orderBy('createdAt', 'desc')
             ->get();
+
+        foreach ($data['projects'] as $project) {
+            $project->expenseClassificationLedger = DB::table('project_expense_ledger')
+                ->where('projectId', $project->id)
+                ->select('classificationId', 'expenseAccountId')
+                ->get()
+                ->pluck('expenseAccountId', 'classificationId');
+        }
         
         // Fetch categories if needed (assuming there's a categories table)
          $data['projectCategories'] = DB::table('project_categories')
@@ -320,6 +427,16 @@ class ProjectController extends Basefunction {
                 'account_charts.accountno'
             )
             ->orderBy('account_charts.accountdescription', 'asc')
+            ->get();
+
+        $data['categoryExpenseClassifications'] = DB::table('project_categories_expense_classification')
+            ->join('budget_classifications', 'project_categories_expense_classification.expense_classificationId', '=', 'budget_classifications.id')
+            ->select(
+                'project_categories_expense_classification.project_categoryId',
+                'project_categories_expense_classification.expense_classificationId as classificationId',
+                'budget_classifications.category as classificationName'
+            )
+            ->orderBy('budget_classifications.category', 'asc')
             ->get();
         
         // Fetch UOMs list for dropdown

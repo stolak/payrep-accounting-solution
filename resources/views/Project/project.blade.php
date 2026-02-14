@@ -31,6 +31,12 @@
                         <div class="card-body">
                             <form method="post">
                                 {{ csrf_field() }}
+                                @php
+                                    $oldExpenseClassificationLedger = old('expenseClassificationLedger', []);
+                                    if (!is_array($oldExpenseClassificationLedger)) {
+                                        $oldExpenseClassificationLedger = [];
+                                    }
+                                @endphp
                                 <div class="row">
                                     <div class="col-md-3">
                                         <div class="form-group">
@@ -88,7 +94,8 @@
                                             <?php if ($categoryId == '') {
                                                 $categoryId = old('categoryId');
                                             } ?>
-                                            <select class="select2 form-control" name="categoryId">
+                                            <select class="select2 form-control" id="create_categoryId" name="categoryId"
+                                                onchange="renderExpenseClassificationLedgers(this.value, 'create_expenseClassificationLedgerContainer', oldExpenseClassificationLedgerMap)">
                                                 <option value="">--Select--</option>
                                                 @foreach ($projectCategories as $cat)
                                                     <option value="{{ $cat->id }}"
@@ -160,6 +167,19 @@
                                         </div>
                                     </div>
 
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="card mb-3">
+                                            <div class="card-header bg-light">
+                                                <h6 class="mb-0">Project Expense Classification Ledgers</h6>
+                                            </div>
+                                            <div class="card-body" id="create_expenseClassificationLedgerContainer">
+                                                <p class="text-muted mb-0">Select project category to load expense classifications.</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <!-- Purchase Orders Section -->
@@ -439,7 +459,7 @@
                                                 </td>
                                                 <td>
                                                     <a class="btn btn-sm bg-success-light"
-                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->projectCode }}','{{ addslashes($list->name) }}','{{ addslashes($list->description ?? '') }}','{{ $list->categoryId }}','{{ addslashes($list->location ?? '') }}','{{ $list->status }}','{{ $list->clientId ?? '' }}','{{ $list->clientAccountId ?? '' }}','{{ $list->expenseAccountId ?? '' }}','{{ $list->revenue_accountId ?? '' }}')">
+                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->projectCode }}','{{ addslashes($list->name) }}','{{ addslashes($list->description ?? '') }}','{{ $list->categoryId }}','{{ addslashes($list->location ?? '') }}','{{ $list->status }}','{{ $list->clientId ?? '' }}','{{ $list->clientAccountId ?? '' }}','{{ $list->expenseAccountId ?? '' }}','{{ $list->revenue_accountId ?? '' }}',{{ json_encode($list->expenseClassificationLedger ?? []) }})">
                                                         <i class="fe fe-pencil"></i>
                                                     </a>
                                                     <a class="btn btn-sm bg-info-light"
@@ -498,7 +518,8 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Category</label>
-                                        <select class="form-control" id="categoryId" name="categoryId">
+                                        <select class="form-control" id="categoryId" name="categoryId"
+                                            onchange="renderExpenseClassificationLedgers(this.value, 'edit_expenseClassificationLedgerContainer', currentEditExpenseClassificationLedgerMap)">
                                             <option value="">--Select--</option>
                                             @foreach ($projectCategories as $cat)
                                                 <option value="{{ $cat->id }}">{{ $cat->category }}</option>
@@ -524,6 +545,18 @@
                                         <select class="form-control" id="clientAccountId" name="clientAccountId">
                                             <option value="">--Select Client First--</option>
                                         </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0">Project Expense Classification Ledgers</h6>
+                                        </div>
+                                        <div class="card-body" id="edit_expenseClassificationLedgerContainer">
+                                            <p class="text-muted mb-0">Select project category to load expense classifications.</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -633,6 +666,58 @@
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
     <script>
         const clientLedgers = @json($clientLedgers ?? []);
+        const categoryExpenseClassifications = @json($categoryExpenseClassifications ?? []);
+        const expenseLedgerLookUp = @json($accountLookUp ?? []);
+        const oldExpenseClassificationLedgerMap = @json($oldExpenseClassificationLedger ?? []);
+        let currentEditExpenseClassificationLedgerMap = {};
+
+        function renderExpenseClassificationLedgers(categoryId, containerId, selectedMap = {}) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            container.innerHTML = '';
+            if (!categoryId) {
+                container.innerHTML = '<p class="text-muted mb-0">Select project category to load expense classifications.</p>';
+                return;
+            }
+
+            const classifications = categoryExpenseClassifications.filter(item => String(item.project_categoryId) === String(categoryId));
+            if (classifications.length === 0) {
+                container.innerHTML = '<p class="text-muted mb-0">No expense classification is mapped to this project category.</p>';
+                return;
+            }
+
+            const row = document.createElement('div');
+            row.className = 'row';
+
+            classifications.forEach(classification => {
+                const col = document.createElement('div');
+                col.className = 'col-md-6';
+
+                const selectedValue = selectedMap && selectedMap[classification.classificationId]
+                    ? selectedMap[classification.classificationId]
+                    : '';
+
+                const options = ['<option value="">--Select Expense Ledger--</option>']
+                    .concat(expenseLedgerLookUp.map(ledger => {
+                        const selected = String(ledger.id) === String(selectedValue) ? 'selected' : '';
+                        return `<option value="${ledger.id}" ${selected}>${ledger.accountdescription}</option>`;
+                    }))
+                    .join('');
+
+                col.innerHTML = `
+                    <div class="form-group">
+                        <label>${classification.classificationName} <span class="text-danger">*</span></label>
+                        <select class="form-control" name="expenseClassificationLedger[${classification.classificationId}]">
+                            ${options}
+                        </select>
+                    </div>
+                `;
+                row.appendChild(col);
+            });
+
+            container.appendChild(row);
+        }
 
         function loadClientLedgers(clientId, targetSelectId, selectedLedgerId = '') {
             const select = document.getElementById(targetSelectId);
@@ -666,7 +751,7 @@
         }
 
         function editfunc(id, projectCode, name, description, categoryId, location, status, clientId, clientAccountId,
-            expenseAccountId, revenueAccountId) {
+            expenseAccountId, revenueAccountId, expenseClassificationLedgerMap) {
             document.getElementById('id').value = id;
             document.getElementById('projectCode').value = projectCode || '';
             document.getElementById('name').value = name;
@@ -678,6 +763,9 @@
             loadClientLedgers(clientId || '', 'clientAccountId', clientAccountId || '');
             document.getElementById('expenseAccountId').value = expenseAccountId || '';
             document.getElementById('revenue_accountId').value = revenueAccountId || '';
+            currentEditExpenseClassificationLedgerMap = expenseClassificationLedgerMap || {};
+            renderExpenseClassificationLedgers(categoryId || '', 'edit_expenseClassificationLedgerContainer',
+                currentEditExpenseClassificationLedgerMap);
 
             $("#edit_details").modal('show')
         }
@@ -693,6 +781,8 @@
         // Recalculate all PO amounts on page load for old input values
         document.addEventListener('DOMContentLoaded', function() {
             loadClientLedgers('{{ $clientId ?? '' }}', 'create_clientAccountId', '{{ $clientAccountId ?? '' }}');
+            renderExpenseClassificationLedgers('{{ $categoryId ?? '' }}', 'create_expenseClassificationLedgerContainer',
+                oldExpenseClassificationLedgerMap);
 
             const poItems = document.querySelectorAll('.po-item');
             poItems.forEach((poItem, poIdx) => {
