@@ -15,6 +15,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\HR;
 use App\Http\Controllers\Payroll;
 use App\Http\Controllers\PDFReport;
+use App\Http\Controllers\Auth\UserRoleController as AuthUserRoleController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
@@ -145,5 +146,6 @@ Route::any('/get-function-control-variables', [Payroll::class, 'GetFunctionContr
  Route::any('/salary-particular',       [Payroll::class, 'PayrollParticularReport']);
 Route::any('/salary-payslip',       [Payroll::class, 'Payslip']);
 Route::any('/payroll-lock',         [Payroll::class, 'PayrollLock']);
+Route::any('/user-role',            [AuthUserRoleController::class, 'index']);
     });
 
