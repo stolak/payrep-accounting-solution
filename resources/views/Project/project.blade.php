@@ -58,7 +58,8 @@
                                             <?php if ($clientId == '') {
                                                 $clientId = old('clientId');
                                             } ?>
-                                            <select class="select2 form-control" name="clientId">
+                                            <select class="select2 form-control" id="create_clientId" name="clientId"
+                                                onchange="loadClientLedgers(this.value, 'create_clientAccountId')">
                                                 <option value="">--Select--</option>
                                                 @foreach ($clients as $client)
                                                     <option value="{{ $client->id }}"
@@ -98,6 +99,19 @@
                                         </div>
                                     </div>
 
+
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Client Ledger</label>
+                                            <?php if ($clientAccountId == '') {
+                                                $clientAccountId = old('clientAccountId');
+                                            } ?>
+                                            <select class="select2 form-control" id="create_clientAccountId"
+                                                name="clientAccountId">
+                                                <option value="">--Select Client First--</option>
+                                            </select>
+                                        </div>
+                                    </div>
 
                                     <div class="col-md-3">
                                         <div class="form-group">
@@ -369,6 +383,7 @@
                                             <th rowspan="1">Project Code</th>
                                             <th rowspan="1">Name</th>
                                             <th rowspan="1">Client</th>
+                                            <th rowspan="1">Client Ledger</th>
                                             <th rowspan="1">Category</th>
                                             <th rowspan="1">Expense Account</th>
                                             <th rowspan="1">Revenue Account</th>
@@ -398,6 +413,9 @@
                                                     {{ $list->clientName ?? 'N/A' }}
                                                 </td>
                                                 <td>
+                                                    {{ $list->clientAccountName ?? 'N/A' }}
+                                                </td>
+                                                <td>
                                                     {{ $list->categoryName ?? 'N/A' }}
                                                 </td>
                                                 <td>
@@ -421,7 +439,7 @@
                                                 </td>
                                                 <td>
                                                     <a class="btn btn-sm bg-success-light"
-                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->projectCode }}','{{ $list->name }}','{{ $list->description }}','{{ $list->categoryId }}','{{ $list->location }}','{{ $list->status }}','{{ $list->clientId ?? '' }}','{{ $list->expenseAccountId ?? '' }}','{{ $list->revenue_accountId ?? '' }}')">
+                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->projectCode }}','{{ addslashes($list->name) }}','{{ addslashes($list->description ?? '') }}','{{ $list->categoryId }}','{{ addslashes($list->location ?? '') }}','{{ $list->status }}','{{ $list->clientId ?? '' }}','{{ $list->clientAccountId ?? '' }}','{{ $list->expenseAccountId ?? '' }}','{{ $list->revenue_accountId ?? '' }}')">
                                                         <i class="fe fe-pencil"></i>
                                                     </a>
                                                     <a class="btn btn-sm bg-info-light"
@@ -491,7 +509,8 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Client</label>
-                                        <select class="form-control" id="clientId" name="clientId">
+                                        <select class="form-control" id="clientId" name="clientId"
+                                            onchange="loadClientLedgers(this.value, 'clientAccountId')">
                                             <option value="">--Select--</option>
                                             @foreach ($clients as $client)
                                                 <option value="{{ $client->id }}">{{ $client->name }}</option>
@@ -499,9 +518,17 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Client Ledger</label>
+                                        <select class="form-control" id="clientAccountId" name="clientAccountId">
+                                            <option value="">--Select Client First--</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Expense Account</label>
                                         <select class="form-control" id="expenseAccountId" name="expenseAccountId">
@@ -513,7 +540,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Revenue Account</label>
                                         <select class="form-control" id="revenue_accountId" name="revenue_accountId">
@@ -605,8 +632,41 @@
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
     <script>
-        function editfunc(id, projectCode, name, description, categoryId, location, status, clientId, expenseAccountId,
-            revenueAccountId) {
+        const clientLedgers = @json($clientLedgers ?? []);
+
+        function loadClientLedgers(clientId, targetSelectId, selectedLedgerId = '') {
+            const select = document.getElementById(targetSelectId);
+            if (!select) return;
+
+            const previousValue = selectedLedgerId || '';
+            select.innerHTML = '<option value="">--Select--</option>';
+
+            if (!clientId) {
+                select.innerHTML = '<option value="">--Select Client First--</option>';
+                if (window.jQuery && $(select).hasClass('select2-hidden-accessible')) {
+                    $(select).trigger('change.select2');
+                }
+                return;
+            }
+
+            const filtered = clientLedgers.filter(item => String(item.clientId) === String(clientId));
+            filtered.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.clientAccountId;
+                option.textContent = `${item.accountno}-${item.accountdescription}`;
+                if (String(item.clientAccountId) === String(previousValue)) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+
+            if (window.jQuery && $(select).hasClass('select2-hidden-accessible')) {
+                $(select).trigger('change.select2');
+            }
+        }
+
+        function editfunc(id, projectCode, name, description, categoryId, location, status, clientId, clientAccountId,
+            expenseAccountId, revenueAccountId) {
             document.getElementById('id').value = id;
             document.getElementById('projectCode').value = projectCode || '';
             document.getElementById('name').value = name;
@@ -615,6 +675,7 @@
             document.getElementById('location').value = location || '';
             document.getElementById('status').value = status || 1;
             document.getElementById('clientId').value = clientId || '';
+            loadClientLedgers(clientId || '', 'clientAccountId', clientAccountId || '');
             document.getElementById('expenseAccountId').value = expenseAccountId || '';
             document.getElementById('revenue_accountId').value = revenueAccountId || '';
 
@@ -631,6 +692,8 @@
 
         // Recalculate all PO amounts on page load for old input values
         document.addEventListener('DOMContentLoaded', function() {
+            loadClientLedgers('{{ $clientId ?? '' }}', 'create_clientAccountId', '{{ $clientAccountId ?? '' }}');
+
             const poItems = document.querySelectorAll('.po-item');
             poItems.forEach((poItem, poIdx) => {
                 const lineItems = poItem.querySelectorAll('.po-line-item');

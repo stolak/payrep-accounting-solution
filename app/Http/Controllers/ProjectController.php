@@ -21,6 +21,7 @@ class ProjectController extends Basefunction {
         $data['expenseAccountId'] = $request->input('expenseAccountId');
         $data['revenue_accountId'] = $request->input('revenue_accountId');
         $data['clientId'] = $request->input('clientId');
+        $data['clientAccountId'] = $request->input('clientAccountId');
         
         if (isset($_POST['addnew'])) {
             // Validate project fields
@@ -32,6 +33,7 @@ class ProjectController extends Basefunction {
                 'location' => 'nullable|string',
                 'status' => 'nullable|string',
                 'clientId' => 'nullable|integer',
+                'clientAccountId' => 'nullable|integer|exists:account_charts,id',
                 'revenue_accountId' => 'nullable|integer',
                 'po_poNumber' => 'required|array|min:1',
                 'po_poNumber.*' => 'required|string|distinct',
@@ -67,6 +69,21 @@ class ProjectController extends Basefunction {
                 }
             }
 
+            if (!empty($data['clientAccountId'])) {
+                if (empty($data['clientId'])) {
+                    return back()->withInput()->with('error_message', 'Please select client before selecting client ledger.');
+                }
+
+                $clientLedgerExists = DB::table('client_ledgers')
+                    ->where('clientId', $data['clientId'])
+                    ->where('clientAccountId', $data['clientAccountId'])
+                    ->exists();
+
+                if (!$clientLedgerExists) {
+                    return back()->withInput()->with('error_message', 'The selected client ledger does not belong to the selected client.');
+                }
+            }
+
             // Create project first
             $projectId = DB::table('projects')->insertGetId([
                 'projectCode' => $data['projectCode'],
@@ -78,6 +95,7 @@ class ProjectController extends Basefunction {
                 'expenseAccountId' => $data['expenseAccountId'] ?? null,
                 'revenue_accountId' => $data['revenue_accountId'] ?? null,
                 'clientId' => $data['clientId'] ?? null,
+                'clientAccountId' => $data['clientAccountId'] ?? null,
                 'createdAt' => now(),
                 'updatedAt' => now(),
                 'createdBy' => Auth::user()->id,
@@ -186,6 +204,7 @@ class ProjectController extends Basefunction {
                 'location' => 'nullable|string',
                 'status' => 'nullable|string',
                 'clientId' => 'nullable|integer',
+                'clientAccountId' => 'nullable|integer|exists:account_charts,id',
                 'revenue_accountId' => 'nullable|integer',
                 'id' => 'required|integer',
             ]);
@@ -204,6 +223,21 @@ class ProjectController extends Basefunction {
                 }
             }
 
+            if (!empty($data['clientAccountId'])) {
+                if (empty($data['clientId'])) {
+                    return back()->withInput()->with('error_message', 'Please select client before selecting client ledger.');
+                }
+
+                $clientLedgerExists = DB::table('client_ledgers')
+                    ->where('clientId', $data['clientId'])
+                    ->where('clientAccountId', $data['clientAccountId'])
+                    ->exists();
+
+                if (!$clientLedgerExists) {
+                    return back()->withInput()->with('error_message', 'The selected client ledger does not belong to the selected client.');
+                }
+            }
+
             DB::table('projects')->where('id', $data['id'])->update([
                 'projectCode' => $data['projectCode'],
                 'name' => $data['name'],
@@ -214,6 +248,7 @@ class ProjectController extends Basefunction {
                 'expenseAccountId' => $data['expenseAccountId'] ?? null,
                 'revenue_accountId' => $data['revenue_accountId'] ?? null,
                 'clientId' => $data['clientId'] ?? null,
+                'clientAccountId' => $data['clientAccountId'] ?? null,
                 // 'incomeAccountId' => $data['incomeAccountId'] ?? null,
                 'updatedAt' => now(),
             ]);
@@ -237,6 +272,7 @@ class ProjectController extends Basefunction {
                 'projects.id',
                 'projectCode',
                 'projects.clientId',
+                'projects.clientAccountId',
                 'projects.expenseAccountId',
                 'projects.revenue_accountId',
                 'projects.name',
@@ -249,11 +285,13 @@ class ProjectController extends Basefunction {
                 'projects.createdBy',
                 'expense_account.accountdescription as expenseAccountName',
                 'revenue_account.accountdescription as revenueAccountName',
+                'client_ledger.accountdescription as clientAccountName',
                 'project_categories.category as categoryName',
                 'clients.name as clientName'
             )
             ->leftJoin('account_charts as expense_account', 'projects.expenseAccountId', '=', 'expense_account.id')
             ->leftJoin('account_charts as revenue_account', 'projects.revenue_accountId', '=', 'revenue_account.id')
+            ->leftJoin('account_charts as client_ledger', 'projects.clientAccountId', '=', 'client_ledger.id')
             ->leftJoin('project_categories', 'projects.categoryId', '=', 'project_categories.id')
             ->leftJoin('clients', 'projects.clientId', '=', 'clients.id')
             ->orderBy('createdAt', 'desc')
@@ -271,6 +309,17 @@ class ProjectController extends Basefunction {
         $data['clients'] = DB::table('clients')
             ->select('id', 'name')
             ->orderBy('name', 'asc')
+            ->get();
+
+        $data['clientLedgers'] = DB::table('client_ledgers')
+            ->join('account_charts', 'client_ledgers.clientAccountId', '=', 'account_charts.id')
+            ->select(
+                'client_ledgers.clientId',
+                'client_ledgers.clientAccountId',
+                'account_charts.accountdescription',
+                'account_charts.accountno'
+            )
+            ->orderBy('account_charts.accountdescription', 'asc')
             ->get();
         
         // Fetch UOMs list for dropdown
