@@ -129,7 +129,9 @@
     <!-- Custom JS -->
     <script src="{{ asset('assets/js/script.js') }}"></script>
     <script>
-        $('.select2').select2();
+        $('.select2').select2({
+            width: '100%'
+        });
     </script>
     @yield('scripts')
 </body>

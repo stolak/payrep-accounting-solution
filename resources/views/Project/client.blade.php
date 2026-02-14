@@ -413,11 +413,6 @@
             color: black;
             text-shadow: 1px 1px 2px #fff;
         }
-
-        /* Ensure Select2 controls stretch to the full parent width in this page/modals */
-        .select2-container {
-            width: 100% !important;
-        }
     </style>
 @endsection
 @section('scripts')
