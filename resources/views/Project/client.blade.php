@@ -73,19 +73,24 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label>Client Account</label>
-                                            <?php if ($clientAccountId == '') {
-                                                $clientAccountId = old('clientAccountId');
-                                            } ?>
-                                            <select class="select2 form-control" name="clientAccountId">
-                                                <option value="">--Select--</option>
+                                            <label>Client Ledgers</label>
+                                            <?php
+                                            $selectedClientAccountIds = old('clientAccountIds', $clientAccountIds ?? []);
+                                            if (!is_array($selectedClientAccountIds)) {
+                                                $selectedClientAccountIds = [];
+                                            }
+                                            ?>
+                                            <select class="select2 form-control" name="clientAccountIds[]" multiple
+                                                required>
                                                 @foreach ($accountLookUp as $account)
                                                     <option value="{{ $account->id }}"
-                                                        {{ $clientAccountId == $account->id ? 'selected' : '' }}>
-                                                        {{ $account->accountdescription }}
+                                                        {{ in_array($account->id, $selectedClientAccountIds) ? 'selected' : '' }}>
+                                                        {{ $account->accountno }}-{{ $account->accountdescription }}
                                                     </option>
                                                 @endforeach
                                             </select>
+                                            <small class="form-text text-muted">Select one or more ledgers. A ledger can
+                                                belong to only one client.</small>
                                         </div>
                                     </div>
                                 </div>
@@ -166,7 +171,7 @@
                                             <th rowspan="1">Client Code</th>
                                             <th rowspan="1">Client Type</th>
                                             <th rowspan="1">Status</th>
-                                            <th rowspan="1">Client Account</th>
+                                            <th rowspan="1">Client Ledgers</th>
                                             <th rowspan="1">Contact</th>
                                             <th rowspan="1">Project Categories</th>
                                             <th rowspan="1">Action</th>
@@ -195,7 +200,15 @@
                                                     {{ $list->status ?? 'N/A' }}
                                                 </td>
                                                 <td>
-                                                    {{ $list->accountName ?? 'N/A' }}
+                                                    @if ($list->clientLedgers && count($list->clientLedgers) > 0)
+                                                        @foreach ($list->clientLedgers as $ledger)
+                                                            <span class="badge badge-primary">
+                                                                {{ $account->accountno }}-{{ $ledger->accountdescription }}
+                                                            </span>
+                                                        @endforeach
+                                                    @else
+                                                        <span class="text-muted">N/A</span>
+                                                    @endif
                                                 </td>
                                                 <td>
                                                     {{ $list->contact_phone_number ?? 'N/A' }}
@@ -216,6 +229,9 @@
                                                         $categoryIds = $list->projectCategories
                                                             ? $list->projectCategories->pluck('id')->toArray()
                                                             : [];
+                                                        $ledgerIds = $list->clientLedgers
+                                                            ? $list->clientLedgers->pluck('clientAccountId')->toArray()
+                                                            : [];
                                                     @endphp
                                                     <a class="btn btn-sm bg-success-light"
                                                         href="javascript: editfunc(
@@ -223,11 +239,11 @@
                                                             '{{ addslashes($list->name) }}',
                                                             '{{ addslashes($list->client_code ?? '') }}',
                                                             '{{ $list->client_type ?? '' }}',
-                                                            '{{ $list->clientAccountId ?? '' }}',
                                                             '{{ $list->status ?? 'Active' }}',
                                                             '{{ addslashes($list->contact_address ?? '') }}',
                                                             '{{ addslashes($list->contact_phone_number ?? '') }}',
                                                             '{{ addslashes($list->contact_email_address ?? '') }}',
+                                                            {{ json_encode($ledgerIds) }},
                                                             {{ json_encode($categoryIds) }}
                                                         )">
                                                         <i class="fe fe-pencil"></i>
@@ -291,15 +307,17 @@
                                 </div>
                                 <div class="col-12 col-sm-12">
                                     <div class="form-group">
-                                        <label>Client Account</label>
-                                        <select class="select2 form-control" id="clientAccountId" name="clientAccountId">
-                                            <option value="">--Select--</option>
+                                        <label>Client Ledgers</label>
+                                        <select class="select2 form-control" id="clientAccountIds"
+                                            name="clientAccountIds[]" multiple required>
                                             @foreach ($accountLookUp as $account)
                                                 <option value="{{ $account->id }}">
-                                                    {{ $account->accountdescription }}
+                                                    {{ $account->accountno }}-{{ $account->accountdescription }}
                                                 </option>
                                             @endforeach
                                         </select>
+                                        <small class="form-text text-muted">Select one or more ledgers. A ledger can
+                                            belong to only one client.</small>
                                     </div>
                                 </div>
                                 <div class="col-12 col-sm-4">
@@ -374,7 +392,7 @@
                                 <h4 class="modal-title">Delete</h4>
                                 <p class="mb-4">Are you sure want to delete?</p>
                                 <button type="submit" class="btn btn-primary" name="del">Continue </button>
-                                <input type="hidden" id="deleteid" name="id">
+                                <input type="hidden" id="deleteid" name="deleteid">
                                 <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
                             </div>
                         </div>
@@ -402,17 +420,22 @@
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
     <script>
-        function editfunc(id, name, clientCode, clientType, clientAccountId, status, contactAddress,
-            contactPhoneNumber, contactEmailAddress, projectCategoryIds) {
+        function editfunc(id, name, clientCode, clientType, status, contactAddress,
+            contactPhoneNumber, contactEmailAddress, clientAccountIds, projectCategoryIds) {
             document.getElementById('id').value = id;
             document.getElementById('name').value = name;
             document.getElementById('client_code').value = clientCode || '';
             document.getElementById('client_type').value = clientType || '';
-            document.getElementById('clientAccountId').value = clientAccountId || '';
             document.getElementById('status').value = status || 'Active';
             document.getElementById('contact_address').value = contactAddress || '';
             document.getElementById('contact_phone_number').value = contactPhoneNumber || '';
             document.getElementById('contact_email_address').value = contactEmailAddress || '';
+
+            // Set selected client ledgers
+            $('#clientAccountIds').val(null).trigger('change');
+            if (clientAccountIds && clientAccountIds.length > 0) {
+                $('#clientAccountIds').val(clientAccountIds).trigger('change');
+            }
 
             // Clear previous selections
             $('#projectCategoryIds').val(null).trigger('change');

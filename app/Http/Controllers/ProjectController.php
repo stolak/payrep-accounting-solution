@@ -768,7 +768,7 @@ class ProjectController extends Basefunction {
     public function client(Request $request)
     {
         $data['name'] = $request->input('name');
-        $data['clientAccountId'] = $request->input('clientAccountId');
+        $data['clientAccountIds'] = $request->input('clientAccountIds', []);
         $data['clientCode'] = $request->input('client_code');
         $data['clientType'] = $request->input('client_type');
         $data['status'] = $request->input('status');
@@ -781,7 +781,8 @@ class ProjectController extends Basefunction {
         if (isset($_POST['addnew'])) {
             $this->validate($request, [
                 'name' => 'required|string|unique:clients,name',
-                'clientAccountId' => 'nullable|integer',
+                'clientAccountIds' => 'required|array|min:1',
+                'clientAccountIds.*' => 'required|integer|exists:account_charts,id|distinct',
                 'client_code' => 'required|string|unique:clients,client_code',
                 'client_type' => 'required|integer|exists:client_type,id',
                 'contact_address' => 'nullable|string',
@@ -791,27 +792,42 @@ class ProjectController extends Basefunction {
                 'projectCategoryIds.*' => 'integer|exists:project_categories,id',
             ]);
 
-            $clientId = DB::table('clients')->insertGetId([
-                'name' => $data['name'],
-                'clientAccountId' => $data['clientAccountId'] ?? null,
-                'client_code' => $data['clientCode'],
-                'client_type' => $data['clientType'],
-                'contact_address' => $data['contactAddress'] ?? null,
-                'contact_phone_number' => $data['contactPhoneNumber'] ?? null,
-                'contact_email_address' => $data['contactEmailAddress'] ?? null,
-                'createdBy' => Auth::user()->id,
-                'createdAt' => now(),
-            ]);
+            $existingLedger = DB::table('client_ledgers')
+                ->whereIn('clientAccountId', $data['clientAccountIds'])
+                ->first();
+            if ($existingLedger) {
+                return back()->withInput()->with('error_message', 'One or more selected client ledgers are already assigned to another client.');
+            }
 
-            // Insert project categories
-            if (!empty($data['projectCategoryIds']) && is_array($data['projectCategoryIds'])) {
-                foreach ($data['projectCategoryIds'] as $categoryId) {
-                    DB::table('client_project_categories')->insert([
+            DB::transaction(function () use ($data) {
+                $clientId = DB::table('clients')->insertGetId([
+                    'name' => $data['name'],
+                    'client_code' => $data['clientCode'],
+                    'client_type' => $data['clientType'],
+                    'contact_address' => $data['contactAddress'] ?? null,
+                    'contact_phone_number' => $data['contactPhoneNumber'] ?? null,
+                    'contact_email_address' => $data['contactEmailAddress'] ?? null,
+                    'createdBy' => Auth::user()->id,
+                    'createdAt' => now(),
+                ]);
+
+                foreach ($data['clientAccountIds'] as $accountId) {
+                    DB::table('client_ledgers')->insert([
                         'clientId' => $clientId,
-                        'project_categoryId' => $categoryId,
+                        'clientAccountId' => $accountId,
                     ]);
                 }
-            }
+
+                // Insert project categories
+                if (!empty($data['projectCategoryIds']) && is_array($data['projectCategoryIds'])) {
+                    foreach ($data['projectCategoryIds'] as $categoryId) {
+                        DB::table('client_project_categories')->insert([
+                            'clientId' => $clientId,
+                            'project_categoryId' => $categoryId,
+                        ]);
+                    }
+                }
+            });
 
             return back()->with('message', 'New record successfully added.');
         }
@@ -819,7 +835,8 @@ class ProjectController extends Basefunction {
         if (isset($_POST['update'])) {
             $this->validate($request, [
                 'name' => 'required|string|unique:clients,name,' . $request->input('id'),
-                'clientAccountId' => 'nullable|integer',
+                'clientAccountIds' => 'required|array|min:1',
+                'clientAccountIds.*' => 'required|integer|exists:account_charts,id|distinct',
                 'client_code' => 'required|string|unique:clients,client_code,' . $request->input('id'),
                 'client_type' => 'required|integer|exists:client_type,id',
                 'status' => 'required|in:Active,On Hold,Inactive',
@@ -831,29 +848,46 @@ class ProjectController extends Basefunction {
                 'projectCategoryIds.*' => 'integer|exists:project_categories,id',
             ]);
 
-            DB::table('clients')->where('id', $data['id'])->update([
-                'name' => $data['name'],
-                'clientAccountId' => $data['clientAccountId'] ?? null,
-                'client_code' => $data['clientCode'],
-                'client_type' => $data['clientType'],
-                'status' => $data['status'],
-                'contact_address' => $data['contactAddress'] ?? null,
-                'contact_phone_number' => $data['contactPhoneNumber'] ?? null,
-                'contact_email_address' => $data['contactEmailAddress'] ?? null,
-            ]);
+            $existingLedger = DB::table('client_ledgers')
+                ->whereIn('clientAccountId', $data['clientAccountIds'])
+                ->where('clientId', '<>', $data['id'])
+                ->first();
+            if ($existingLedger) {
+                return back()->withInput()->with('error_message', 'One or more selected client ledgers are already assigned to another client.');
+            }
 
-            // Delete existing project categories
-            DB::table('client_project_categories')->where('clientId', $data['id'])->delete();
+            DB::transaction(function () use ($data) {
+                DB::table('clients')->where('id', $data['id'])->update([
+                    'name' => $data['name'],
+                    'client_code' => $data['clientCode'],
+                    'client_type' => $data['clientType'],
+                    'status' => $data['status'],
+                    'contact_address' => $data['contactAddress'] ?? null,
+                    'contact_phone_number' => $data['contactPhoneNumber'] ?? null,
+                    'contact_email_address' => $data['contactEmailAddress'] ?? null,
+                ]);
 
-            // Insert new project categories
-            if (!empty($data['projectCategoryIds']) && is_array($data['projectCategoryIds'])) {
-                foreach ($data['projectCategoryIds'] as $categoryId) {
-                    DB::table('client_project_categories')->insert([
+                DB::table('client_ledgers')->where('clientId', $data['id'])->delete();
+                foreach ($data['clientAccountIds'] as $accountId) {
+                    DB::table('client_ledgers')->insert([
                         'clientId' => $data['id'],
-                        'project_categoryId' => $categoryId,
+                        'clientAccountId' => $accountId,
                     ]);
                 }
-            }
+
+                // Delete existing project categories
+                DB::table('client_project_categories')->where('clientId', $data['id'])->delete();
+
+                // Insert new project categories
+                if (!empty($data['projectCategoryIds']) && is_array($data['projectCategoryIds'])) {
+                    foreach ($data['projectCategoryIds'] as $categoryId) {
+                        DB::table('client_project_categories')->insert([
+                            'clientId' => $data['id'],
+                            'project_categoryId' => $categoryId,
+                        ]);
+                    }
+                }
+            });
 
             return back()->with('message', 'Record successfully updated.');
         }
@@ -868,37 +902,46 @@ class ProjectController extends Basefunction {
             
             // Delete associated project categories
             DB::table('client_project_categories')->where('clientId', $del)->delete();
+            DB::table('client_ledgers')->where('clientId', $del)->delete();
             
             DB::table('clients')->where('id', $del)->delete();
             return back()->with('message', 'Record successfully deleted.');
         }
         
-        // Fetch clients list with account information and project categories
+        // Fetch clients list with related information
         $clients = DB::table('clients')
-            ->leftJoin('account_charts', 'clients.clientAccountId', '=', 'account_charts.id')
             ->leftJoin('client_type', 'clients.client_type', '=', 'client_type.id')
             ->select(
                 'clients.id',
                 'clients.name',
-                'clients.clientAccountId',
                 'clients.client_code',
                 'clients.client_type',
                 'clients.status',
                 'clients.contact_address',
                 'clients.contact_phone_number',
                 'clients.contact_email_address',
-                'account_charts.accountdescription as accountName',
                 'client_type.name as clientTypeName'
             )
             ->orderBy('clients.name', 'asc')
             ->get();
 
-        // Fetch project categories for each client
+        // Fetch project categories and ledgers for each client
         foreach ($clients as $client) {
             $client->projectCategories = DB::table('client_project_categories')
                 ->join('project_categories', 'client_project_categories.project_categoryId', '=', 'project_categories.id')
                 ->where('client_project_categories.clientId', $client->id)
                 ->select('project_categories.id', 'project_categories.category')
+                ->get();
+
+            $client->clientLedgers = DB::table('client_ledgers')
+                ->join('account_charts', 'client_ledgers.clientAccountId', '=', 'account_charts.id')
+                ->where('client_ledgers.clientId', $client->id)
+                ->select(
+                    'client_ledgers.clientAccountId',
+                    'account_charts.accountdescription',
+                    'account_charts.accountno'
+                )
+                ->orderBy('account_charts.accountdescription', 'asc')
                 ->get();
         }
 
