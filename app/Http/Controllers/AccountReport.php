@@ -167,6 +167,121 @@ class AccountReport extends Controller
         return view('AccountReport.pettycashreport', $data);
     }
 
+    public function CashFlowReport(Request $request)
+    {
+        $data['fromdate'] = $request->input('fromdate');
+        $data['todate'] = $request->input('todate');
+        $data['subheadid'] = $request->input('subheadid');
+        $data['accountid'] = $request->input('accountid');
+
+        if ($data['todate'] == "") {
+            $data['todate'] = date("Y-m-d");
+        }
+        if ($data['fromdate'] == "") {
+            $data['fromdate'] = date("Y-m-d");
+        }
+        if ($data['fromdate'] > $data['todate']) {
+            [$data['fromdate'], $data['todate']] = [$data['todate'], $data['fromdate']];
+        }
+
+        $data['cashSubheads'] = DB::table('account_subheads')
+            ->where('status', 1)
+            ->where('payment_method', 'Cash')
+            ->select('id', 'subhead')
+            ->orderBy('subhead', 'asc')
+            ->get();
+
+        $data['cashAccounts'] = DB::table('account_charts as ac')
+            ->join('account_subheads as ash', 'ac.subheadid', '=', 'ash.id')
+            ->where('ash.status', 1)
+            ->where('ash.payment_method', 'Cash')
+            ->when(!empty($data['subheadid']), function ($query) use ($data) {
+                $query->where('ac.subheadid', $data['subheadid']);
+            })
+            ->select('ac.id', 'ac.accountno', 'ac.accountdescription')
+            ->orderBy('ac.accountdescription', 'asc')
+            ->get();
+
+        $baseQuery = DB::table('account_transactions as t')
+            ->join('account_subheads as s', 't.subheadid', '=', 's.id')
+            ->leftJoin('account_charts as a', 't.accountid', '=', 'a.id')
+            ->leftJoin('users as u', 't.postby', '=', 'u.id')
+            ->where('s.payment_method', 'Cash')
+            ->when(!empty($data['subheadid']), function ($query) use ($data) {
+                $query->where('t.subheadid', $data['subheadid']);
+            })
+            ->when(!empty($data['accountid']), function ($query) use ($data) {
+                $query->where('t.accountid', $data['accountid']);
+            });
+
+        $openingQuery = clone $baseQuery;
+        $data['openingInflow'] = (float) $openingQuery
+            ->whereDate('t.transdate', '<', $data['fromdate'])
+            ->sum('t.debit');
+
+        $openingOutflowQuery = clone $baseQuery;
+        $data['openingOutflow'] = (float) $openingOutflowQuery
+            ->whereDate('t.transdate', '<', $data['fromdate'])
+            ->sum('t.credit');
+
+        $data['openingBalance'] = $data['openingInflow'] - $data['openingOutflow'];
+
+        $periodInflowQuery = clone $baseQuery;
+        $data['periodInflow'] = (float) $periodInflowQuery
+            ->whereDate('t.transdate', '>=', $data['fromdate'])
+            ->whereDate('t.transdate', '<=', $data['todate'])
+            ->sum('t.debit');
+
+        $periodOutflowQuery = clone $baseQuery;
+        $data['periodOutflow'] = (float) $periodOutflowQuery
+            ->whereDate('t.transdate', '>=', $data['fromdate'])
+            ->whereDate('t.transdate', '<=', $data['todate'])
+            ->sum('t.credit');
+
+        $data['netCashFlow'] = $data['periodInflow'] - $data['periodOutflow'];
+        $data['closingBalance'] = $data['openingBalance'] + $data['netCashFlow'];
+
+        $periodDetailQuery = clone $baseQuery;
+        $data['cashTransactions'] = $periodDetailQuery
+            ->whereDate('t.transdate', '>=', $data['fromdate'])
+            ->whereDate('t.transdate', '<=', $data['todate'])
+            ->select(
+                't.id',
+                't.transdate',
+                't.ref',
+                't.manual_ref',
+                't.remarks',
+                't.debit',
+                't.credit',
+                't.accountid',
+                'a.accountno',
+                'a.accountdescription',
+                's.subhead',
+                'u.name as postedBy'
+            )
+            ->orderBy('t.transdate', 'desc')
+            ->orderBy('t.id', 'desc')
+            ->get();
+
+        $ledgerSummaryQuery = clone $baseQuery;
+        $data['cashFlowByLedger'] = $ledgerSummaryQuery
+            ->whereDate('t.transdate', '>=', $data['fromdate'])
+            ->whereDate('t.transdate', '<=', $data['todate'])
+            ->select(
+                't.accountid',
+                'a.accountno',
+                'a.accountdescription',
+                DB::raw('SUM(t.debit) as inflow'),
+                DB::raw('SUM(t.credit) as outflow'),
+                DB::raw('SUM(t.debit - t.credit) as netflow')
+            )
+            ->groupBy('t.accountid', 'a.accountno', 'a.accountdescription')
+            ->orderBy('a.accountdescription', 'asc')
+            ->get();
+
+        return view('AccountReport.cashflowreport', $data);
+    }
+
     public function QuarterlyBalanceSheetold(Request $request)
     {
 

@@ -33,11 +33,13 @@ public function subaccount(Request $request){
     }
     $data['accountHead'] = SessionTrait::validate($request, 'accountHead');
     $data['subaccount'] = SessionTrait::validate($request, 'subaccount');
+    $data['payment_method'] = SessionTrait::validate($request, 'payment_method');
 
     if (isset ($_POST['addnew'])) {
         $this->validate($request, [
             'subaccount'          => 'required',
             'accountHead'    => 'required',
+            'payment_method' => 'required|in:Cash,Non-cash',
           ]);
     $head=DB::table('account_heads')->where('id',$request->input('accountHead'))->first();
     if (!$head) {
@@ -50,14 +52,38 @@ public function subaccount(Request $request){
             'subhead' => $request->input('subaccount'),
             'status' => 1,
             'rank' => 0,
-
+            'payment_method' => $request->input('payment_method'),
         ]);
 
         SessionTrait::forget($request, [
             'accountHead',
             'subaccount',
+            'payment_method',
         ]);
         return back()->with('message', 'New record successfully added.');
+    }
+
+    if (isset ($_POST['update'])) {
+        $this->validate($request, [
+            'id' => 'required|integer|exists:account_subheads,id',
+            'subaccount' => 'required',
+            'accountHead' => 'required',
+            'payment_method' => 'required|in:Cash,Non-cash',
+        ]);
+
+        $head = DB::table('account_heads')->where('id', $request->input('accountHead'))->first();
+        if (!$head) {
+            return back()->with('error_message', 'Invalid Account head!');
+        }
+
+        DB::table('account_subheads')->where('id', $request->input('id'))->update([
+            'groupid' => $head->groupid,
+            'headid' => $request->input('accountHead'),
+            'subhead' => $request->input('subaccount'),
+            'payment_method' => $request->input('payment_method'),
+        ]);
+
+        return back()->with('message', 'Record successfully updated.');
     }
 
 
@@ -78,7 +104,7 @@ public function subaccount(Request $request){
 
 
     $data['accountHeads']= AccountHead::all();
-    $data['subaccounts']= AccountSubhead::where('headid', $request->input('accountHead'))
+    $data['subaccounts']= AccountSubhead::where('headid',($data['accountHead']  && $data['accountHead']!=='All')? '=':'<>',$data['accountHead'])
     ->leftJoin('account_heads', 'account_subheads.headid', '=', 'account_heads.id')
     ->select('account_subheads.*', 'account_heads.accounthead')->get();
     // dd($data['subaccounts']);
