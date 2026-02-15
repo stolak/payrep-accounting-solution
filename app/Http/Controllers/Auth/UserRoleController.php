@@ -46,8 +46,12 @@ class UserRoleController extends Controller
             ]);
 
             $inUse = DB::table('users')->where('userrole', $data['id'])->exists();
+            $inUse2 = DB::table('assign_role_modules')->where('roleid', $data['id'])->exists();
             if ($inUse) {
                 return back()->with('error_message', 'This role is assigned to one or more users and cannot be deleted.');
+            }
+            if ($inUse2) {
+                return back()->with('error_message', 'This role is assigned to one or more modules and cannot be deleted.');
             }
 
             DB::table('user_roles')->where('id', $data['id'])->delete();
