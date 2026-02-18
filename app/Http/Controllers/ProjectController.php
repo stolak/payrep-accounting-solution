@@ -8,6 +8,7 @@ use DB;
 use Auth;
 use Session;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use PDF;
 class ProjectController extends Basefunction {
@@ -3459,9 +3460,12 @@ class ProjectController extends Basefunction {
                 return $browser->pdf();
             } catch (\Throwable $e) {
                 // Fall back to Dompdf when Chrome/Node runtime is unavailable.
+                Log::warning('Browsershot PDF rendering failed; falling back to Dompdf.', [
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
-
+// dd("chrome/node runtime is unavailable", $poData);
         $domPdfPoData = $poData;
         $domPdfPoData['pdfRenderer'] = 'dompdf';
 

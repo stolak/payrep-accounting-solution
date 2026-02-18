@@ -355,6 +355,7 @@
             .total-box,
             .terms-title,
             .terms-cols h4,
+            .terms-table h4,
             .sign-block {
                 font-size: 13px;
             }
@@ -362,6 +363,32 @@
             .terms-cols {
                 font-size: 12px;
                 line-height: 1.25;
+            }
+
+            .terms-table {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 18px 0;
+                font-size: 12px;
+                line-height: 1.25;
+            }
+
+            .terms-table td {
+                width: 50%;
+                vertical-align: top;
+            }
+
+            .terms-table h4 {
+                margin: 8px 0 4px;
+            }
+
+            .terms-table p,
+            .terms-table ul {
+                margin: 0 0 6px;
+            }
+
+            .terms-table ul {
+                padding-left: 16px;
             }
 
             .line {
@@ -520,105 +547,208 @@
         <section class="page">
             <div class="terms-page">
                 <div class="terms-title">PURCHASE ORDER TERMS &amp; CONDITIONS</div>
-                <div class="terms-cols">
-                    <p><strong>{{ env('Coy_Name', 'McEmtol Consulting Company (MCC)') }}</strong></p>
-                    <p>These Purchase Order Terms and Conditions govern all purchase orders issued by Purchaser to
-                        Seller for goods and/or services described in this Order.</p>
+                @if (!empty($pdfMode) && ($pdfRenderer ?? 'dompdf') === 'dompdf')
+                    <table class="terms-table">
+                        <tr>
+                            <td>
+                                <p><strong>{{ env('Coy_Name', 'McEmtol Consulting Company (MCC)') }}</strong></p>
+                                <p>These Purchase Order Terms and Conditions govern all purchase orders issued by
+                                    Purchaser to Seller for goods and/or services described in this Order.</p>
 
-                    <h4>1. Acceptance &amp; Contract Formation</h4>
-                    <p>Seller accepts this Order and these Terms by signing the Order or by commencing performance.
-                        These Terms and the Order form the entire agreement.</p>
+                                <h4>1. Acceptance &amp; Contract Formation</h4>
+                                <p>Seller accepts this Order and these Terms by signing the Order or by commencing
+                                    performance. These Terms and the Order form the entire agreement.</p>
 
-                    <h4>2. Scope, Delivery &amp; Default</h4>
-                    <p>Time is of the essence. Seller shall deliver goods and/or perform services strictly in line with
-                        this Order schedule.</p>
-                    <ul>
-                        <li>corrective action for delay;</li>
-                        <li>delivery extension with price adjustment;</li>
-                        <li>procurement of substitutes at Seller's cost; or</li>
-                        <li>termination of part/all of the Order.</li>
-                    </ul>
+                                <h4>2. Scope, Delivery &amp; Default</h4>
+                                <p>Time is of the essence. Seller shall deliver goods and/or perform services strictly
+                                    in line with this Order schedule.</p>
+                                <ul>
+                                    <li>corrective action for delay;</li>
+                                    <li>delivery extension with price adjustment;</li>
+                                    <li>procurement of substitutes at Seller's cost; or</li>
+                                    <li>termination of part/all of the Order.</li>
+                                </ul>
 
-                    <h4>3. Price &amp; Taxes</h4>
-                    <p>Prices shall not exceed the Order values unless approved in writing. Applicable taxes and duties
-                        remain Seller's responsibility except where law states otherwise.</p>
+                                <h4>3. Price &amp; Taxes</h4>
+                                <p>Prices shall not exceed the Order values unless approved in writing. Applicable
+                                    taxes and duties remain Seller's responsibility except where law states otherwise.
+                                </p>
 
-                    <h4>4. Invoicing &amp; Payment</h4>
-                    <p>Invoices must reference this Purchase Order and contain complete item descriptions, quantities,
-                        and prices. Payment term is <strong>30 days</strong> from receipt of valid invoice unless
-                        otherwise
-                        agreed.</p>
+                                <h4>4. Invoicing &amp; Payment</h4>
+                                <p>Invoices must reference this Purchase Order and contain complete item descriptions,
+                                    quantities, and prices. Payment term is <strong>30 days</strong> from receipt of
+                                    valid invoice unless otherwise agreed.</p>
 
-                    <h4>5. Packaging, Shipping &amp; Risk</h4>
-                    <p>Goods must be properly packaged and shipped. Title and risk pass upon delivery and acceptance.
-                    </p>
+                                <h4>5. Packaging, Shipping &amp; Risk</h4>
+                                <p>Goods must be properly packaged and shipped. Title and risk pass upon delivery and
+                                    acceptance.</p>
 
-                    <h4>6. Inspection &amp; Acceptance</h4>
-                    <p>Goods/services are subject to inspection and acceptance. Defective or non-conforming supply may
-                        be
-                        rejected or replaced at Seller's cost.</p>
+                                <h4>6. Inspection &amp; Acceptance</h4>
+                                <p>Goods/services are subject to inspection and acceptance. Defective or non-conforming
+                                    supply may be rejected or replaced at Seller's cost.</p>
 
-                    <h4>7. Warranties</h4>
-                    <p>Seller warrants goods/services meet specification, are fit for purpose, and are free from
-                        defects.
-                    </p>
+                                <h4>7. Warranties</h4>
+                                <p>Seller warrants goods/services meet specification, are fit for purpose, and are
+                                    free from defects.</p>
 
-                    <h4>8. Indemnity</h4>
-                    <p>Seller indemnifies Purchaser against claims, losses, damages, costs, and expenses resulting from
-                        Seller's acts, omissions, or IP infringements.</p>
+                                <h4>8. Indemnity</h4>
+                                <p>Seller indemnifies Purchaser against claims, losses, damages, costs, and expenses
+                                    resulting from Seller's acts, omissions, or IP infringements.</p>
 
-                    <h4>9. Limitation of Liability</h4>
-                    <p>Purchaser liability shall not exceed amount paid for affected goods/services and excludes
-                        indirect
-                        or punitive damages.</p>
+                                <h4>9. Limitation of Liability</h4>
+                                <p>Purchaser liability shall not exceed amount paid for affected goods/services and
+                                    excludes indirect or punitive damages.</p>
 
-                    <h4>10. Purchaser Property</h4>
-                    <p>Materials, data, or equipment provided by Purchaser remain Purchaser property and must be
-                        returned
-                        on request.</p>
+                                <h4>10. Purchaser Property</h4>
+                                <p>Materials, data, or equipment provided by Purchaser remain Purchaser property and
+                                    must be returned on request.</p>
+                            </td>
+                            <td>
+                                <h4>11. Changes</h4>
+                                <p>Purchaser may modify quantity/specification/delivery in writing. Seller continues
+                                    performance pending resolution.</p>
 
-                    <h4>11. Changes</h4>
-                    <p>Purchaser may modify quantity/specification/delivery in writing. Seller continues performance
-                        pending resolution.</p>
+                                <h4>12. Legal &amp; Regulatory Compliance</h4>
+                                <p>Seller complies with all applicable Nigerian laws, permits, and industry standards.
+                                </p>
 
-                    <h4>12. Legal &amp; Regulatory Compliance</h4>
-                    <p>Seller complies with all applicable Nigerian laws, permits, and industry standards.</p>
+                                <h4>13. Confidentiality</h4>
+                                <p>Seller shall keep Purchaser information confidential and use it only for this Order.
+                                </p>
 
-                    <h4>13. Confidentiality</h4>
-                    <p>Seller shall keep Purchaser information confidential and use it only for this Order.</p>
+                                <h4>14. Work at Purchaser or Client Sites</h4>
+                                <p>Seller complies with all site safety, security, and operational rules.</p>
 
-                    <h4>14. Work at Purchaser or Client Sites</h4>
-                    <p>Seller complies with all site safety, security, and operational rules.</p>
+                                <h4>15. Insurance</h4>
+                                <p>Seller maintains adequate insurance, including general liability and workers
+                                    compensation.</p>
 
-                    <h4>15. Insurance</h4>
-                    <p>Seller maintains adequate insurance, including general liability and workers compensation.</p>
+                                <h4>16. Termination</h4>
+                                <p>Purchaser may terminate for convenience or default; payment applies only to
+                                    satisfactory deliveries made before termination.</p>
 
-                    <h4>16. Termination</h4>
-                    <p>Purchaser may terminate for convenience or default; payment applies only to satisfactory
-                        deliveries made before termination.</p>
+                                <h4>17. Assignment</h4>
+                                <p>Seller may not assign/subcontract this Order without Purchaser's written approval.
+                                </p>
 
-                    <h4>17. Assignment</h4>
-                    <p>Seller may not assign/subcontract this Order without Purchaser's written approval.</p>
+                                <h4>18. Force Majeure</h4>
+                                <p>Neither party is liable for delays due to events beyond reasonable control with
+                                    prompt notice.</p>
 
-                    <h4>18. Force Majeure</h4>
-                    <p>Neither party is liable for delays due to events beyond reasonable control with prompt notice.
-                    </p>
+                                <h4>19. Governing Law &amp; Dispute Resolution</h4>
+                                <p>This Order is governed by the laws of the Federal Republic of Nigeria. Disputes
+                                    unresolved by negotiation will be referred to binding arbitration in Nigeria.</p>
 
-                    <h4>19. Governing Law &amp; Dispute Resolution</h4>
-                    <p>This Order is governed by the laws of the Federal Republic of Nigeria. Disputes unresolved by
-                        negotiation will be referred to binding arbitration in Nigeria.</p>
+                                <h4>20. Miscellaneous</h4>
+                                <p>Severability, waiver, and entire agreement provisions apply. Notices shall be sent
+                                    to the addresses in this Order.</p>
 
-                    <h4>20. Miscellaneous</h4>
-                    <p>Severability, waiver, and entire agreement provisions apply. Notices shall be sent to the
-                        addresses in this Order.</p>
+                                <div class="sign-block">
+                                    <strong>Accepted for Seller</strong><br>
+                                    Name: ___________________________<br>
+                                    Signature: ________________________<br>
+                                    Date: ____________________________
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                @else
+                    <div class="terms-cols">
+                        <p><strong>{{ env('Coy_Name', 'McEmtol Consulting Company (MCC)') }}</strong></p>
+                        <p>These Purchase Order Terms and Conditions govern all purchase orders issued by Purchaser to
+                            Seller for goods and/or services described in this Order.</p>
 
-                    <div class="sign-block">
-                        <strong>Accepted for Seller</strong><br>
-                        Name: ___________________________<br>
-                        Signature: ________________________<br>
-                        Date: ____________________________
+                        <h4>1. Acceptance &amp; Contract Formation</h4>
+                        <p>Seller accepts this Order and these Terms by signing the Order or by commencing performance.
+                            These Terms and the Order form the entire agreement.</p>
+
+                        <h4>2. Scope, Delivery &amp; Default</h4>
+                        <p>Time is of the essence. Seller shall deliver goods and/or perform services strictly in line
+                            with this Order schedule.</p>
+                        <ul>
+                            <li>corrective action for delay;</li>
+                            <li>delivery extension with price adjustment;</li>
+                            <li>procurement of substitutes at Seller's cost; or</li>
+                            <li>termination of part/all of the Order.</li>
+                        </ul>
+
+                        <h4>3. Price &amp; Taxes</h4>
+                        <p>Prices shall not exceed the Order values unless approved in writing. Applicable taxes and
+                            duties remain Seller's responsibility except where law states otherwise.</p>
+
+                        <h4>4. Invoicing &amp; Payment</h4>
+                        <p>Invoices must reference this Purchase Order and contain complete item descriptions,
+                            quantities, and prices. Payment term is <strong>30 days</strong> from receipt of valid
+                            invoice unless otherwise agreed.</p>
+
+                        <h4>5. Packaging, Shipping &amp; Risk</h4>
+                        <p>Goods must be properly packaged and shipped. Title and risk pass upon delivery and
+                            acceptance.</p>
+
+                        <h4>6. Inspection &amp; Acceptance</h4>
+                        <p>Goods/services are subject to inspection and acceptance. Defective or non-conforming supply
+                            may be rejected or replaced at Seller's cost.</p>
+
+                        <h4>7. Warranties</h4>
+                        <p>Seller warrants goods/services meet specification, are fit for purpose, and are free from
+                            defects.</p>
+
+                        <h4>8. Indemnity</h4>
+                        <p>Seller indemnifies Purchaser against claims, losses, damages, costs, and expenses resulting
+                            from Seller's acts, omissions, or IP infringements.</p>
+
+                        <h4>9. Limitation of Liability</h4>
+                        <p>Purchaser liability shall not exceed amount paid for affected goods/services and excludes
+                            indirect or punitive damages.</p>
+
+                        <h4>10. Purchaser Property</h4>
+                        <p>Materials, data, or equipment provided by Purchaser remain Purchaser property and must be
+                            returned on request.</p>
+
+                        <h4>11. Changes</h4>
+                        <p>Purchaser may modify quantity/specification/delivery in writing. Seller continues
+                            performance pending resolution.</p>
+
+                        <h4>12. Legal &amp; Regulatory Compliance</h4>
+                        <p>Seller complies with all applicable Nigerian laws, permits, and industry standards.</p>
+
+                        <h4>13. Confidentiality</h4>
+                        <p>Seller shall keep Purchaser information confidential and use it only for this Order.</p>
+
+                        <h4>14. Work at Purchaser or Client Sites</h4>
+                        <p>Seller complies with all site safety, security, and operational rules.</p>
+
+                        <h4>15. Insurance</h4>
+                        <p>Seller maintains adequate insurance, including general liability and workers compensation.
+                        </p>
+
+                        <h4>16. Termination</h4>
+                        <p>Purchaser may terminate for convenience or default; payment applies only to satisfactory
+                            deliveries made before termination.</p>
+
+                        <h4>17. Assignment</h4>
+                        <p>Seller may not assign/subcontract this Order without Purchaser's written approval.</p>
+
+                        <h4>18. Force Majeure</h4>
+                        <p>Neither party is liable for delays due to events beyond reasonable control with prompt
+                            notice.</p>
+
+                        <h4>19. Governing Law &amp; Dispute Resolution</h4>
+                        <p>This Order is governed by the laws of the Federal Republic of Nigeria. Disputes unresolved
+                            by negotiation will be referred to binding arbitration in Nigeria.</p>
+
+                        <h4>20. Miscellaneous</h4>
+                        <p>Severability, waiver, and entire agreement provisions apply. Notices shall be sent to the
+                            addresses in this Order.</p>
+
+                        <div class="sign-block">
+                            <strong>Accepted for Seller</strong><br>
+                            Name: ___________________________<br>
+                            Signature: ________________________<br>
+                            Date: ____________________________
+                        </div>
                     </div>
-                </div>
+                @endif
             </div>
         </section>
     </div>
