@@ -223,6 +223,14 @@
                                                                     <i class="fe fe-trash"></i>
                                                                 </a>
                                                             @endif
+                                                            @if ($vendorProject->status == 'Approved')
+                                                                <a class="btn btn-sm bg-primary-light"
+                                                                    href="{{ url('/vendor-project-purchase-order') }}?vendorProjectId={{ $vendorProject->id }}"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    title="View Purchase Order">
+                                                                    <i class="fa fa-file"></i>
+                                                                </a>
+                                                            @endif
                                                         </td>
                                                     </tr>
                                                 @endforeach

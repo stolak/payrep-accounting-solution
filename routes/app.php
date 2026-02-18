@@ -151,3 +151,7 @@ Route::middleware(['auth', 'route.access'])->group(function () {
     Route::any('/user-role',            [AuthUserRoleController::class, 'index']);
 });
 
+Route::get('/vendor-project-acknowledge', [ProjectController::class, 'vendorProjectAcknowledge'])
+    ->name('vendor.project.acknowledge')
+    ->middleware('signed');
+

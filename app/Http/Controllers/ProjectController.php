@@ -7,6 +7,8 @@ use App\Http\Requests;
 use DB;
 use Auth;
 use Session;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 class ProjectController extends Basefunction {
 
     public function project(Request $request)
@@ -2909,7 +2911,7 @@ class ProjectController extends Basefunction {
             $unitCost = $data['unitCost'];
             $calculatedAmount = $quantity * $unitCost;
 
-            DB::table('vendor_projects')->insert([
+            $vendorProjectId = DB::table('vendor_projects')->insertGetId([
                 'projectId' => $data['projectId'],
                 'vendorId' => $data['vendorId'],
                 'description' => $data['description'] ?? null,
@@ -2921,7 +2923,14 @@ class ProjectController extends Basefunction {
                 'createdAt' => now(),
                 'updateAt' => now(),
             ]);
-            return back()->with('message', 'New vendor project successfully added.');
+
+            $emailResult = $this->sendVendorProjectAcknowledgementEmail($vendorProjectId);
+            if ($emailResult['sent']) {
+                return back()->with('message', 'New vendor project successfully added and acknowledgement email sent.');
+            }
+
+            return back()->with('message', 'New vendor project successfully added.')
+                ->with('error_message', 'Acknowledgement email was not sent: ' . $emailResult['reason']);
         }
         
         if (isset($_POST['update'])) {
@@ -2954,99 +2963,10 @@ class ProjectController extends Basefunction {
         
         if (isset($_POST['approve'])) {
             $approveId = $request->input('approveid');
-            $refno=$this->RefNo();
-
-            $approvalData = DB::table('vendor_projects')
-                ->leftJoin('budgets', 'vendor_projects.vendorId', '=', 'budgets.id')
-                ->leftJoin('projects', 'vendor_projects.projectId', '=', 'projects.id')
-                ->leftJoin('project_expense_ledger', function ($join) {
-                    $join->on('vendor_projects.projectId', '=', 'project_expense_ledger.projectId')
-                        ->where('project_expense_ledger.classificationId', 1);
-                })
-                ->where('vendor_projects.id', $approveId)
-                ->select(
-                    'vendor_projects.id',
-                    'vendor_projects.status',
-                    'vendor_projects.projectId',
-                    'vendor_projects.vendorId',
-                    'vendor_projects.description',
-                    'vendor_projects.quantity',
-                    'vendor_projects.unitCost',
-                    'vendor_projects.amount',
-                    'vendor_projects.createdAt',
-                    'budgets.accountId',
-                    'budgets.name as vendorName',
-                    'budgets.trade_name as vendorTradeName',
-                    'budgets.address as vendorAddress',
-                    'budgets.email as vendorEmail',
-                    'budgets.contact_phone_number as vendorPhone',
-                    'budgets.tax_number as vendorTaxNumber',
-                    'project_expense_ledger.expenseAccountId',
-                    'projects.name as projectName',
-                    'projects.projectCode',
-                    'projects.location as projectLocation'
-                )
-                ->first();
-
-            if (!$approvalData) {
-                return back()->with('error_message', 'Vendor project record was not found.');
+            $approval = $this->approveVendorProjectEntry($approveId, Auth::user()->id, 'Vendor project approved');
+            if (!$approval['success']) {
+                return back()->with('error_message', $approval['message']);
             }
-
-            if ($approvalData->status === 'Approved') {
-                return back()->with('error_message', 'This vendor project has already been approved.');
-            }
-
-            if (empty($approvalData->accountId)) {
-                return back()->with('error_message', "No account is configured for vendor budget '{$approvalData->vendorName}'.");
-            }
-
-            if (empty($approvalData->expenseAccountId)) {
-                return back()->with('error_message', "No  expense ledger is configured for SCB Delivery '{$approvalData->projectName}'.");
-            }
-
-            if (!$this->FetchAccountCodes($approvalData->accountId)) {
-                return back()->with('error_message', "Vendor account ID '{$approvalData->accountId}' was not found in chart of accounts.");
-            }
-
-            if (!$this->FetchAccountCodes($approvalData->expenseAccountId)) {
-                return back()->with('error_message', "Project expense account ID '{$approvalData->expenseAccountId}' was not found in chart of accounts.");
-            }
-
-            if ((float) $approvalData->amount <= 0) {
-                return back()->with('error_message', 'Vendor project amount must be greater than zero before approval.');
-            }
-
-            $transDate = now()->format('Y-m-d');
-            $remark = 'Vendor project approved';
-            $userId = Auth::user()->id;
-
-            $this->CreditAccount(
-                $approvalData->accountId,
-                $approvalData->amount,
-                $refno,
-                $transDate,
-                $remark,
-                $userId,
-                $refno,
-                $approvalData->projectId
-            );
-
-            $this->DebitAccount(
-                $approvalData->expenseAccountId,
-                $approvalData->amount,
-                $refno,
-                $transDate,
-                $remark,
-                $userId,
-                $refno,
-                $approvalData->projectId
-            );
-
-            DB::table('vendor_projects')->where('id', $approveId)->update([
-                'status' => 'Approved',
-                'approvedBy' => Auth::user()->id,
-                'updateAt' => now(),
-            ]);
 
             return redirect('/vendor-project-purchase-order?vendorProjectId=' . $approveId);
         }
@@ -3131,6 +3051,47 @@ class ProjectController extends Basefunction {
         return view('Project.vendorprojectpurchaseorder', $data);
     }
 
+    public function vendorProjectAcknowledge(Request $request)
+    {
+        if (!$request->hasValidSignature()) {
+            return response()->view('Project.vendorprojectacknowledge', [
+                'success' => false,
+                'title' => 'Invalid or Expired Link',
+                'message' => 'This acknowledgement link is invalid or has expired. Please request a new acknowledgement link.',
+                'poNumber' => null,
+            ], 403);
+        }
+
+        $vendorProjectId = $request->input('vendorProjectId');
+        if (empty($vendorProjectId)) {
+            return response()->view('Project.vendorprojectacknowledge', [
+                'success' => false,
+                'title' => 'Invalid Request',
+                'message' => 'Vendor project ID is required.',
+                'poNumber' => null,
+            ], 422);
+        }
+
+        $approval = $this->approveVendorProjectEntry($vendorProjectId, null, 'Vendor acknowledged purchase order');
+        $poNumber = 'VP-' . str_pad((string) $vendorProjectId, 6, '0', STR_PAD_LEFT);
+
+        if (!$approval['success']) {
+            return response()->view('Project.vendorprojectacknowledge', [
+                'success' => false,
+                'title' => 'Acknowledgement Failed',
+                'message' => $approval['message'],
+                'poNumber' => $poNumber,
+            ], 422);
+        }
+
+        return view('Project.vendorprojectacknowledge', [
+            'success' => true,
+            'title' => 'Acknowledgement Received',
+            'message' => 'Thank you. The purchase order has been acknowledged and approved.',
+            'poNumber' => $poNumber,
+        ]);
+    }
+
     private function buildVendorProjectPurchaseOrderData($vendorProjectId)
     {
         $poData = DB::table('vendor_projects')
@@ -3203,6 +3164,156 @@ class ProjectController extends Basefunction {
             ],
             'comments' => $poData->description ?: '',
         ];
+    }
+
+    private function sendVendorProjectAcknowledgementEmail($vendorProjectId)
+    {
+        $vendorProject = DB::table('vendor_projects')
+            ->leftJoin('budgets', 'vendor_projects.vendorId', '=', 'budgets.id')
+            ->leftJoin('projects', 'vendor_projects.projectId', '=', 'projects.id')
+            ->where('vendor_projects.id', $vendorProjectId)
+            ->select(
+                'vendor_projects.id',
+                'vendor_projects.amount',
+                'budgets.email as vendorEmail',
+                'budgets.name as vendorName',
+                'projects.name as projectName'
+            )
+            ->first();
+
+        if (!$vendorProject) {
+            return ['sent' => false, 'reason' => 'vendor project was not found.'];
+        }
+
+        if (empty($vendorProject->vendorEmail)) {
+            return ['sent' => false, 'reason' => 'vendor email is not configured.'];
+        }
+
+        try {
+            $expiryHours = (int) env('VENDOR_PO_ACK_EXPIRES_HOURS', 168);
+            if ($expiryHours < 1) {
+                $expiryHours = 168;
+            }
+
+            $ackUrl = URL::temporarySignedRoute(
+                'vendor.project.acknowledge',
+                now()->addHours($expiryHours),
+                ['vendorProjectId' => $vendorProject->id]
+            );
+
+            $poNumber = 'VP-' . str_pad((string) $vendorProject->id, 6, '0', STR_PAD_LEFT);
+            $subject = 'Purchase Order Acknowledgement Required - ' . $poNumber;
+            $vendorName = $vendorProject->vendorName ?: 'Vendor';
+            $projectName = $vendorProject->projectName ?: 'Project';
+            $amount = number_format((float) $vendorProject->amount, 2, '.', ',');
+
+            $htmlBody = '<p>Dear ' . e($vendorName) . ',</p>'
+                . '<p>A new purchase order has been allocated to you.</p>'
+                . '<p><strong>PO Number:</strong> ' . e($poNumber) . '<br>'
+                . '<strong>Project:</strong> ' . e($projectName) . '<br>'
+                . '<strong>Amount:</strong> ' . e($amount) . '</p>'
+                . '<p>Please click the link below to acknowledge receipt. Clicking the link will automatically approve the PO:</p>'
+                . '<p><a href="' . e($ackUrl) . '">Acknowledge Purchase Order</a></p>'
+                . '<p>If you cannot click the link, copy and paste this URL into your browser:<br>' . e($ackUrl) . '</p>'
+                . '<p>Regards,<br>' . e(env('Coy_Name', 'Accounting Team')) . '</p>';
+
+            Mail::send([], [], function ($message) use ($vendorProject, $subject, $htmlBody) {
+                $message->to($vendorProject->vendorEmail)
+                    ->subject($subject)
+                    ->setBody($htmlBody, 'text/html');
+            });
+
+            return ['sent' => true, 'reason' => null];
+        } catch (\Throwable $e) {
+            return ['sent' => false, 'reason' => $e->getMessage()];
+        }
+    }
+
+    private function approveVendorProjectEntry($vendorProjectId, $approvedByUserId = null, $remark = 'Vendor project approved')
+    {
+        $refno = $this->RefNo();
+        $approvalData = DB::table('vendor_projects')
+            ->leftJoin('budgets', 'vendor_projects.vendorId', '=', 'budgets.id')
+            ->leftJoin('projects', 'vendor_projects.projectId', '=', 'projects.id')
+            ->leftJoin('project_expense_ledger', function ($join) {
+                $join->on('vendor_projects.projectId', '=', 'project_expense_ledger.projectId')
+                    ->where('project_expense_ledger.classificationId', 1);
+            })
+            ->where('vendor_projects.id', $vendorProjectId)
+            ->select(
+                'vendor_projects.id',
+                'vendor_projects.status',
+                'vendor_projects.projectId',
+                'vendor_projects.vendorId',
+                'vendor_projects.amount',
+                'vendor_projects.createdBy',
+                'budgets.accountId',
+                'budgets.name as vendorName',
+                'project_expense_ledger.expenseAccountId',
+                'projects.name as projectName'
+            )
+            ->first();
+
+        if (!$approvalData) {
+            return ['success' => false, 'message' => 'Vendor project record was not found.'];
+        }
+
+        if ($approvalData->status === 'Approved') {
+            return ['success' => true, 'message' => 'This vendor project has already been approved.'];
+        }
+
+        if (empty($approvalData->accountId)) {
+            return ['success' => false, 'message' => "No account is configured for vendor budget '{$approvalData->vendorName}'."];
+        }
+
+        if (empty($approvalData->expenseAccountId)) {
+            return ['success' => false, 'message' => "No expense ledger is configured for SCB Delivery '{$approvalData->projectName}'."];
+        }
+
+        if (!$this->FetchAccountCodes($approvalData->accountId)) {
+            return ['success' => false, 'message' => "Vendor account ID '{$approvalData->accountId}' was not found in chart of accounts."];
+        }
+
+        if (!$this->FetchAccountCodes($approvalData->expenseAccountId)) {
+            return ['success' => false, 'message' => "Project expense account ID '{$approvalData->expenseAccountId}' was not found in chart of accounts."];
+        }
+
+        if ((float) $approvalData->amount <= 0) {
+            return ['success' => false, 'message' => 'Vendor project amount must be greater than zero before approval.'];
+        }
+
+        $postingUserId = $approvedByUserId ?: $approvalData->createdBy ?: 1;
+        $transDate = now()->format('Y-m-d');
+
+        $this->CreditAccount(
+            $approvalData->accountId,
+            $approvalData->amount,
+            $refno,
+            $transDate,
+            $remark,
+            $postingUserId,
+            $refno,
+            $approvalData->projectId
+        );
+
+        $this->DebitAccount(
+            $approvalData->expenseAccountId,
+            $approvalData->amount,
+            $refno,
+            $transDate,
+            $remark,
+            $postingUserId,
+            $refno,
+            $approvalData->projectId
+        );
+
+        DB::table('vendor_projects')->where('id', $vendorProjectId)->update([
+            'status' => 'Approved',
+            'approvedBy' => $approvedByUserId,
+            'updateAt' => now(),
+        ]);
+
+        return ['success' => true, 'message' => 'Vendor project successfully approved.'];
     }
 
     public function vendorProjectReport(Request $request)
