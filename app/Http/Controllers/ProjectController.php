@@ -9,6 +9,7 @@ use Auth;
 use Session;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
+use PDF;
 class ProjectController extends Basefunction {
 
     public function project(Request $request)
@@ -2968,7 +2969,8 @@ class ProjectController extends Basefunction {
                 return back()->with('error_message', $approval['message']);
             }
 
-            return redirect('/vendor-project-purchase-order?vendorProjectId=' . $approveId);
+            return redirect('/vendor-project-purchase-order?vendorProjectId=' . $approveId)
+                ->with('message', $approval['message']);
         }
         
         if (isset($_POST['del'])) {
@@ -3087,7 +3089,7 @@ class ProjectController extends Basefunction {
         return view('Project.vendorprojectacknowledge', [
             'success' => true,
             'title' => 'Acknowledgement Received',
-            'message' => 'Thank you. The purchase order has been acknowledged and approved.',
+            'message' => 'Thank you. ' . $approval['message'],
             'poNumber' => $poNumber,
         ]);
     }
@@ -3249,6 +3251,8 @@ class ProjectController extends Basefunction {
                 'vendor_projects.createdBy',
                 'budgets.accountId',
                 'budgets.name as vendorName',
+                'budgets.trade_name as vendorTradeName',
+                'budgets.email as vendorEmail',
                 'project_expense_ledger.expenseAccountId',
                 'projects.name as projectName'
             )
@@ -3313,7 +3317,77 @@ class ProjectController extends Basefunction {
             'updateAt' => now(),
         ]);
 
+        $pdfMail = $this->sendApprovedVendorPoPdfToVendor($vendorProjectId, $approvalData->vendorEmail, $approvalData->vendorTradeName ?: $approvalData->vendorName);
+        if (!$pdfMail['sent']) {
+            return ['success' => true, 'message' => 'Vendor project approved, but PO PDF email was not sent: ' . $pdfMail['reason']];
+        }
+
         return ['success' => true, 'message' => 'Vendor project successfully approved.'];
+    }
+
+    private function sendApprovedVendorPoPdfToVendor($vendorProjectId, $vendorEmail, $vendorName = null)
+    {
+        if (empty($vendorEmail)) {
+            return ['sent' => false, 'reason' => 'vendor email is not configured.'];
+        }
+
+        $tempPdfPath = null;
+        try {
+            $poData = $this->buildVendorProjectPurchaseOrderData($vendorProjectId);
+            if (!$poData) {
+                return ['sent' => false, 'reason' => 'purchase order data was not found.'];
+            }
+
+            if (($poData['status'] ?? null) !== 'Approved') {
+                return ['sent' => false, 'reason' => 'vendor project is not approved yet.'];
+            }
+
+            $poData['pdfMode'] = true;
+            $poData['logoPath'] = public_path('assets/img/logo.jpeg');
+
+            $pdf = PDF::loadView('Project.vendorprojectpurchaseorder', $poData)
+                ->setPaper('a4', 'portrait')
+                ->setOptions([
+                    'isHtml5ParserEnabled' => true,
+                    'isRemoteEnabled' => true,
+                    'dpi' => 120,
+                    'defaultFont' => 'Arial',
+                ]);
+            $pdfBinary = $pdf->output();
+            $poNumber = $poData['poNumber'] ?? ('VP-' . str_pad((string) $vendorProjectId, 6, '0', STR_PAD_LEFT));
+            $fileName = str_replace([' ', '/'], ['_', '-'], $poNumber) . '.pdf';
+            $recipient = $vendorName ?: 'Vendor';
+            $subject = 'Approved Purchase Order - ' . $poNumber;
+            $tempDir = storage_path('app/temp');
+            if (!is_dir($tempDir)) {
+                mkdir($tempDir, 0755, true);
+            }
+            $tempPdfPath = $tempDir . DIRECTORY_SEPARATOR . uniqid('vendor_po_', true) . '.pdf';
+            file_put_contents($tempPdfPath, $pdfBinary);
+
+            $htmlBody = '<p>Dear ' . e($recipient) . ',</p>'
+                . '<p>Your purchase order has been approved. Please find the approved PO attached as PDF.</p>'
+                . '<p><strong>PO Number:</strong> ' . e($poNumber) . '</p>'
+                . '<p>Regards,<br>' . e(env('Coy_Name', 'Accounting Team')) . '</p>';
+
+            Mail::send([], [], function ($message) use ($vendorEmail, $subject, $htmlBody, $tempPdfPath, $fileName) {
+                $message->to($vendorEmail);
+                $message->subject($subject);
+                $message->setBody($htmlBody, 'text/html');
+                $message->attach($tempPdfPath, [
+                    'as' => $fileName,
+                    'mime' => 'application/pdf',
+                ]);
+            });
+
+            return ['sent' => true, 'reason' => null];
+        } catch (\Throwable $e) {
+            return ['sent' => false, 'reason' => $e->getMessage()];
+        } finally {
+            if (!empty($tempPdfPath) && file_exists($tempPdfPath)) {
+                @unlink($tempPdfPath);
+            }
+        }
     }
 
     public function vendorProjectReport(Request $request)

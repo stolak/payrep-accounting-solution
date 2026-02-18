@@ -262,6 +262,142 @@
             margin-top: 18px;
             font-size: 20px;
         }
+
+        @if (!empty($pdfMode))
+            body {
+                background: #fff;
+            }
+
+            .document-wrap {
+                width: 100%;
+                margin: 0;
+                box-shadow: none;
+            }
+
+            .page {
+                min-height: auto;
+            }
+
+            .top-green-strip {
+                height: 14px;
+            }
+
+            .header {
+                display: table;
+                width: 100%;
+                table-layout: fixed;
+            }
+
+            .header-left,
+            .header-right {
+                display: table-cell;
+                vertical-align: top;
+            }
+
+            .header-left {
+                width: 64%;
+            }
+
+            .header-right {
+                width: 36%;
+                text-align: right;
+            }
+
+            .logo {
+                width: 260px;
+            }
+
+            .header-right .title {
+                font-size: 32px;
+                letter-spacing: 2px;
+            }
+
+            .header-right .ref {
+                font-size: 22px;
+            }
+
+            .company-meta {
+                font-size: 13px;
+                line-height: 1.25;
+            }
+
+            .content {
+                padding: 14px 18px 20px;
+            }
+
+            .address-row {
+                display: table;
+                width: 100%;
+                table-layout: fixed;
+            }
+
+            .address-box {
+                display: table-cell;
+                width: 50%;
+                vertical-align: top;
+            }
+
+            .address-box:last-child {
+                padding-left: 14px;
+            }
+
+            .address-box h3,
+            .address-lines,
+            .address-lines strong,
+            .comments-label,
+            .line,
+            .meta-table th,
+            .meta-table td,
+            .main-table th,
+            .main-table td,
+            .total-box,
+            .terms-title,
+            .terms-cols h4,
+            .sign-block {
+                font-size: 13px;
+            }
+
+            .terms-cols {
+                font-size: 12px;
+                line-height: 1.25;
+            }
+
+            .line {
+                height: 14px;
+                border-bottom: 2px solid #6f6f6f;
+                margin-bottom: 4px;
+                margin-top: 4px;
+                padding-bottom: 2px;
+            }
+
+            .remarks-row {
+                display: table;
+                width: 100%;
+                table-layout: fixed;
+            }
+
+            .remarks-row .comments-label,
+            .remarks-row .line {
+                display: table-cell;
+                vertical-align: bottom;
+            }
+
+            .remarks-row .comments-label {
+                width: 78px;
+            }
+
+            .meta-table th,
+            .meta-table td,
+            .main-table th,
+            .main-table td {
+                padding: 5px 6px;
+            }
+
+            .total-box {
+                padding: 10px 12px;
+                margin-top: 12px;
+            }
+        @endif
     </style>
 </head>
 
@@ -271,7 +407,8 @@
             <div class="top-green-strip"></div>
             <div class="header">
                 <div class="header-left">
-                    <img src="{{ asset('assets/img/logo.jpeg') }}" alt="Company Logo" class="logo">
+                    <img src="{{ !empty($pdfMode) ? $logoPath ?? public_path('assets/img/logo.jpeg') : asset('assets/img/logo.jpeg') }}"
+                        alt="Company Logo" class="logo">ffgdfgdgd
                     <div class="company-meta">
                         {{ env('Coy_Address', 'Plot 1a Remi Olowude Street, Lekki Phase 1, Lagos.') }}<br>
                         {{ env('Coy_Phone', '+234 (0) 802 222 4832') }} |

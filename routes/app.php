@@ -137,19 +137,19 @@ Route::middleware(['auth', 'route.access'])->group(function () {
         Route::any('/gradelist-list',      	    [HR::class, 'NewGrade']);
         Route::any('/leave-application',      	    [HR::class, 'LeaveApplication']);
    // Payroll route
-    Route::any('/control-variable',      	[Payroll::class, 'ControlVariable']);
-    Route::any('/get-function-control-variables', [Payroll::class, 'GetFunctionControlVariables']);
-    Route::any('/grade-chart',      	    [Payroll::class, 'SalaryChart']);
-    Route::any('/salary-computation',      [Payroll::class, 'SalaryComputation']);
-    Route::any('/staff-variable',          [Payroll::class, 'StaffControlVariable']);
-    Route::any('/report-payroll',          [Payroll::class, 'ReportPayroll']);
-    Route::any('/active-period',           [Payroll::class, 'ActivePeriod']);
-    Route::any('/salary-mandate',          [Payroll::class, 'Payroll_Mandate']);
-    Route::any('/salary-particular',       [Payroll::class, 'PayrollParticularReport']);
-    Route::any('/salary-payslip',       [Payroll::class, 'Payslip']);
-    Route::any('/payroll-lock',         [Payroll::class, 'PayrollLock']);
+ Route::any('/control-variable',      	[Payroll::class, 'ControlVariable']);
+Route::any('/get-function-control-variables', [Payroll::class, 'GetFunctionControlVariables']);
+ Route::any('/grade-chart',      	    [Payroll::class, 'SalaryChart']);
+ Route::any('/salary-computation',      [Payroll::class, 'SalaryComputation']);
+ Route::any('/staff-variable',          [Payroll::class, 'StaffControlVariable']);
+ Route::any('/report-payroll',          [Payroll::class, 'ReportPayroll']);
+ Route::any('/active-period',           [Payroll::class, 'ActivePeriod']);
+ Route::any('/salary-mandate',          [Payroll::class, 'Payroll_Mandate']);
+ Route::any('/salary-particular',       [Payroll::class, 'PayrollParticularReport']);
+Route::any('/salary-payslip',       [Payroll::class, 'Payslip']);
+Route::any('/payroll-lock',         [Payroll::class, 'PayrollLock']);
     Route::any('/user-role',            [AuthUserRoleController::class, 'index']);
-});
+    });
 
 Route::get('/vendor-project-acknowledge', [ProjectController::class, 'vendorProjectAcknowledge'])
     ->name('vendor.project.acknowledge')
