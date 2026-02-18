@@ -828,7 +828,7 @@ class ProjectController extends Basefunction {
     public function budgetCategory(Request $request)
     {
         $data['category'] = $request->input('category');
-        $data['isMeasure'] = $request->input('isMeasure', 0);
+        $data['isMeasure'] = $request->input('isMeasure', 1);
         $data['isMilestone'] = $request->input('isMilestone', 0);
         $data['isSubContrator'] = $request->input('isSubContrator', 0);
         $data['id'] = $request->input('id');

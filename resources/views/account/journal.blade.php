@@ -137,7 +137,18 @@
                                             </tr>
                                         @endforeach
                                         <tr>
-                                            <td>Total</td>
+                                            <td>
+                                                <b>Project:</b>
+                                                <select name="projectId" class="form-control" style="width:220px;">
+                                                    <option value="">-- Optional --</option>
+                                                    @foreach ($projects as $project)
+                                                        <option value="{{ $project->id }}"
+                                                            {{ (string) $projectId === (string) $project->id ? 'selected' : '' }}>
+                                                            {{ $project->projectCode }} - {{ $project->name }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </td>
                                             <td>
                                                 @if (number_format($totalcredit, 2, '.', ',') == number_format($totaldebit, 2, '.', ',') && $totaldebit > 0)
                                                     <b>Transaction Date:</b><input type="date" name="transdate"

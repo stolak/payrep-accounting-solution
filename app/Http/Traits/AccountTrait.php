@@ -12,7 +12,9 @@ trait AccountTrait
         if($amount==0) return null;
 
 	    $accountdetails = AccountTrait::getAccountDetails($accountid);
-
+echo "debitAccount: ";
+echo $account;
+echo "<br>";
 	    return DB::table('account_transactions')->insert([
             'groupid' => $accountdetails->groupid ,
             'headid' => $accountdetails->headid ,
@@ -35,6 +37,9 @@ trait AccountTrait
     {
         if($amount==0) return null;
 	    $accountdetails=AccountTrait::getAccountDetails($accountid);
+	    echo "creditAccount: ";
+	    echo $account;
+	    echo "<br>";
 	    return DB::table('account_transactions')->insert([
     	          'groupid' => $accountdetails->groupid ,
     	          'headid' => $accountdetails->headid ,
@@ -48,7 +53,8 @@ trait AccountTrait
     	          'manual_ref' => $manual_ref ,
     	          'transdate' => $transdate ,
     	          'postby' => $userid ,
-                  'account_sub'=>$account
+                  'account_sub'=>$account,
+                  'projectid' => $account,
 
     	        ]);
 	}

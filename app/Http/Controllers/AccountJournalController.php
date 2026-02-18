@@ -25,7 +25,7 @@ class AccountJournalController extends Controller
 
 
    public function journal(Request $request)
-    {
+  {
 
     $data['accountNumber'] = SessionTrait::validate($request, 'accountNumber');
 
@@ -50,68 +50,74 @@ class AccountJournalController extends Controller
    	$data['accountnames']=$request->input('accountnames');
    	// $data['accountname']=$this->AccountName($data['acctid']);
    	$data['manual_ref']=$request->input('manual_ref');
+    $data['projectId']=$request->input('projectId');
+    $projectId = $request->input('projectId');
    	$data['id']=$request->input('id');
    	if ( isset( $_POST['add'] ) ) {
+        $this->validate($request, [
+        'accountNumber'      => 'required|string',
+        'transactiontype'      => 'required|string',
+        'debitamount'      => 'required_without:creditamount|nullable|numeric|between:0,9999999999999999.99',
+        'creditamount'      => 'required_without:debitamount|nullable|numeric|between:0,9999999999999999.99',
+        'projectId'      => 'nullable|integer|exists:projects,id',
+        //'transdate'      => 'required|string',
+        'remarks'      => 'required|string',
+        ],
+        []
+        ,
+        ['accountNumber'=>'Principal Account number',
+        'accountNumber'=>'Secondary Account number',
+        'transactiontype'=>'Module Type',
+        'debitamount'=>'Deposit',
+        'creditamount'=>'Payment',
+        'transdate'=>'Transaction Date',
+        ]);
+        $userid=Auth::user()->id;
+        DB::table('temp_journal_transfer')->insert([
+        'transtype' => $data['transactiontype'] ,
+        'accountid' => $data['accountNumber'] ,
+        'debit' => $data['debitamount'] !== null ? $data['debitamount'] : 0 ,
+        'credit' => $data['creditamount'] !== null ? $data['creditamount'] : 0  ,
+        //'transdate' => $data['transdate'] ,
+        'remarks' => $data['remarks'] ,
+        'projectId' => !empty($data['projectId']) ? $data['projectId'] : null,
+        'postby' => Auth::user()->id ,
+        ]);
+        return back()->with('message','New record successfully added.'  );
+      }
+        if ( isset( $_POST['post'] ) ) {
+            $data['daterange'] = db::table('tbldaterange')->first();
             $this->validate($request, [
-            'accountNumber'      => 'required|string',
-            'transactiontype'      => 'required|string',
-            'debitamount'      => 'required_without:creditamount|nullable|numeric|between:0,9999999999999999.99',
-            'creditamount'      => 'required_without:debitamount|nullable|numeric|between:0,9999999999999999.99',
-            //'transdate'      => 'required|string',
-            'remarks'      => 'required|string',
-            ],
-            []
-            ,
-            ['accountNumber'=>'Principal Account number',
-            'accountNumber'=>'Secondary Account number',
-            'transactiontype'=>'Module Type',
-            'debitamount'=>'Deposit',
-            'creditamount'=>'Payment',
-            'transdate'=>'Transaction Date',
-            ]);
-            $userid=Auth::user()->id;
-            DB::table('temp_journal_transfer')->insert([
-    	         'transtype' => $data['transactiontype'] ,
-    	          'accountid' => $data['accountNumber'] ,
-    	          'debit' => $data['debitamount'] !== null ? $data['debitamount'] : 0 ,
-    	          'credit' => $data['creditamount'] !== null ? $data['creditamount'] : 0  ,
-    	          //'transdate' => $data['transdate'] ,
-    	          'remarks' => $data['remarks'] ,
-    	          'postby' => Auth::user()->id ,
-    	        ]);
-    	   return back()->with('message','New record successfully added.'  );
-         }
-         if ( isset( $_POST['post'] ) ) {
-             $data['daterange'] = db::table('tbldaterange')->first();
-              $this->validate($request, [
             'transdate'      => 'required|date|after_or_equal:'.$data['daterange']->date_from.'|before_or_equal:'.$data['daterange']->date_to, //'required|string',
             'manual_ref'      => 'required|string|unique:account_transactions,manual_ref',
+            'projectId'      => 'nullable|integer|exists:projects,id',
             ],[],[
             'transdate'=>'Transaction Date',
             ]);
 
             //dd("Validated pls check later");
-             $data['JournalPending'] =AccountTrait::journalPending(0);
+              $data['JournalPending'] =AccountTrait::journalPending(0);
             $refno=AccountTrait::RefNo();
             $userid=Auth::user()->id;
 
-             DB::table('temp_journal_transfer')->where('postby',Auth::user()->id)->where('status',0)->update([
-    	          'status' => 1 ,
-    	          'ref' => $refno ,
-    	          'manual_ref' => $data['manual_ref'] ,
-    	          'transdate' => $data['transdate'],
-    	        ]);
+              DB::table('temp_journal_transfer')->where('postby',Auth::user()->id)->where('status',0)->update([
+                'status' => 1 ,
+                'ref' => $refno ,
+                'manual_ref' => $data['manual_ref'] ,
+                'transdate' => $data['transdate'],
+                  'projectId' => !empty($data['projectId']) ? $data['projectId'] : null,
+              ]);
 
-    	        foreach ($data['JournalPending'] as $b){
-    	          if ($b->debit!=0) {
-                  AccountTrait::debitAccount($b->accountid, $b->debit,$refno,$data['transdate'], $b->remarks, $userid, $data['manual_ref']);
+              foreach ($data['JournalPending'] as $b){
+                if ($b->debit!=0) {
+                  AccountTrait::debitAccount($b->accountid, $b->debit, $refno, $data['transdate'], $b->remarks, $userid, $data['manual_ref'], $projectId);
+                }
+                if ($b->credit!=0) {
+                  AccountTrait::creditAccount($b->accountid, $b->credit, $refno, $data['transdate'], $b->remarks,$userid, $data['manual_ref'], $projectId);
+                }
+              }
 
-    	          }
-    	          if ($b->credit!=0) {
-                  AccountTrait::creditAccount($b->accountid, $b->credit,$refno,$data['transdate'],$b->remarks,$userid, $data['manual_ref']);
-    	          }
-    	        }
-    	        return back()->with('message','record successfully updated.'  );
+              return back()->with('message','record successfully updated.'  );
          }
          $del=$request->input('delid');
 
@@ -124,6 +130,7 @@ class AccountJournalController extends Controller
             'transactiontype'      => 'required|string',
             'debitamount'      => 'required_without:creditamount|nullable|numeric|between:0,9999999999999999.99',
             'creditamount'      => 'required_without:debitamount|nullable|numeric|between:0,9999999999999999.99',
+            'projectId'      => 'nullable|integer|exists:projects,id',
             //'transdate'      => 'required|string',
             'remarks'      => 'required|string',
             ],
@@ -144,6 +151,7 @@ class AccountJournalController extends Controller
     	          'credit' => $data['creditamount'] !== null ? $data['creditamount'] : 0  ,
     	          //'transdate' => $data['transdate'] ,
     	          'remarks' => $data['remarks'] ,
+    	          'projectId' => !empty($data['projectId']) ? $data['projectId'] : null,
     	          'postby' => Auth::user()->id ,
     	        ]);
     	        return back()->with('message','record successfully updated.'  );
@@ -154,12 +162,23 @@ class AccountJournalController extends Controller
     $postby=Auth::user()->id;
     $data['AccountTransType'] =DB::table('tbltranstype')->get();
     $data['JournalPending'] = AccountTrait::journalPending(0);
+    $data['projects'] = DB::table('projects')
+        ->where('status', 'Active')
+        ->select('id', 'projectCode', 'name')
+        ->orderBy('name', 'asc')
+        ->get();
+    if (empty($data['projectId'])) {
+        $data['projectId'] = DB::table('temp_journal_transfer')
+            ->where('postby', $postby)
+            ->where('status', 0)
+            ->value('projectId');
+    }
     $crdr= DB::sELECT("SELECT ifnull(sum(`credit`-`debit`),0)as bal FROM `temp_journal_transfer` WHERE `postby`='$postby' and `status`=0")[0]->bal;
     $data['defaultremark']= DB::table('temp_journal_transfer')->where('postby',$postby)->where('status',0)->value('remarks');
     $data['crbal'] = ($crdr<0)? abs($crdr):'';
     $data['drbal'] = ($crdr>0)? abs($crdr):'';
 
-	return view('account.journal', $data);
+	  return view('account.journal', $data);
 
    }
 
