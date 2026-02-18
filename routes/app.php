@@ -127,6 +127,7 @@ Route::middleware(['auth', 'route.access'])->group(function () {
         Route::any('/vendor-setup',  [ProjectController::class, 'vendor']);
         Route::any('/vendor-project',  [ProjectController::class, 'vendorProject']);
         Route::get('/vendor-project-purchase-order',  [ProjectController::class, 'vendorProjectPurchaseOrder']);
+        Route::get('/vendor-project-send-po-email',  [ProjectController::class, 'vendorProjectSendPoEmail']);
         Route::any('/vendor-project-report',  [ProjectController::class, 'vendorProjectReport']);
         //
         Route::any('/staff-registration',      	[HR::class, 'StaffRreg']);

@@ -3053,6 +3053,45 @@ class ProjectController extends Basefunction {
         return view('Project.vendorprojectpurchaseorder', $data);
     }
 
+    public function vendorProjectSendPoEmail(Request $request)
+    {
+        $vendorProjectId = $request->input('vendorProjectId');
+        if (empty($vendorProjectId)) {
+            return back()->with('error_message', 'Vendor project ID is required.');
+        }
+
+        $vendorData = DB::table('vendor_projects')
+            ->leftJoin('budgets', 'vendor_projects.vendorId', '=', 'budgets.id')
+            ->where('vendor_projects.id', $vendorProjectId)
+            ->select(
+                'vendor_projects.status',
+                'budgets.email as vendorEmail',
+                'budgets.trade_name as vendorTradeName',
+                'budgets.name as vendorName'
+            )
+            ->first();
+
+        if (!$vendorData) {
+            return back()->with('error_message', 'Vendor project record was not found.');
+        }
+
+        if ($vendorData->status !== 'Approved') {
+            return back()->with('error_message', 'PO email can only be sent after vendor project approval.');
+        }
+
+        $sendResult = $this->sendApprovedVendorPoPdfToVendor(
+            $vendorProjectId,
+            $vendorData->vendorEmail,
+            $vendorData->vendorTradeName ?: $vendorData->vendorName
+        );
+
+        if (!$sendResult['sent']) {
+            return back()->with('error_message', 'PO PDF email was not sent: ' . $sendResult['reason']);
+        }
+
+        return back()->with('message', 'PO PDF email sent successfully to vendor.');
+    }
+
     public function vendorProjectAcknowledge(Request $request)
     {
         if (!$request->hasValidSignature()) {
@@ -3344,16 +3383,8 @@ class ProjectController extends Basefunction {
 
             $poData['pdfMode'] = true;
             $poData['logoPath'] = public_path('assets/img/logo.jpeg');
-
-            $pdf = PDF::loadView('Project.vendorprojectpurchaseorder', $poData)
-                ->setPaper('a4', 'portrait')
-                ->setOptions([
-                    'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => true,
-                    'dpi' => 120,
-                    'defaultFont' => 'Arial',
-                ]);
-            $pdfBinary = $pdf->output();
+            $poData['logoDataUri'] = $this->buildPoLogoDataUri();
+            $pdfBinary = $this->generateVendorPoPdfBinary($poData);
             $poNumber = $poData['poNumber'] ?? ('VP-' . str_pad((string) $vendorProjectId, 6, '0', STR_PAD_LEFT));
             $fileName = str_replace([' ', '/'], ['_', '-'], $poNumber) . '.pdf';
             $recipient = $vendorName ?: 'Vendor';
@@ -3388,6 +3419,73 @@ class ProjectController extends Basefunction {
                 @unlink($tempPdfPath);
             }
         }
+    }
+
+    private function generateVendorPoPdfBinary(array $poData)
+    {
+        if (class_exists('\Spatie\Browsershot\Browsershot')) {
+            try {
+                $browserPoData = $poData;
+                $browserPoData['pdfRenderer'] = 'browsershot';
+                $html = view('Project.vendorprojectpurchaseorder', $browserPoData)->render();
+                $browser = \Spatie\Browsershot\Browsershot::html($html)
+                    ->format('A4')
+                    ->showBackground()
+                    ->margins(0, 0, 0, 0)
+                    ->setOption('printBackground', true)
+                    ->setOption('preferCSSPageSize', true)
+                    ->setOption('waitUntil', 'networkidle0');
+
+                if (!empty(env('NODE_BINARY'))) {
+                    $browser->setNodeBinary(env('NODE_BINARY'));
+                }
+                if (!empty(env('CHROME_PATH'))) {
+                    $browser->setChromePath(env('CHROME_PATH'));
+                } else {
+                    $commonChromePaths = [
+                        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+                        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+                        'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+                        'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+                    ];
+                    foreach ($commonChromePaths as $chromePath) {
+                        if (file_exists($chromePath)) {
+                            $browser->setChromePath($chromePath);
+                            break;
+                        }
+                    }
+                }
+
+                return $browser->pdf();
+            } catch (\Throwable $e) {
+                // Fall back to Dompdf when Chrome/Node runtime is unavailable.
+            }
+        }
+
+        $domPdfPoData = $poData;
+        $domPdfPoData['pdfRenderer'] = 'dompdf';
+
+        return PDF::loadView('Project.vendorprojectpurchaseorder', $domPdfPoData)
+            ->setPaper('a4', 'portrait')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'dpi' => 120,
+                'defaultFont' => 'Arial',
+            ])
+            ->output();
+    }
+
+    private function buildPoLogoDataUri()
+    {
+        $logoPath = public_path('assets/img/logo.jpeg');
+        if (!file_exists($logoPath)) {
+            return null;
+        }
+
+        $mime = function_exists('mime_content_type') ? mime_content_type($logoPath) : 'image/jpeg';
+        $data = base64_encode(file_get_contents($logoPath));
+        return 'data:' . $mime . ';base64,' . $data;
     }
 
     public function vendorProjectReport(Request $request)

@@ -230,6 +230,11 @@
                                                                     title="View Purchase Order">
                                                                     <i class="fa fa-file"></i>
                                                                 </a>
+                                                                <a class="btn btn-sm bg-warning-light"
+                                                                    href="{{ url('/vendor-project-send-po-email') }}?vendorProjectId={{ $vendorProject->id }}"
+                                                                    title="Send PO PDF to Vendor">
+                                                                    <i class="fa fa-envelope"></i>
+                                                                </a>
                                                             @endif
                                                         </td>
                                                     </tr>

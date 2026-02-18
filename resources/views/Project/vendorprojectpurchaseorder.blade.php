@@ -261,9 +261,11 @@
         .sign-block {
             margin-top: 18px;
             font-size: 20px;
+            break-inside: avoid-column;
+            page-break-inside: avoid;
         }
 
-        @if (!empty($pdfMode))
+        @if (!empty($pdfMode) && ($pdfRenderer ?? 'dompdf') === 'dompdf')
             body {
                 background: #fff;
             }
@@ -407,8 +409,8 @@
             <div class="top-green-strip"></div>
             <div class="header">
                 <div class="header-left">
-                    <img src="{{ !empty($pdfMode) ? $logoPath ?? public_path('assets/img/logo.jpeg') : asset('assets/img/logo.jpeg') }}"
-                        alt="Company Logo" class="logo">ffgdfgdgd
+                    <img src="{{ $logoDataUri ?? (!empty($pdfMode) ? $logoPath ?? public_path('assets/img/logo.jpeg') : asset('assets/img/logo.jpeg')) }}"
+                        alt="Company Logo" class="logo">
                     <div class="company-meta">
                         {{ env('Coy_Address', 'Plot 1a Remi Olowude Street, Lekki Phase 1, Lagos.') }}<br>
                         {{ env('Coy_Phone', '+234 (0) 802 222 4832') }} |
