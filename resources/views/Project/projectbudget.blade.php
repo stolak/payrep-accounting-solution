@@ -132,7 +132,7 @@
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header">
-                                <h4 class="card-title">Add Budget to Project</h4>
+                                <h4 class="card-title">Project Budget Setup</h4>
                             </div>
                             <div class="card-body">
                                 <form method="post" id="addBudgetForm">
@@ -157,7 +157,7 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
+                                        <div class="col-md-3">
                                             <div class="form-group">
                                                 <label>Budget/sub contractor <span class="text-danger">*</span></label>
                                                 <?php if ($budgetId == '') {
@@ -179,7 +179,7 @@
                                         </div>
                                         <div class="col-md-2" id="unitFieldContainer">
                                             <div class="form-group">
-                                                <label>Unit</label>
+                                                <label>QTY</label>
                                                 <?php if ($unit == '') {
                                                     $unit = old('unit');
                                                 } ?>
@@ -199,7 +199,7 @@
                                                     oninput="calculateAmount(); validateAmount();">
                                             </div>
                                         </div>
-                                        <div class="col-md-3" id="amountFieldContainer">
+                                        <div class="col-md-2" id="amountFieldContainer">
                                             <div class="form-group">
                                                 <label>Amount <span id="amountRequired"
                                                         class="text-danger">*</span></label>
@@ -248,7 +248,7 @@
                                                 <th rowspan="1">S/N</th>
 
                                                 <th rowspan="1">Budget Name</th>
-                                                <th rowspan="1">Unit</th>
+                                                <th rowspan="1">QTY</th>
                                                 <th rowspan="1">Unit Cost</th>
                                                 <th rowspan="1">Amount</th>
                                                 <th rowspan="1">Note</th>
@@ -416,7 +416,7 @@
                             <div class="row">
                                 <div class="col-md-4" id="edit_unitFieldContainer">
                                     <div class="form-group">
-                                        <label>Unit</label>
+                                        <label>QTY</label>
                                         <input type="number" class="form-control" id="edit_unit" name="unit"
                                             step="0.01" min="0"
                                             oninput="calculateEditAmount(); validateEditAmount();">
@@ -746,20 +746,24 @@
         function editfunc(id, budgetId, classificationId, amount, unit, unitCost, note) {
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_classificationId').value = classificationId || '';
-            document.getElementById('edit_budgetId').value = budgetId;
-            document.getElementById('edit_unit').value = unit || '';
-            document.getElementById('edit_unitCost').value = unitCost || '';
-            document.getElementById('edit_amount').value = amount || '';
-            document.getElementById('edit_note').value = note || '';
 
             // Filter budgets based on classification
             handleEditClassificationChange();
 
             // Set the budget after filtering
             document.getElementById('edit_budgetId').value = budgetId;
+            if (document.getElementById('edit_classificationId').classList.contains('select2-hidden-accessible')) {
+                $('#edit_classificationId').trigger('change');
+            }
             if (document.getElementById('edit_budgetId').classList.contains('select2-hidden-accessible')) {
                 $('#edit_budgetId').trigger('change');
             }
+
+            // Set values after filtering (classification change resets these fields)
+            document.getElementById('edit_unit').value = unit || '';
+            document.getElementById('edit_unitCost').value = unitCost || '';
+            document.getElementById('edit_amount').value = amount || '';
+            document.getElementById('edit_note').value = note || '';
 
             // Handle visibility based on selected budget's isMeasure
             handleEditBudgetChange();

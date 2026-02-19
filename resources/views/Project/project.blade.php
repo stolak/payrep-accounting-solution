@@ -29,7 +29,7 @@
                             <h4 class="card-title">Create Project</h4>
                         </div>
                         <div class="card-body">
-                            <form method="post">
+                            <form method="post" id="createProjectForm">
                                 {{ csrf_field() }}
                                 @php
                                     $oldExpenseClassificationLedger = old('expenseClassificationLedger', []);
@@ -215,7 +215,7 @@
                                                             <div class="col-md-3">
                                                                 <div class="form-group">
                                                                     <label>VAT %</label>
-                                                                    <input type="number"
+                                                                    <input type="text"
                                                                         class="form-control po-header-vat" name="po_vat[]"
                                                                         step="0.01" min="0"
                                                                         value="{{ $oldPoVats[$i] ?? '' }}" max="100"
@@ -266,7 +266,7 @@
                                                                                 <div class="form-group">
                                                                                     <label>Qty <span
                                                                                             class="text-danger">*</span></label>
-                                                                                    <input type="number"
+                                                                                    <input type="text"
                                                                                         class="form-control po-item-qty"
                                                                                         name="po_item_qty[{{ $i }}][]"
                                                                                         step="0.01" min="0"
@@ -279,7 +279,7 @@
                                                                                 <div class="form-group">
                                                                                     <label>Unit Cost <span
                                                                                             class="text-danger">*</span></label>
-                                                                                    <input type="number"
+                                                                                    <input type="text"
                                                                                         class="form-control po-item-unitCost"
                                                                                         name="po_item_unitCost[{{ $i }}][]"
                                                                                         step="0.01" min="0"
@@ -291,7 +291,7 @@
                                                                             <div class="col-md-2">
                                                                                 <div class="form-group">
                                                                                     <label>Subtotal</label>
-                                                                                    <input type="number"
+                                                                                    <input type="text"
                                                                                         class="form-control po-item-subcost"
                                                                                         readonly
                                                                                         style="background-color: #f0f0f0;">
@@ -322,7 +322,7 @@
                                                             <div class="col-md-4">
                                                                 <div class="form-group">
                                                                     <label><strong>Total Purchase Value</strong></label>
-                                                                    <input type="number"
+                                                                    <input type="text"
                                                                         class="form-control po-total-subcost" readonly
                                                                         style="background-color: #e9ecef; font-weight: bold;">
                                                                 </div>
@@ -330,7 +330,7 @@
                                                             <div class="col-md-4">
                                                                 <div class="form-group">
                                                                     <label><strong>VAT Amount</strong></label>
-                                                                    <input type="number"
+                                                                    <input type="text"
                                                                         class="form-control po-total-vatAmount" readonly
                                                                         style="background-color: #e9ecef; font-weight: bold;">
                                                                 </div>
@@ -338,7 +338,7 @@
                                                             <div class="col-md-4">
                                                                 <div class="form-group">
                                                                     <label><strong>Total PO Value</strong></label>
-                                                                    <input type="number"
+                                                                    <input type="text"
                                                                         class="form-control po-total-subnet" readonly
                                                                         style="background-color: #e9ecef; font-weight: bold;">
                                                                 </div>
@@ -749,6 +749,61 @@
 
         let poIndex = {{ $poCount ?? 1 }};
 
+        function splitNumericParts(rawValue) {
+            let cleaned = String(rawValue ?? '').replace(/,/g, '').replace(/[^\d.]/g, '');
+            const firstDotIndex = cleaned.indexOf('.');
+            const hasDot = firstDotIndex !== -1;
+            if (hasDot) {
+                cleaned = cleaned.slice(0, firstDotIndex + 1) + cleaned.slice(firstDotIndex + 1).replace(/\./g, '');
+            }
+            const parts = cleaned.split('.');
+            return {
+                integerPart: parts[0] || '',
+                decimalPart: parts.length > 1 ? parts[1].slice(0, 2) : '',
+                hasDot,
+            };
+        }
+
+        function normalizeNumericInput(rawValue) {
+            const parts = splitNumericParts(rawValue);
+            const intPart = (parts.integerPart || '0').replace(/^0+(?=\d)/, '') || '0';
+            if (parts.decimalPart !== '') {
+                return `${intPart}.${parts.decimalPart}`;
+            }
+            return intPart;
+        }
+
+        function formatNumberForDisplay(rawValue) {
+            const parts = splitNumericParts(rawValue);
+            if (!parts.integerPart && !parts.hasDot) return '';
+            const intPart = (parts.integerPart || '0').replace(/^0+(?=\d)/, '') || '0';
+            const withCommas = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            if (parts.hasDot) {
+                return parts.decimalPart !== '' ? `${withCommas}.${parts.decimalPart}` : `${withCommas}.`;
+            }
+            return withCommas;
+        }
+
+        function parseFormattedNumber(rawValue) {
+            const normalized = normalizeNumericInput(rawValue);
+            if (normalized === '') return 0;
+            const parsed = parseFloat(normalized);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        function formatCurrency(amount) {
+            const numeric = Number(amount) || 0;
+            return numeric.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+        }
+
+        function applyNumberFormatting(input) {
+            if (!input) return;
+            input.value = formatNumberForDisplay(input.value);
+        }
+
         // Recalculate all PO amounts on page load for old input values
         document.addEventListener('DOMContentLoaded', function() {
             loadClientLedgers('{{ $clientId ?? '' }}', 'create_clientAccountId', '{{ $clientAccountId ?? '' }}');
@@ -758,8 +813,11 @@
 
             const poItems = document.querySelectorAll('.po-item');
             poItems.forEach((poItem, poIdx) => {
+                applyNumberFormatting(poItem.querySelector('.po-header-vat'));
                 const lineItems = poItem.querySelectorAll('.po-line-item');
                 lineItems.forEach((lineItem, itemIdx) => {
+                    applyNumberFormatting(lineItem.querySelector('.po-item-qty'));
+                    applyNumberFormatting(lineItem.querySelector('.po-item-unitCost'));
                     calculatePoItemAmount(poIdx, itemIdx);
                 });
                 calculatePoTotals(poIdx);
@@ -770,12 +828,17 @@
         function calculatePoItemAmount(poIndex, itemIndex) {
             const poItem = document.querySelector(`.po-item[data-po-index="${poIndex}"]`);
             const lineItem = poItem.querySelector(`.po-line-item[data-item-index="${itemIndex}"]`);
+            const qtyInput = lineItem.querySelector('.po-item-qty');
+            const unitCostInput = lineItem.querySelector('.po-item-unitCost');
 
-            const qty = parseFloat(lineItem.querySelector('.po-item-qty').value) || 0;
-            const unitCost = parseFloat(lineItem.querySelector('.po-item-unitCost').value) || 0;
+            applyNumberFormatting(qtyInput);
+            applyNumberFormatting(unitCostInput);
+
+            const qty = parseFormattedNumber(qtyInput.value);
+            const unitCost = parseFormattedNumber(unitCostInput.value);
             const subcost = qty * unitCost;
 
-            lineItem.querySelector('.po-item-subcost').value = subcost.toFixed(2);
+            lineItem.querySelector('.po-item-subcost').value = formatCurrency(subcost);
 
             // Recalculate PO totals
             calculatePoTotals(poIndex);
@@ -788,17 +851,19 @@
 
             let totalSubcost = 0;
             lineItems.forEach(lineItem => {
-                const subcost = parseFloat(lineItem.querySelector('.po-item-subcost').value) || 0;
+                const subcost = parseFormattedNumber(lineItem.querySelector('.po-item-subcost').value);
                 totalSubcost += subcost;
             });
 
-            const vat = parseFloat(poItem.querySelector('.po-header-vat').value) || 0;
+            const vatInput = poItem.querySelector('.po-header-vat');
+            applyNumberFormatting(vatInput);
+            const vat = parseFormattedNumber(vatInput.value);
             const vatAmount = totalSubcost * (vat / 100);
             const subnet = totalSubcost + vatAmount;
 
-            poItem.querySelector('.po-total-subcost').value = totalSubcost.toFixed(2);
-            poItem.querySelector('.po-total-vatAmount').value = vatAmount.toFixed(2);
-            poItem.querySelector('.po-total-subnet').value = subnet.toFixed(2);
+            poItem.querySelector('.po-total-subcost').value = formatCurrency(totalSubcost);
+            poItem.querySelector('.po-total-vatAmount').value = formatCurrency(vatAmount);
+            poItem.querySelector('.po-total-subnet').value = formatCurrency(subnet);
         }
 
         // Add new PO
@@ -940,6 +1005,27 @@
                 // Recalculate totals
                 calculatePoTotals(poIndex);
             }
+        }
+
+        document.addEventListener('input', function(e) {
+            if (
+                e.target.classList.contains('po-item-qty') ||
+                e.target.classList.contains('po-item-unitCost') ||
+                e.target.classList.contains('po-header-vat')
+            ) {
+                applyNumberFormatting(e.target);
+            }
+        });
+
+        const createProjectForm = document.getElementById('createProjectForm');
+        if (createProjectForm) {
+            createProjectForm.addEventListener('submit', function() {
+                createProjectForm.querySelectorAll(
+                    'input[name^="po_item_qty"], input[name^="po_item_unitCost"], input[name="po_vat[]"]'
+                ).forEach((input) => {
+                    input.value = normalizeNumericInput(input.value);
+                });
+            });
         }
     </script>
 @endsection

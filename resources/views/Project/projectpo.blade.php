@@ -111,8 +111,8 @@
                                                                 @if ($itemIdx == 0)
                                                                     <td rowspan="{{ $itemCount }}"
                                                                         style="vertical-align: middle;">
-                                                            {{ $i++ }}
-                                                        </td>
+                                                                        {{ $i++ }}
+                                                                    </td>
                                                                     <td rowspan="{{ $itemCount }}"
                                                                         style="vertical-align: middle;">
                                                                         <strong>{{ $list->poNumber }}</strong>
@@ -138,11 +138,11 @@
                                                                     <td rowspan="{{ $itemCount }}"
                                                                         style="vertical-align: middle; text-align: right;">
                                                                         <strong>{{ number_format($list->vatAmount, 2, '.', ',') }}</strong>
-                                                        </td>
+                                                                    </td>
                                                                     <td rowspan="{{ $itemCount }}"
                                                                         style="vertical-align: middle; text-align: right;">
                                                                         <strong>{{ number_format($list->subnet, 2, '.', ',') }}</strong>
-                                                        </td>
+                                                                    </td>
                                                                     <td rowspan="{{ $itemCount }}"
                                                                         style="vertical-align: middle;">
                                                                         @if ($list->status == 'Approved')
@@ -150,15 +150,15 @@
                                                                         @else
                                                                             <span class="badge bg-warning">Pending</span>
                                                                         @endif
-                                                        </td>
+                                                                    </td>
                                                                     <td rowspan="{{ $itemCount }}"
                                                                         style="vertical-align: middle;">
                                                                         {{ $list->createdByName ?? 'N/A' }}
-                                                        </td>
+                                                                    </td>
                                                                     <td rowspan="{{ $itemCount }}"
                                                                         style="vertical-align: middle;">
                                                                         {{ $list->approvedByName ?? 'N/A' }}
-                                                        </td>
+                                                                    </td>
                                                                     <td rowspan="{{ $itemCount }}"
                                                                         style="vertical-align: middle;">
                                                                         @if ($list->status != 'Approved')
@@ -175,7 +175,7 @@
                                                                             href="javascript: deletefunc('{{ $list->id }}')">
                                                                             <i class="fe fe-trash"></i>
                                                                         </a>
-                                                        </td>
+                                                                    </td>
                                                                 @endif
                                                             </tr>
                                                         @endforeach
@@ -186,41 +186,41 @@
                                                             <td><strong>{{ $list->description }}</strong></td>
                                                             <td colspan="3" class="text-center text-muted">No line
                                                                 items</td>
-                                                        <td style="text-align: right;">
+                                                            <td style="text-align: right;">
                                                                 <strong>{{ $list->vat ? number_format($list->vat, 2, '.', ',') . '%' : '0%' }}</strong>
-                                                        </td>
-                                                        <td style="text-align: right;">
+                                                            </td>
+                                                            <td style="text-align: right;">
                                                                 <strong>{{ number_format($list->vatAmount, 2, '.', ',') }}</strong>
-                                                        </td>
-                                                        <td style="text-align: right;">
+                                                            </td>
+                                                            <td style="text-align: right;">
                                                                 <strong>{{ number_format($list->subnet, 2, '.', ',') }}</strong>
-                                                        </td>
-                                                        <td>
-                                                            @if ($list->status == 'Approved')
-                                                                <span class="badge bg-success">Approved</span>
-                                                            @else
-                                                                <span class="badge bg-warning">Pending</span>
-                                                            @endif
-                                                        </td>
+                                                            </td>
+                                                            <td>
+                                                                @if ($list->status == 'Approved')
+                                                                    <span class="badge bg-success">Approved</span>
+                                                                @else
+                                                                    <span class="badge bg-warning">Pending</span>
+                                                                @endif
+                                                            </td>
                                                             <td>{{ $list->createdByName ?? 'N/A' }}</td>
                                                             <td>{{ $list->approvedByName ?? 'N/A' }}</td>
-                                                        <td>
-                                                            @if ($list->status != 'Approved')
-                                                                <a class="btn btn-sm bg-success-light"
+                                                            <td>
+                                                                @if ($list->status != 'Approved')
+                                                                    <a class="btn btn-sm bg-success-light"
                                                                         href="javascript: editfunc('{{ $list->id }}','{{ $list->poNumber }}','{{ addslashes($list->description) }}','{{ $list->vat ?? 0 }}',[])">
-                                                                    <i class="fe fe-pencil"></i>
+                                                                        <i class="fe fe-pencil"></i>
+                                                                    </a>
+                                                                    <a class="btn btn-sm bg-info-light"
+                                                                        href="javascript: approvefunc('{{ $list->id }}')">
+                                                                        <i class="fe fe-check"></i>
+                                                                    </a>
+                                                                @endif
+                                                                <a class="btn btn-sm bg-danger-light"
+                                                                    href="javascript: deletefunc('{{ $list->id }}')">
+                                                                    <i class="fe fe-trash"></i>
                                                                 </a>
-                                                                <a class="btn btn-sm bg-info-light"
-                                                                    href="javascript: approvefunc('{{ $list->id }}')">
-                                                                    <i class="fe fe-check"></i>
-                                                                </a>
-                                                            @endif
-                                                            <a class="btn btn-sm bg-danger-light"
-                                                                href="javascript: deletefunc('{{ $list->id }}')">
-                                                                <i class="fe fe-trash"></i>
-                                                            </a>
-                                                        </td>
-                                                    </tr>
+                                                            </td>
+                                                        </tr>
                                                     @endif
                                                 @endforeach
                                                 <tr
@@ -286,7 +286,7 @@
                                                 <?php if ($vat == '') {
                                                     $vat = old('vat');
                                                 } ?>
-                                                <input type="number" class="form-control" value="{{ $vat }}"
+                                                <input type="text" class="form-control" value="{{ $vat }}"
                                                     name="vat" id="vat" step="0.01" min="0"
                                                     max="100" oninput="calculatePoTotals()">
                                             </div>
@@ -333,7 +333,7 @@
                                                         <div class="col-md-2">
                                                             <div class="form-group">
                                                                 <label>Qty <span class="text-danger">*</span></label>
-                                                                <input type="number" class="form-control po-item-qty"
+                                                                <input type="text" class="form-control po-item-qty"
                                                                     name="item_qty[]" step="0.01" min="0"
                                                                     value="{{ $oldItemQties[$i] ?? '' }}" required
                                                                     oninput="calculatePoItemAmount(this)">
@@ -342,7 +342,7 @@
                                                         <div class="col-md-2">
                                                             <div class="form-group">
                                                                 <label>Unit Cost <span class="text-danger">*</span></label>
-                                                                <input type="number"
+                                                                <input type="text"
                                                                     class="form-control po-item-unitCost"
                                                                     name="item_unitCost[]" step="0.01" min="0"
                                                                     value="{{ $oldItemUnitCosts[$i] ?? '' }}" required
@@ -352,7 +352,7 @@
                                                         <div class="col-md-2">
                                                             <div class="form-group">
                                                                 <label>Subtotal</label>
-                                                                <input type="number" class="form-control po-item-subcost"
+                                                                <input type="text" class="form-control po-item-subcost"
                                                                     readonly style="background-color: #f0f0f0;">
                                                             </div>
                                                         </div>
@@ -381,21 +381,21 @@
                                         <div class="col-md-4">
                                             <div class="form-group">
                                                 <label><strong>Total Purchase Value</strong></label>
-                                                <input type="number" class="form-control" id="total-subcost" readonly
+                                                <input type="text" class="form-control" id="total-subcost" readonly
                                                     style="background-color: #e9ecef; font-weight: bold;">
                                             </div>
                                         </div>
                                         <div class="col-md-4">
                                             <div class="form-group">
                                                 <label><strong>VAT Amount</strong></label>
-                                                <input type="number" class="form-control" id="total-vatAmount" readonly
+                                                <input type="text" class="form-control" id="total-vatAmount" readonly
                                                     style="background-color: #e9ecef; font-weight: bold;">
                                             </div>
                                         </div>
                                         <div class="col-md-4">
                                             <div class="form-group">
                                                 <label><strong>Total PO Value</strong></label>
-                                                <input type="number" class="form-control" id="total-subnet" readonly
+                                                <input type="text" class="form-control" id="total-subnet" readonly
                                                     style="background-color: #e9ecef; font-weight: bold;">
                                             </div>
                                         </div>
@@ -456,7 +456,7 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label>VAT %</label>
-                                        <input type="number" class="form-control" id="edit_vat" name="vat"
+                                        <input type="text" class="form-control" id="edit_vat" name="vat"
                                             step="0.01" min="0" max="100"
                                             oninput="calculateEditPoTotals()">
                                     </div>
@@ -477,21 +477,21 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label><strong>Total Purchase Value</strong></label>
-                                        <input type="number" class="form-control" id="edit_total-subcost" readonly
+                                        <input type="text" class="form-control" id="edit_total-subcost" readonly
                                             style="background-color: #e9ecef; font-weight: bold;">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label><strong>VAT Amount</strong></label>
-                                        <input type="number" class="form-control" id="edit_total-vatAmount" readonly
+                                        <input type="text" class="form-control" id="edit_total-vatAmount" readonly
                                             style="background-color: #e9ecef; font-weight: bold;">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label><strong>Total PO Value</strong></label>
-                                        <input type="number" class="form-control" id="edit_total-subnet" readonly
+                                        <input type="text" class="form-control" id="edit_total-subnet" readonly
                                             style="background-color: #e9ecef; font-weight: bold;">
                                     </div>
                                 </div>
@@ -578,14 +578,73 @@
 
         let editItemIndex = 0;
 
+        function splitNumericParts(rawValue) {
+            let cleaned = String(rawValue ?? '').replace(/,/g, '').replace(/[^\d.]/g, '');
+            const firstDotIndex = cleaned.indexOf('.');
+            const hasDot = firstDotIndex !== -1;
+            if (hasDot) {
+                cleaned = cleaned.slice(0, firstDotIndex + 1) + cleaned.slice(firstDotIndex + 1).replace(/\./g, '');
+            }
+            const parts = cleaned.split('.');
+            return {
+                integerPart: parts[0] || '',
+                decimalPart: parts.length > 1 ? parts[1].slice(0, 2) : '',
+                hasDot,
+            };
+        }
+
+        function normalizeNumericInput(rawValue) {
+            const parts = splitNumericParts(rawValue);
+            const intPart = (parts.integerPart || '0').replace(/^0+(?=\d)/, '') || '0';
+            if (parts.decimalPart !== '') {
+                return `${intPart}.${parts.decimalPart}`;
+            }
+            return intPart;
+        }
+
+        function formatNumberForDisplay(rawValue) {
+            const parts = splitNumericParts(rawValue);
+            if (!parts.integerPart && !parts.hasDot) return '';
+            const intPart = (parts.integerPart || '0').replace(/^0+(?=\d)/, '') || '0';
+            const withCommas = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            if (parts.hasDot) {
+                return parts.decimalPart !== '' ? `${withCommas}.${parts.decimalPart}` : `${withCommas}.`;
+            }
+            return withCommas;
+        }
+
+        function parseFormattedNumber(rawValue) {
+            const normalized = normalizeNumericInput(rawValue);
+            if (normalized === '') return 0;
+            const parsed = parseFloat(normalized);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        function formatCurrency(amount) {
+            const numeric = Number(amount) || 0;
+            return numeric.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+        }
+
+        function applyNumberFormatting(input) {
+            if (!input) return;
+            input.value = formatNumberForDisplay(input.value);
+        }
+
         // Calculate individual line item amount (add form)
         function calculatePoItemAmount(element) {
             const lineItem = element.closest('.po-line-item');
-            const qty = parseFloat(lineItem.querySelector('.po-item-qty').value) || 0;
-            const unitCost = parseFloat(lineItem.querySelector('.po-item-unitCost').value) || 0;
+            const qtyInput = lineItem.querySelector('.po-item-qty');
+            const unitCostInput = lineItem.querySelector('.po-item-unitCost');
+            applyNumberFormatting(qtyInput);
+            applyNumberFormatting(unitCostInput);
+            const qty = parseFormattedNumber(qtyInput.value);
+            const unitCost = parseFormattedNumber(unitCostInput.value);
             const subcost = qty * unitCost;
 
-            lineItem.querySelector('.po-item-subcost').value = subcost.toFixed(2);
+            lineItem.querySelector('.po-item-subcost').value = formatCurrency(subcost);
             calculatePoTotals();
         }
 
@@ -595,17 +654,19 @@
             let totalSubcost = 0;
 
             lineItems.forEach(lineItem => {
-                const subcost = parseFloat(lineItem.querySelector('.po-item-subcost').value) || 0;
+                const subcost = parseFormattedNumber(lineItem.querySelector('.po-item-subcost').value);
                 totalSubcost += subcost;
             });
 
-            const vat = parseFloat(document.getElementById('vat').value) || 0;
+            const vatInput = document.getElementById('vat');
+            applyNumberFormatting(vatInput);
+            const vat = parseFormattedNumber(vatInput.value);
             const vatAmount = totalSubcost * (vat / 100);
             const subnet = totalSubcost + vatAmount;
 
-            document.getElementById('total-subcost').value = totalSubcost.toFixed(2);
-            document.getElementById('total-vatAmount').value = vatAmount.toFixed(2);
-            document.getElementById('total-subnet').value = subnet.toFixed(2);
+            document.getElementById('total-subcost').value = formatCurrency(totalSubcost);
+            document.getElementById('total-vatAmount').value = formatCurrency(vatAmount);
+            document.getElementById('total-subnet').value = formatCurrency(subnet);
         }
 
         // Add line item (add form)
@@ -662,11 +723,15 @@
         // Calculate individual line item amount (edit form)
         function calculateEditPoItemAmount(element) {
             const lineItem = element.closest('.po-line-item');
-            const qty = parseFloat(lineItem.querySelector('.po-item-qty').value) || 0;
-            const unitCost = parseFloat(lineItem.querySelector('.po-item-unitCost').value) || 0;
+            const qtyInput = lineItem.querySelector('.po-item-qty');
+            const unitCostInput = lineItem.querySelector('.po-item-unitCost');
+            applyNumberFormatting(qtyInput);
+            applyNumberFormatting(unitCostInput);
+            const qty = parseFormattedNumber(qtyInput.value);
+            const unitCost = parseFormattedNumber(unitCostInput.value);
             const subcost = qty * unitCost;
 
-            lineItem.querySelector('.po-item-subcost').value = subcost.toFixed(2);
+            lineItem.querySelector('.po-item-subcost').value = formatCurrency(subcost);
             calculateEditPoTotals();
         }
 
@@ -676,17 +741,19 @@
             let totalSubcost = 0;
 
             lineItems.forEach(lineItem => {
-                const subcost = parseFloat(lineItem.querySelector('.po-item-subcost').value) || 0;
+                const subcost = parseFormattedNumber(lineItem.querySelector('.po-item-subcost').value);
                 totalSubcost += subcost;
             });
 
-            const vat = parseFloat(document.getElementById('edit_vat').value) || 0;
+            const vatInput = document.getElementById('edit_vat');
+            applyNumberFormatting(vatInput);
+            const vat = parseFormattedNumber(vatInput.value);
             const vatAmount = totalSubcost * (vat / 100);
             const subnet = totalSubcost + vatAmount;
 
-            document.getElementById('edit_total-subcost').value = totalSubcost.toFixed(2);
-            document.getElementById('edit_total-vatAmount').value = vatAmount.toFixed(2);
-            document.getElementById('edit_total-subnet').value = subnet.toFixed(2);
+            document.getElementById('edit_total-subcost').value = formatCurrency(totalSubcost);
+            document.getElementById('edit_total-vatAmount').value = formatCurrency(vatAmount);
+            document.getElementById('edit_total-subnet').value = formatCurrency(subnet);
         }
 
         // Add line item (edit form)
@@ -747,10 +814,13 @@
 
         // Recalculate on page load
         document.addEventListener('DOMContentLoaded', function() {
+            applyNumberFormatting(document.getElementById('vat'));
             const lineItems = document.querySelectorAll('#po-items-container .po-line-item');
             lineItems.forEach(lineItem => {
                 const qtyInput = lineItem.querySelector('.po-item-qty');
                 const unitCostInput = lineItem.querySelector('.po-item-unitCost');
+                applyNumberFormatting(qtyInput);
+                applyNumberFormatting(unitCostInput);
                 if (qtyInput && unitCostInput && (qtyInput.value || unitCostInput.value)) {
                     calculatePoItemAmount(qtyInput);
                 }
@@ -762,7 +832,7 @@
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_poNumber').value = poNumber || '';
             document.getElementById('edit_description').value = description || '';
-            document.getElementById('edit_vat').value = vat || 0;
+            document.getElementById('edit_vat').value = formatNumberForDisplay(vat || 0);
 
             // Clear existing items
             const container = document.getElementById('edit-po-items-container');
@@ -839,6 +909,32 @@
             document.getElementById('deleteid').value = id;
             $("#delete_modal").modal('show');
         }
+
+        document.addEventListener('input', function(e) {
+            if (
+                e.target.classList.contains('po-item-qty') ||
+                e.target.classList.contains('po-item-unitCost') ||
+                e.target.id === 'vat' ||
+                e.target.id === 'edit_vat'
+            ) {
+                applyNumberFormatting(e.target);
+            }
+        });
+
+        function stripCommasBeforeSubmit(formId) {
+            const form = document.getElementById(formId);
+            if (!form) return;
+            form.addEventListener('submit', function() {
+                form.querySelectorAll('input[name="item_qty[]"], input[name="item_unitCost[]"], input[name="vat"]')
+                    .forEach(
+                        (input) => {
+                            input.value = normalizeNumericInput(input.value);
+                        });
+            });
+        }
+
+        stripCommasBeforeSubmit('addPoForm');
+        stripCommasBeforeSubmit('editForm');
     </script>
 @endsection
 <!-- /Page Wrapper -->
