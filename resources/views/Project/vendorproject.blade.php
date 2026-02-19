@@ -98,37 +98,98 @@
                                         </div>
                                     </div>
                                     <div class="row">
-                                        <div class="col-md-2">
-                                            <div class="form-group">
-                                                <label>Quantity <span class="text-danger">*</span></label>
-                                                <?php if ($quantity == '') {
-                                                    $quantity = old('quantity');
-                                                } ?>
-                                                <input type="number" class="form-control" value="{{ $quantity }}"
-                                                    name="quantity" id="quantity" step="0.01" min="0" required
-                                                    oninput="calculateAmount()">
+                                        <div class="col-md-12">
+                                            <label>Items <span class="text-danger">*</span></label>
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered">
+                                                    <thead>
+                                                        <tr>
+                                                            <th style="width: 42%;">Item Description</th>
+                                                            <th style="width: 16%;">Qty</th>
+                                                            <th style="width: 16%;">Cost</th>
+                                                            <th style="width: 16%;">Subtotal</th>
+                                                            <th style="width: 10%;">Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="add-items-body">
+                                                        @php
+                                                            $oldDescriptions = old('item_description', ['']);
+                                                            $oldQties = old('item_qty', ['']);
+                                                            $oldCosts = old('item_cost', ['']);
+                                                        @endphp
+                                                        @foreach ($oldDescriptions as $idx => $oldDescription)
+                                                            <tr class="item-row">
+                                                                <td>
+                                                                    <input type="text"
+                                                                        class="form-control item-description"
+                                                                        name="item_description[]"
+                                                                        value="{{ $oldDescription }}" required>
+                                                                </td>
+                                                                <td>
+                                                                    <input type="number"
+                                                                        class="form-control item-qty add-item-input"
+                                                                        name="item_qty[]"
+                                                                        value="{{ $oldQties[$idx] ?? '' }}" min="0"
+                                                                        step="0.01" required>
+                                                                </td>
+                                                                <td>
+                                                                    <input type="number"
+                                                                        class="form-control item-cost add-item-input"
+                                                                        name="item_cost[]"
+                                                                        value="{{ $oldCosts[$idx] ?? '' }}" min="0"
+                                                                        step="0.01" required>
+                                                                </td>
+                                                                <td>
+                                                                    <input type="number" class="form-control item-subtotal"
+                                                                        value="0" step="0.01" readonly>
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-danger remove-item-btn">
+                                                                        <i class="fe fe-trash"></i>
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
                                             </div>
+                                            <button type="button" class="btn btn-sm btn-secondary"
+                                                onclick="addItemRow('add')">
+                                                <i class="fe fe-plus"></i> Add Item
+                                            </button>
                                         </div>
-                                        <div class="col-md-2">
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-md-3">
                                             <div class="form-group">
-                                                <label>Unit Cost <span class="text-danger">*</span></label>
-                                                <?php if ($unitCost == '') {
-                                                    $unitCost = old('unitCost');
-                                                } ?>
-                                                <input type="number" class="form-control" value="{{ $unitCost }}"
-                                                    name="unitCost" id="unitCost" step="0.01" min="0" required
-                                                    oninput="calculateAmount()">
+                                                <label>VAT (%)</label>
+                                                <input type="number" class="form-control"
+                                                    value="{{ old('vat', $vat ?? 0) }}" name="vat" id="add_vat"
+                                                    step="0.01" min="0" max="100">
                                             </div>
                                         </div>
                                         <div class="col-md-3">
                                             <div class="form-group">
-                                                <label>Amount</label>
-                                                <input type="number" class="form-control" value="{{ $amount }}"
-                                                    name="amount" id="amount" step="0.01" readonly
-                                                    style="background-color: #f0f0f0;">
+                                                <label>Subtotal</label>
+                                                <input type="number" class="form-control" id="add_subtotal"
+                                                    step="0.01" readonly style="background-color: #f0f0f0;">
                                             </div>
                                         </div>
-
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>VAT Amount</label>
+                                                <input type="number" class="form-control" id="add_vatAmount"
+                                                    step="0.01" readonly style="background-color: #f0f0f0;">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>Total Amount</label>
+                                                <input type="number" class="form-control" id="add_total" step="0.01"
+                                                    readonly style="background-color: #f0f0f0;">
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div class="text-right">
@@ -156,8 +217,8 @@
                                                 <th rowspan="1">S/N</th>
                                                 <th rowspan="1">Vendor</th>
                                                 <th rowspan="1">Description</th>
-                                                <th rowspan="1">Quantity</th>
-                                                <th rowspan="1">Unit Cost</th>
+                                                <th rowspan="1">Items</th>
+                                                <th rowspan="1">VAT</th>
                                                 <th rowspan="1">Amount</th>
                                                 <th rowspan="1">Status</th>
                                                 <th rowspan="1">Created By</th>
@@ -182,11 +243,23 @@
                                                         <td>
                                                             {{ $vendorProject->description ?? 'N/A' }}
                                                         </td>
-                                                        <td style="text-align: right;">
-                                                            {{ number_format($vendorProject->quantity, 2, '.', ',') }}
+                                                        <td>
+                                                            <strong>{{ $vendorProject->itemCount ?? 0 }} item(s)</strong>
+                                                            @if (!empty($vendorProject->items) && count($vendorProject->items) > 0)
+                                                                <ul class="mb-0 mt-1 pl-3">
+                                                                    @foreach ($vendorProject->items as $item)
+                                                                        <li>
+                                                                            {{ $item->item_description }}
+                                                                            ({{ number_format($item->qty, 2, '.', ',') }}
+                                                                            x
+                                                                            {{ number_format($item->cost, 2, '.', ',') }})
+                                                                        </li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            @endif
                                                         </td>
                                                         <td style="text-align: right;">
-                                                            {{ number_format($vendorProject->unitCost, 2, '.', ',') }}
+                                                            {{ number_format($vendorProject->vat ?? 0, 2, '.', ',') }}%
                                                         </td>
                                                         <td style="text-align: right;">
                                                             <strong>{{ number_format($vendorProject->amount, 2, '.', ',') }}</strong>
@@ -209,7 +282,7 @@
                                                         <td>
                                                             @if ($vendorProject->status != 'Approved')
                                                                 <a class="btn btn-sm bg-success-light"
-                                                                    href="javascript: editfunc('{{ $vendorProject->id }}','{{ $vendorProject->vendorId }}','{{ addslashes($vendorProject->description ?? '') }}','{{ $vendorProject->quantity }}','{{ $vendorProject->unitCost }}','{{ $vendorProject->status }}')">
+                                                                    href="javascript: editfunc('{{ $vendorProject->id }}')">
                                                                     <i class="fe fe-pencil"></i>
                                                                 </a>
                                                                 <a class="btn btn-sm bg-info-light"
@@ -303,29 +376,58 @@
                                 </div>
                             </div>
                             <div class="row">
+                                <div class="col-md-12">
+                                    <label>Items <span class="text-danger">*</span></label>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 42%;">Item Description</th>
+                                                    <th style="width: 16%;">Qty</th>
+                                                    <th style="width: 16%;">Cost</th>
+                                                    <th style="width: 16%;">Subtotal</th>
+                                                    <th style="width: 10%;">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="edit-items-body"></tbody>
+                                        </table>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="addItemRow('edit')">
+                                        <i class="fe fe-plus"></i> Add Item
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>Quantity <span class="text-danger">*</span></label>
-                                        <input type="number" id="edit_quantity" name="quantity" class="form-control"
-                                            step="0.01" min="0" required oninput="calculateEditAmount()">
+                                        <label>VAT (%)</label>
+                                        <input type="number" id="edit_vat" name="vat" class="form-control"
+                                            min="0" max="100" step="0.01">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>Unit Cost <span class="text-danger">*</span></label>
-                                        <input type="number" id="edit_unitCost" name="unitCost" class="form-control"
-                                            step="0.01" min="0" required oninput="calculateEditAmount()">
+                                        <label>Subtotal</label>
+                                        <input type="number" id="edit_subtotal" class="form-control" readonly
+                                            step="0.01" style="background-color: #f0f0f0;">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>VAT Amount</label>
+                                        <input type="number" id="edit_vatAmount" class="form-control" readonly
+                                            step="0.01" style="background-color: #f0f0f0;">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Total Amount</label>
+                                        <input type="number" id="edit_total" class="form-control" readonly
+                                            step="0.01" style="background-color: #f0f0f0;">
                                     </div>
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label>Amount</label>
-                                        <input type="number" id="edit_amount" name="amount" class="form-control"
-                                            step="0.01" readonly style="background-color: #f0f0f0;">
-                                    </div>
-                                </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label>Status</label>
@@ -410,6 +512,33 @@
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
     <script>
+        @php
+            $vendorProjectEditData = ($vendorProjects ?? collect())
+                ->mapWithKeys(function ($vendorProject) {
+                    return [
+                        $vendorProject->id => [
+                            'id' => $vendorProject->id,
+                            'vendorId' => $vendorProject->vendorId,
+                            'description' => $vendorProject->description,
+                            'vat' => (float) ($vendorProject->vat ?? 0),
+                            'status' => $vendorProject->status ?? 'Pending',
+                            'items' => collect($vendorProject->items ?? collect())
+                                ->map(function ($item) {
+                                    return [
+                                        'description' => $item->item_description,
+                                        'qty' => (float) $item->qty,
+                                        'cost' => (float) $item->cost,
+                                    ];
+                                })
+                                ->values()
+                                ->toArray(),
+                        ],
+                    ];
+                })
+                ->toArray();
+        @endphp
+        const vendorProjectEditData = @json($vendorProjectEditData);
+
         function selectProject() {
             var projectId = document.getElementById('projectId').value;
             if (projectId) {
@@ -417,34 +546,84 @@
             }
         }
 
-        function calculateAmount() {
-            var quantity = parseFloat(document.getElementById('quantity').value) || 0;
-            var unitCost = parseFloat(document.getElementById('unitCost').value) || 0;
-            var amount = quantity * unitCost;
-            document.getElementById('amount').value = amount.toFixed(2);
+        function itemRowTemplate(prefix, data = {}) {
+            const desc = escapeHtml(data.description || '');
+            const qty = data.qty ?? '';
+            const cost = data.cost ?? '';
+            return `
+                <tr class="item-row">
+                    <td><input type="text" class="form-control item-description" name="item_description[]" value="${desc}" required></td>
+                    <td><input type="number" class="form-control item-qty ${prefix}-item-input" name="item_qty[]" value="${qty}" min="0" step="0.01" required></td>
+                    <td><input type="number" class="form-control item-cost ${prefix}-item-input" name="item_cost[]" value="${cost}" min="0" step="0.01" required></td>
+                    <td><input type="number" class="form-control item-subtotal" value="0" readonly step="0.01"></td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-danger remove-item-btn"><i class="fe fe-trash"></i></button>
+                    </td>
+                </tr>
+            `;
         }
 
-        function calculateEditAmount() {
-            var quantity = parseFloat(document.getElementById('edit_quantity').value) || 0;
-            var unitCost = parseFloat(document.getElementById('edit_unitCost').value) || 0;
-            var amount = quantity * unitCost;
-            document.getElementById('edit_amount').value = amount.toFixed(2);
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;',
+            };
+            return String(text).replace(/[&<>"']/g, (m) => map[m]);
         }
 
-        function editfunc(id, vendorId, description, quantity, unitCost, status) {
-            document.getElementById('edit_id').value = id;
-            document.getElementById('edit_vendorId').value = vendorId;
-            document.getElementById('edit_description').value = description || '';
-            document.getElementById('edit_quantity').value = quantity;
-            document.getElementById('edit_unitCost').value = unitCost;
-            document.getElementById('edit_status').value = status || 'Pending';
+        function addItemRow(prefix, data = {}) {
+            const body = document.getElementById(prefix + '-items-body');
+            body.insertAdjacentHTML('beforeend', itemRowTemplate(prefix, data));
+            recalculateTotals(prefix);
+        }
 
-            // Calculate amount
-            calculateEditAmount();
+        function recalculateTotals(prefix) {
+            let subtotal = 0;
+            document.querySelectorAll('#' + prefix + '-items-body tr').forEach((row) => {
+                const qty = parseFloat(row.querySelector('.item-qty')?.value) || 0;
+                const cost = parseFloat(row.querySelector('.item-cost')?.value) || 0;
+                const lineSubtotal = qty * cost;
+                const subtotalInput = row.querySelector('.item-subtotal');
+                if (subtotalInput) {
+                    subtotalInput.value = lineSubtotal.toFixed(2);
+                }
+                subtotal += lineSubtotal;
+            });
 
-            // Trigger select2 update
+            const vat = parseFloat(document.getElementById(prefix + '_vat')?.value) || 0;
+            const vatAmount = subtotal * (vat / 100);
+            const total = subtotal + vatAmount;
+
+            const subtotalEl = document.getElementById(prefix + '_subtotal');
+            const vatAmountEl = document.getElementById(prefix + '_vatAmount');
+            const totalEl = document.getElementById(prefix + '_total');
+            if (subtotalEl) subtotalEl.value = subtotal.toFixed(2);
+            if (vatAmountEl) vatAmountEl.value = vatAmount.toFixed(2);
+            if (totalEl) totalEl.value = total.toFixed(2);
+        }
+
+        function editfunc(id) {
+            const row = vendorProjectEditData[id];
+            if (!row) return;
+
+            document.getElementById('edit_id').value = row.id;
+            document.getElementById('edit_vendorId').value = row.vendorId;
+            document.getElementById('edit_description').value = row.description || '';
+            document.getElementById('edit_vat').value = row.vat || 0;
+            document.getElementById('edit_status').value = row.status || 'Pending';
+
+            const editBody = document.getElementById('edit-items-body');
+            editBody.innerHTML = '';
+            (row.items || []).forEach((item) => addItemRow('edit', item));
+            if ((row.items || []).length === 0) {
+                addItemRow('edit');
+            }
+            recalculateTotals('edit');
+
             $('#edit_vendorId').trigger('change');
-
             $("#edit_modal").modal('show')
         }
 
@@ -457,6 +636,43 @@
             document.getElementById('deleteid').value = id;
             $("#delete_modal").modal('show')
         }
+
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('add-item-input') || e.target.id === 'add_vat') {
+                recalculateTotals('add');
+            }
+            if (e.target.classList.contains('edit-item-input') || e.target.id === 'edit_vat') {
+                recalculateTotals('edit');
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            const removeBtn = e.target.closest('.remove-item-btn');
+            if (!removeBtn) return;
+            const row = removeBtn.closest('tr');
+            const parentId = row?.parentElement?.id || '';
+            row?.remove();
+
+            if (parentId === 'add-items-body') {
+                if (document.querySelectorAll('#add-items-body tr').length === 0) {
+                    addItemRow('add');
+                }
+                recalculateTotals('add');
+            }
+            if (parentId === 'edit-items-body') {
+                if (document.querySelectorAll('#edit-items-body tr').length === 0) {
+                    addItemRow('edit');
+                }
+                recalculateTotals('edit');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            recalculateTotals('add');
+            if (document.querySelectorAll('#add-items-body tr').length === 0) {
+                addItemRow('add');
+            }
+        });
     </script>
 @endsection
 <!-- /Page Wrapper -->

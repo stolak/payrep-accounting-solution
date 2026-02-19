@@ -2897,8 +2897,7 @@ class ProjectController extends Basefunction {
         $data['projectId'] = $request->input('projectId');
         $data['vendorId'] = $request->input('vendorId');
         $data['description'] = $request->input('description');
-        $data['quantity'] = $request->input('quantity');
-        $data['unitCost'] = $request->input('unitCost');
+        $data['vat'] = $request->input('vat');
         $data['amount'] = $request->input('amount');
         $data['status'] = $request->input('status');
         $data['id'] = $request->input('id');
@@ -2939,28 +2938,75 @@ class ProjectController extends Basefunction {
                 'projectId' => 'required|integer',
                 'vendorId' => 'required|integer',
                 'description' => 'nullable|string',
-                'quantity' => 'required|numeric|min:0',
-                'unitCost' => 'required|numeric|min:0',
+                'vat' => 'nullable|numeric|min:0|max:100',
+                'item_description' => 'required|array|min:1',
+                'item_description.*' => 'required|string',
+                'item_qty' => 'required|array|min:1',
+                'item_qty.*' => 'required|numeric|min:0',
+                'item_cost' => 'required|array|min:1',
+                'item_cost.*' => 'required|numeric|min:0',
                 'status' => 'nullable|string',
             ]);
 
-            // Calculate amount
-            $quantity = $data['quantity'];
-            $unitCost = $data['unitCost'];
-            $calculatedAmount = $quantity * $unitCost;
+            $itemDescriptions = $request->input('item_description', []);
+            $itemQties = $request->input('item_qty', []);
+            $itemCosts = $request->input('item_cost', []);
+            $vat = (float) ($data['vat'] ?? 0);
+            $subtotal = 0;
+            $preparedItems = [];
 
-            $vendorProjectId = DB::table('vendor_projects')->insertGetId([
-                'projectId' => $data['projectId'],
-                'vendorId' => $data['vendorId'],
-                'description' => $data['description'] ?? null,
-                'quantity' => $quantity,
-                'unitCost' => $unitCost,
-                'amount' => $calculatedAmount,
-                'status' => 'Pending', // Always set to Pending on creation
-                'createdBy' => Auth::user()->id,
-                'createdAt' => now(),
-                'updateAt' => now(),
-            ]);
+            foreach ($itemDescriptions as $index => $itemDescription) {
+                $description = trim((string) $itemDescription);
+                if ($description === '') {
+                    continue;
+                }
+
+                $qty = (float) ($itemQties[$index] ?? 0);
+                $cost = (float) ($itemCosts[$index] ?? 0);
+                $lineSubtotal = $qty * $cost;
+
+                $preparedItems[] = [
+                    'item_description' => $description,
+                    'qty' => $qty,
+                    'cost' => $cost,
+                    'subtotal' => $lineSubtotal,
+                ];
+                $subtotal += $lineSubtotal;
+            }
+
+            if (empty($preparedItems) || $subtotal <= 0) {
+                return back()->withInput()->with('error_message', 'At least one valid vendor project item with amount greater than zero is required.');
+            }
+
+            $vatAmount = $subtotal * ($vat / 100);
+            $totalAmount = $subtotal + $vatAmount;
+
+            $vendorProjectId = DB::transaction(function () use ($data, $vat, $vatAmount, $totalAmount, $preparedItems) {
+                $vendorProjectId = DB::table('vendor_projects')->insertGetId([
+                    'projectId' => $data['projectId'],
+                    'vendorId' => $data['vendorId'],
+                    'description' => $data['description'] ?? null,
+                    'vat' => $vat,
+                    'vatAmount' => $vatAmount,
+                    'amount' => $totalAmount,
+                    'status' => 'Pending', // Always set to Pending on creation
+                    'createdBy' => Auth::user()->id,
+                    'createdAt' => now(),
+                    'updateAt' => now(),
+                ]);
+
+                foreach ($preparedItems as $item) {
+                    DB::table('vendor_project_items')->insert([
+                        'vendor_projectId' => $vendorProjectId,
+                        'item_description' => $item['item_description'],
+                        'qty' => $item['qty'],
+                        'cost' => $item['cost'],
+                        'subtotal' => $item['subtotal'],
+                    ]);
+                }
+
+                return $vendorProjectId;
+            });
 
             $emailResult = $this->sendVendorProjectAcknowledgementEmail($vendorProjectId);
             if ($emailResult['sent']) {
@@ -2976,26 +3022,80 @@ class ProjectController extends Basefunction {
                 'projectId' => 'required|integer',
                 'vendorId' => 'required|integer',
                 'description' => 'nullable|string',
-                'quantity' => 'required|numeric|min:0',
-                'unitCost' => 'required|numeric|min:0',
+                'vat' => 'nullable|numeric|min:0|max:100',
+                'item_description' => 'required|array|min:1',
+                'item_description.*' => 'required|string',
+                'item_qty' => 'required|array|min:1',
+                'item_qty.*' => 'required|numeric|min:0',
+                'item_cost' => 'required|array|min:1',
+                'item_cost.*' => 'required|numeric|min:0',
                 'status' => 'nullable|string',
                 'id' => 'required|integer',
             ]);
 
-            // Calculate amount
-            $quantity = $data['quantity'];
-            $unitCost = $data['unitCost'];
-            $calculatedAmount = $quantity * $unitCost;
+            $existingVendorProject = DB::table('vendor_projects')->where('id', $data['id'])->first();
+            if (!$existingVendorProject) {
+                return back()->with('error_message', 'Vendor project record was not found.');
+            }
+            if ($existingVendorProject->status === 'Approved') {
+                return back()->with('error_message', 'Cannot update vendor project with Approved status.');
+            }
 
-            DB::table('vendor_projects')->where('id', $data['id'])->update([
-                'vendorId' => $data['vendorId'],
-                'description' => $data['description'] ?? null,
-                'quantity' => $quantity,
-                'unitCost' => $unitCost,
-                'amount' => $calculatedAmount,
-                'status' => $data['status'] ?? 'Pending',
-                'updateAt' => now(),
-            ]);
+            $itemDescriptions = $request->input('item_description', []);
+            $itemQties = $request->input('item_qty', []);
+            $itemCosts = $request->input('item_cost', []);
+            $vat = (float) ($data['vat'] ?? 0);
+            $subtotal = 0;
+            $preparedItems = [];
+
+            foreach ($itemDescriptions as $index => $itemDescription) {
+                $description = trim((string) $itemDescription);
+                if ($description === '') {
+                    continue;
+                }
+
+                $qty = (float) ($itemQties[$index] ?? 0);
+                $cost = (float) ($itemCosts[$index] ?? 0);
+                $lineSubtotal = $qty * $cost;
+
+                $preparedItems[] = [
+                    'item_description' => $description,
+                    'qty' => $qty,
+                    'cost' => $cost,
+                    'subtotal' => $lineSubtotal,
+                ];
+                $subtotal += $lineSubtotal;
+            }
+
+            if (empty($preparedItems) || $subtotal <= 0) {
+                return back()->withInput()->with('error_message', 'At least one valid vendor project item with amount greater than zero is required.');
+            }
+
+            $vatAmount = $subtotal * ($vat / 100);
+            $totalAmount = $subtotal + $vatAmount;
+
+            DB::transaction(function () use ($data, $vat, $vatAmount, $totalAmount, $preparedItems) {
+                DB::table('vendor_projects')->where('id', $data['id'])->update([
+                    'vendorId' => $data['vendorId'],
+                    'description' => $data['description'] ?? null,
+                    'vat' => $vat,
+                    'vatAmount' => $vatAmount,
+                    'amount' => $totalAmount,
+                    'status' => $data['status'] ?? 'Pending',
+                    'updateAt' => now(),
+                ]);
+
+                DB::table('vendor_project_items')->where('vendor_projectId', $data['id'])->delete();
+                foreach ($preparedItems as $item) {
+                    DB::table('vendor_project_items')->insert([
+                        'vendor_projectId' => $data['id'],
+                        'item_description' => $item['item_description'],
+                        'qty' => $item['qty'],
+                        'cost' => $item['cost'],
+                        'subtotal' => $item['subtotal'],
+                    ]);
+                }
+            });
             return back()->with('message', 'Vendor project successfully updated.');
         }
         
@@ -3019,7 +3119,10 @@ class ProjectController extends Basefunction {
                 return back()->with('error_message', 'Cannot delete vendor project with Approved status.');
             }
             
-            DB::table('vendor_projects')->where('id', $del)->delete();
+            DB::transaction(function () use ($del) {
+                DB::table('vendor_project_items')->where('vendor_projectId', $del)->delete();
+                DB::table('vendor_projects')->where('id', $del)->delete();
+            });
             return back()->with('message', 'Vendor project successfully deleted.');
         }
         
@@ -3050,8 +3153,8 @@ class ProjectController extends Basefunction {
                     'vendor_projects.projectId',
                     'vendor_projects.vendorId',
                     'vendor_projects.description',
-                    'vendor_projects.quantity',
-                    'vendor_projects.unitCost',
+                    'vendor_projects.vat',
+                    'vendor_projects.vatAmount',
                     'vendor_projects.amount',
                     'vendor_projects.status',
                     'vendor_projects.createdAt',
@@ -3064,6 +3167,15 @@ class ProjectController extends Basefunction {
                 )
                 ->orderBy('vendor_projects.createdAt', 'desc')
                 ->get();
+
+            foreach ($data['vendorProjects'] as $vendorProject) {
+                $vendorProject->items = DB::table('vendor_project_items')
+                    ->where('vendor_projectId', $vendorProject->id)
+                    ->select('id', 'item_description', 'qty', 'cost', 'subtotal')
+                    ->orderBy('id', 'asc')
+                    ->get();
+                $vendorProject->itemCount = $vendorProject->items->count();
+            }
         }
         
         return view('Project.vendorproject', $data);
@@ -3181,8 +3293,8 @@ class ProjectController extends Basefunction {
                 'vendor_projects.status',
                 'vendor_projects.vendorId',
                 'vendor_projects.description',
-                'vendor_projects.quantity',
-                'vendor_projects.unitCost',
+                'vendor_projects.vat',
+                'vendor_projects.vatAmount',
                 'vendor_projects.amount',
                 'vendor_projects.createdAt',
                 'vendor_projects.updateAt',
@@ -3205,6 +3317,40 @@ class ProjectController extends Basefunction {
         $poDate = date('d M, Y', strtotime($baseDate));
         $completeBy = date('d M, Y', strtotime($baseDate . ' +7 days'));
 
+        $poItems = DB::table('vendor_project_items')
+            ->where('vendor_projectId', $vendorProjectId)
+            ->select('item_description', 'qty', 'cost', 'subtotal')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $lineItems = [];
+        $subTotal = 0;
+        foreach ($poItems as $poItem) {
+            $lineAmount = (float) ($poItem->subtotal ?? ((float) $poItem->qty * (float) $poItem->cost));
+            $lineItems[] = [
+                'qty' => (float) $poItem->qty,
+                'description' => $poItem->item_description,
+                'unitPrice' => (float) $poItem->cost,
+                'amount' => $lineAmount,
+            ];
+            $subTotal += $lineAmount;
+        }
+
+        if (empty($lineItems)) {
+            $fallbackAmount = (float) $poData->amount;
+            $lineItems[] = [
+                'qty' => 1,
+                'description' => $poData->description ?: ('Vendor delivery for ' . ($poData->projectName ?: 'project')),
+                'unitPrice' => $fallbackAmount,
+                'amount' => $fallbackAmount,
+            ];
+            $subTotal = $fallbackAmount;
+        }
+
+        $vatPercent = (float) ($poData->vat ?? 0);
+        $vatAmount = (float) ($poData->vatAmount ?? ($subTotal * ($vatPercent / 100)));
+        $total = (float) ($poData->amount ?? ($subTotal + $vatAmount));
+
         return [
             'status' => $poData->status,
             'poNumber' => 'VP-' . str_pad((string) $poData->id, 6, '0', STR_PAD_LEFT),
@@ -3212,16 +3358,11 @@ class ProjectController extends Basefunction {
             'completeBy' => $completeBy,
             'vendorReference' => $poData->vendorTaxNumber ?: ('VENDOR-' . $poData->vendorId),
             'termsLabel' => 'Attached',
-            'subtotal' => (float) $poData->amount,
-            'vatPercent' => 0,
-            'vatAmount' => 0,
-            'total' => (float) $poData->amount,
-            'lineItems' => [[
-                'qty' => (float) $poData->quantity,
-                'description' => $poData->description ?: ('Vendor delivery for ' . ($poData->projectName ?: 'project')),
-                'unitPrice' => (float) $poData->unitCost,
-                'amount' => (float) $poData->amount,
-            ]],
+            'subtotal' => $subTotal,
+            'vatPercent' => $vatPercent,
+            'vatAmount' => $vatAmount,
+            'total' => $total,
+            'lineItems' => $lineItems,
             'vendorInfo' => [
                 'attention' => 'Vendor Main Contact',
                 'name' => $poData->vendorTradeName ?: $poData->vendorName,
@@ -3614,8 +3755,8 @@ class ProjectController extends Basefunction {
                 'vendor_projects.id',
                 'vendor_projects.projectId',
                 'vendor_projects.vendorId',
-                'vendor_projects.quantity',
-                'vendor_projects.unitCost',
+                'vendor_projects.vat',
+                'vendor_projects.vatAmount',
                 'vendor_projects.amount',
                 'vendor_projects.status',
                 'vendor_projects.createdAt',
