@@ -359,13 +359,47 @@ class ProjectController extends Basefunction {
         }
         
         if (isset($_POST['del'])) {
-            $del = $request->input('deleteid');
-            // Check if project has related records before deletion
-            // Add your related table checks here if needed
-            // if (DB::table('related_table')->where('projectId', $del)->first()) {
-            //     return back()->with('error_message', 'Project has related records. Hence, record cannot be deleted!');
-            // }
+            $del = $request->input('deleteid') ?? $request->input('id');
+            if (empty($del) || !is_numeric($del)) {
+                return back()->with('error_message', 'Invalid project selected for deletion.');
+            }
+
+            $projectExists = DB::table('projects')->where('id', $del)->exists();
+            if (!$projectExists) {
+                return back()->with('error_message', 'Selected project was not found.');
+            }
+
+            // Critical dependency checks before deleting a project.
+            $dependencyChecks = [
+                'Project Budgets' => DB::table('project_budget')->where('projectId', $del)->count(),
+                'Project Purchase Orders' => DB::table('project_po')->where('projectId', $del)
+                ->where('status', 'Approved')->count(),
+                'Payment Milestones' => DB::table('payment_milestone')->where('projectId', $del)->count(),
+                'Project Expenses' => DB::table('project_expense')->where('projectId', $del)->count(),
+                'Project Invoices' => DB::table('project_invoice')->where('projectId', $del)->count(),
+                'Vendor Projects' => DB::table('vendor_projects')->where('projectId', $del)->count(),
+                'Journal Transactions' => DB::table('account_transactions')->where('projectid', $del)->count(),
+                // 'Pending Journals' => DB::table('temp_journal_transfer')->where('projectId', $del)->count(),
+            ];
+
+            $blockingDependencies = [];
+            foreach ($dependencyChecks as $module => $count) {
+                if ($count > 0) {
+                    $blockingDependencies[] = $module . ' (' . $count . ')';
+                }
+            }
+
+            if (!empty($blockingDependencies)) {
+                return back()->with(
+                    'error_message',
+                    'Project cannot be deleted because related records exist in: ' . implode(', ', $blockingDependencies) . '.'
+                );
+            }
+
+            // Cleanup non-transactional project mapping records.
+            DB::table('project_expense_ledger')->where('projectId', $del)->delete();
             DB::table('projects')->where('id', $del)->delete();
+            DB::table('project_po')->where('projectId', $del)->delete();
             return back()->with('message', 'Record successfully deleted.');
         }
         
