@@ -163,8 +163,8 @@
                                                 <?php if ($budgetId == '') {
                                                     $budgetId = old('budgetId');
                                                 } ?>
-                                                <select class="select2 form-control" name="budgetId" id="budgetId" required
-                                                    onchange="handleBudgetChange()">
+                                                <select class="select2 form-control" name="budgetId" id="budgetId"
+                                                    required>
                                                     <option value="">--Select Budget--</option>
                                                     @foreach ($budgets as $budget)
                                                         <option value="{{ $budget->id }}"
@@ -183,7 +183,7 @@
                                                 <?php if ($unit == '') {
                                                     $unit = old('unit');
                                                 } ?>
-                                                <input type="number" class="form-control" value="{{ $unit }}"
+                                                <input type="text" class="form-control" value="{{ $unit }}"
                                                     name="unit" id="unit" step="0.01" min="0"
                                                     oninput="calculateAmount(); validateAmount();">
                                             </div>
@@ -194,7 +194,7 @@
                                                 <?php if ($unitCost == '') {
                                                     $unitCost = old('unitCost');
                                                 } ?>
-                                                <input type="number" class="form-control" value="{{ $unitCost }}"
+                                                <input type="text" class="form-control" value="{{ $unitCost }}"
                                                     name="unitCost" id="unitCost" step="0.01" min="0"
                                                     oninput="calculateAmount(); validateAmount();">
                                             </div>
@@ -206,9 +206,10 @@
                                                 <?php if ($amount == '') {
                                                     $amount = old('amount');
                                                 } ?>
-                                                <input type="number" class="form-control" value="{{ $amount }}"
+                                                <input type="text" class="form-control" value="{{ $amount }}"
                                                     name="amount" id="amount" step="0.01" min="0"
-                                                    oninput="validateAmount()">
+                                                    oninput="validateAmount()" readonly
+                                                    style="background-color: #f0f0f0;">
                                             </div>
                                         </div>
                                     </div>
@@ -402,8 +403,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Budget <span class="text-danger">*</span></label>
-                                <select class="select2 form-control" id="edit_budgetId" name="budgetId" required
-                                    onchange="handleEditBudgetChange()">
+                                <select class="select2 form-control" id="edit_budgetId" name="budgetId" required>
                                     <option value="">--Select Budget--</option>
                                     @foreach ($budgets as $budget)
                                         <option value="{{ $budget->id }}"
@@ -417,7 +417,7 @@
                                 <div class="col-md-4" id="edit_unitFieldContainer">
                                     <div class="form-group">
                                         <label>QTY</label>
-                                        <input type="number" class="form-control" id="edit_unit" name="unit"
+                                        <input type="text" class="form-control" id="edit_unit" name="unit"
                                             step="0.01" min="0"
                                             oninput="calculateEditAmount(); validateEditAmount();">
                                     </div>
@@ -425,7 +425,7 @@
                                 <div class="col-md-4" id="edit_unitCostFieldContainer">
                                     <div class="form-group">
                                         <label>Unit Cost</label>
-                                        <input type="number" class="form-control" id="edit_unitCost" name="unitCost"
+                                        <input type="text" class="form-control" id="edit_unitCost" name="unitCost"
                                             step="0.01" min="0"
                                             oninput="calculateEditAmount(); validateEditAmount();">
                                     </div>
@@ -433,8 +433,9 @@
                                 <div class="col-md-4" id="edit_amountFieldContainer">
                                     <div class="form-group">
                                         <label>Amount <span id="edit_amountRequired" class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" id="edit_amount" name="amount"
-                                            step="0.01" min="0" oninput="validateEditAmount()">
+                                        <input type="text" class="form-control" id="edit_amount" name="amount"
+                                            step="0.01" min="0" oninput="validateEditAmount()" readonly
+                                            style="background-color: #f0f0f0;">
                                     </div>
                                 </div>
                             </div>
@@ -544,18 +545,14 @@
             form.submit();
         }
 
-        function handleEditClassificationChange() {
+        function handleEditClassificationChange(preservedBudgetId) {
+            if (typeof preservedBudgetId === 'undefined' || preservedBudgetId === null) {
+                preservedBudgetId = '';
+            }
             var classificationId = document.getElementById('edit_classificationId').value;
             var budgetSelect = document.getElementById('edit_budgetId');
 
-            // Check if Select2 is initialized and destroy it
-            var isSelect2 = $(budgetSelect).hasClass('select2-hidden-accessible');
-            if (isSelect2) {
-                $(budgetSelect).select2('destroy');
-            }
-
-            // Clear current selection
-            budgetSelect.value = '';
+            var selectedBudgetId = preservedBudgetId || budgetSelect.value || '';
 
             // Show/hide budget options based on classification
             for (var i = 0; i < budgetSelect.options.length; i++) {
@@ -565,7 +562,11 @@
                     option.hidden = false;
                 } else {
                     var optionClassificationId = option.getAttribute('data-classificationid');
-                    if (classificationId === '' || optionClassificationId === classificationId) {
+                    if (
+                        classificationId === '' ||
+                        optionClassificationId === classificationId ||
+                        (preservedBudgetId && String(option.value) === String(preservedBudgetId))
+                    ) {
                         option.hidden = false;
                     } else {
                         option.hidden = true;
@@ -573,94 +574,102 @@
                 }
             }
 
-            // Reinitialize Select2 if it was initialized before
-            if (isSelect2) {
-                $(budgetSelect).select2();
+            // Restore preserved budget selection after filtering.
+            if (preservedBudgetId) {
+                budgetSelect.value = String(preservedBudgetId);
             }
 
-            // Clear unit, unitCost, and amount when classification changes
-            document.getElementById('edit_unit').value = '';
-            document.getElementById('edit_unitCost').value = '';
-            document.getElementById('edit_amount').value = '';
-            handleEditBudgetChange();
-        }
-
-        function handleBudgetChange() {
-            var budgetSelect = document.getElementById('budgetId');
-            var selectedOption = budgetSelect.options[budgetSelect.selectedIndex];
-            var isMeasure = selectedOption ? selectedOption.getAttribute('data-ismeasure') : '0';
-
-            var unitContainer = document.getElementById('unitFieldContainer');
-            var unitCostContainer = document.getElementById('unitCostFieldContainer');
-            var amountContainer = document.getElementById('amountFieldContainer');
-
-            // Clear unit and unitCost values when hiding
-            if (isMeasure == '1' || isMeasure == 1) {
-                // Show Unit and Unit Cost fields
-                unitContainer.style.display = 'block';
-                unitCostContainer.style.display = 'block';
-                // amountContainer.className = 'col-md-4';
+            // Apply selected budget only if it still exists and is visible after filtering.
+            if (selectedBudgetId) {
+                var selectedOption = budgetSelect.querySelector('option[value="' + selectedBudgetId + '"]');
+                if (selectedOption && !selectedOption.hidden) {
+                    budgetSelect.value = selectedBudgetId;
+                } else {
+                    budgetSelect.value = '';
+                }
             } else {
-                // Hide Unit and Unit Cost fields
-                unitContainer.style.display = 'none';
-                unitCostContainer.style.display = 'none';
-                // amountContainer.className = 'col-md-12';
-                // Clear unit and unitCost values
-                document.getElementById('unit').value = '';
-                document.getElementById('unitCost').value = '';
-                // Trigger validation
-                validateAmount();
+                budgetSelect.value = '';
+            }
+
+            if ($(budgetSelect).hasClass('select2-hidden-accessible')) {
+                $(budgetSelect).trigger('change.select2');
             }
         }
 
-        function handleEditBudgetChange() {
-            var budgetSelect = document.getElementById('edit_budgetId');
-            var selectedOption = budgetSelect.options[budgetSelect.selectedIndex];
-            var isMeasure = selectedOption ? selectedOption.getAttribute('data-ismeasure') : '0';
+        function handleBudgetChange() {}
 
-            var unitContainer = document.getElementById('edit_unitFieldContainer');
-            var unitCostContainer = document.getElementById('edit_unitCostFieldContainer');
-            var amountContainer = document.getElementById('edit_amountFieldContainer');
+        function handleEditBudgetChange() {}
 
-            // Clear unit and unitCost values when hiding
-            if (isMeasure == '1' || isMeasure == 1) {
-                // Show Unit and Unit Cost fields
-                unitContainer.style.display = 'block';
-                unitCostContainer.style.display = 'block';
-            } else {
-                // Hide Unit and Unit Cost fields
-                unitContainer.style.display = 'none';
-                unitCostContainer.style.display = 'none';
-
-                // Clear unit and unitCost values
-                document.getElementById('edit_unit').value = '';
-                document.getElementById('edit_unitCost').value = '';
-                // Trigger validation
-                validateEditAmount();
+        function splitNumericParts(rawValue) {
+            let cleaned = String(rawValue ?? '').replace(/,/g, '').replace(/[^\d.]/g, '');
+            const firstDotIndex = cleaned.indexOf('.');
+            const hasDot = firstDotIndex !== -1;
+            if (hasDot) {
+                cleaned = cleaned.slice(0, firstDotIndex + 1) + cleaned.slice(firstDotIndex + 1).replace(/\./g, '');
             }
+            const parts = cleaned.split('.');
+            return {
+                integerPart: parts[0] || '',
+                decimalPart: parts.length > 1 ? parts[1].slice(0, 2) : '',
+                hasDot,
+            };
+        }
+
+        function normalizeNumericInput(rawValue) {
+            const parts = splitNumericParts(rawValue);
+            const intPart = (parts.integerPart || '0').replace(/^0+(?=\d)/, '') || '0';
+            if (parts.decimalPart !== '') {
+                return `${intPart}.${parts.decimalPart}`;
+            }
+            return intPart;
+        }
+
+        function formatNumberForDisplay(rawValue) {
+            const parts = splitNumericParts(rawValue);
+            if (!parts.integerPart && !parts.hasDot) return '';
+            const intPart = (parts.integerPart || '0').replace(/^0+(?=\d)/, '') || '0';
+            const withCommas = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            if (parts.hasDot) {
+                return parts.decimalPart !== '' ? `${withCommas}.${parts.decimalPart}` : `${withCommas}.`;
+            }
+            return withCommas;
+        }
+
+        function parseFormattedNumber(rawValue) {
+            const normalized = normalizeNumericInput(rawValue);
+            if (normalized === '') return 0;
+            const parsed = parseFloat(normalized);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        function formatCurrency(amount) {
+            const numeric = Number(amount) || 0;
+            return numeric.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+        }
+
+        function applyNumberFormatting(input) {
+            if (!input) return;
+            input.value = formatNumberForDisplay(input.value);
         }
 
         function calculateAmount() {
-            var unit = parseFloat(document.getElementById('unit').value) || 0;
-            var unitCost = parseFloat(document.getElementById('unitCost').value) || 0;
+            applyNumberFormatting(document.getElementById('unit'));
+            applyNumberFormatting(document.getElementById('unitCost'));
+            var unit = parseFormattedNumber(document.getElementById('unit').value);
+            var unitCost = parseFormattedNumber(document.getElementById('unitCost').value);
             var amountInput = document.getElementById('amount');
 
-            if (unit > 0 && unitCost > 0) {
-                var calculatedAmount = unit * unitCost;
-                amountInput.value = calculatedAmount.toFixed(2);
-                amountInput.readOnly = true;
-                amountInput.style.backgroundColor = '#f0f0f0';
-                document.getElementById('amountRequired').style.display = 'none';
-            } else {
-                amountInput.readOnly = false;
-                amountInput.style.backgroundColor = '';
-                validateAmount();
-            }
+            var calculatedAmount = unit * unitCost;
+            amountInput.value = formatCurrency(calculatedAmount);
+            validateAmount();
         }
 
         function validateAmount() {
-            var unit = parseFloat(document.getElementById('unit').value) || 0;
-            var unitCost = parseFloat(document.getElementById('unitCost').value) || 0;
+            var unit = parseFormattedNumber(document.getElementById('unit').value);
+            var unitCost = parseFormattedNumber(document.getElementById('unitCost').value);
             var amountInput = document.getElementById('amount');
             var amountRequired = document.getElementById('amountRequired');
 
@@ -679,39 +688,28 @@
                 document.getElementById('unitCost').setCustomValidity('');
             }
 
-            // If both are absent or 0, amount is required
-            if (unit == 0 && unitCost == 0) {
-                amountInput.required = true;
-                amountRequired.style.display = 'inline';
-            } else {
-                amountInput.required = false;
-                amountRequired.style.display = 'none';
-            }
+            // Amount stays required in all cases.
+            amountInput.required = true;
+            amountRequired.style.display = 'inline';
 
             return true;
         }
 
         function calculateEditAmount() {
-            var unit = parseFloat(document.getElementById('edit_unit').value) || 0;
-            var unitCost = parseFloat(document.getElementById('edit_unitCost').value) || 0;
+            applyNumberFormatting(document.getElementById('edit_unit'));
+            applyNumberFormatting(document.getElementById('edit_unitCost'));
+            var unit = parseFormattedNumber(document.getElementById('edit_unit').value);
+            var unitCost = parseFormattedNumber(document.getElementById('edit_unitCost').value);
             var amountInput = document.getElementById('edit_amount');
 
-            if (unit > 0 && unitCost > 0) {
-                var calculatedAmount = unit * unitCost;
-                amountInput.value = calculatedAmount.toFixed(2);
-                amountInput.readOnly = true;
-                amountInput.style.backgroundColor = '#f0f0f0';
-                document.getElementById('edit_amountRequired').style.display = 'none';
-            } else {
-                amountInput.readOnly = false;
-                amountInput.style.backgroundColor = '';
-                validateEditAmount();
-            }
+            var calculatedAmount = unit * unitCost;
+            amountInput.value = formatCurrency(calculatedAmount);
+            validateEditAmount();
         }
 
         function validateEditAmount() {
-            var unit = parseFloat(document.getElementById('edit_unit').value) || 0;
-            var unitCost = parseFloat(document.getElementById('edit_unitCost').value) || 0;
+            var unit = parseFormattedNumber(document.getElementById('edit_unit').value);
+            var unitCost = parseFormattedNumber(document.getElementById('edit_unitCost').value);
             var amountInput = document.getElementById('edit_amount');
             var amountRequired = document.getElementById('edit_amountRequired');
 
@@ -731,14 +729,9 @@
                 document.getElementById('edit_unitCost').setCustomValidity('');
             }
 
-            // If both are absent or 0, amount is required
-            if (unit == 0 && unitCost == 0) {
-                amountInput.required = true;
-                amountRequired.style.display = 'inline';
-            } else {
-                amountInput.required = false;
-                amountRequired.style.display = 'none';
-            }
+            // Amount stays required in all cases.
+            amountInput.required = true;
+            amountRequired.style.display = 'inline';
 
             return true;
         }
@@ -747,26 +740,20 @@
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_classificationId').value = classificationId || '';
 
-            // Filter budgets based on classification
-            handleEditClassificationChange();
-
-            // Set the budget after filtering
-            document.getElementById('edit_budgetId').value = budgetId;
-            if (document.getElementById('edit_classificationId').classList.contains('select2-hidden-accessible')) {
-                $('#edit_classificationId').trigger('change');
+            // Filter budgets while preserving the selected budget.
+            handleEditClassificationChange(budgetId);
+            if ($('#edit_classificationId').hasClass('select2-hidden-accessible')) {
+                $('#edit_classificationId').val(classificationId || '').trigger('change.select2');
             }
-            if (document.getElementById('edit_budgetId').classList.contains('select2-hidden-accessible')) {
-                $('#edit_budgetId').trigger('change');
+            if ($('#edit_budgetId').hasClass('select2-hidden-accessible')) {
+                $('#edit_budgetId').val(budgetId || '').trigger('change.select2');
             }
 
             // Set values after filtering (classification change resets these fields)
-            document.getElementById('edit_unit').value = unit || '';
-            document.getElementById('edit_unitCost').value = unitCost || '';
-            document.getElementById('edit_amount').value = amount || '';
+            document.getElementById('edit_unit').value = formatNumberForDisplay(unit || '');
+            document.getElementById('edit_unitCost').value = formatNumberForDisplay(unitCost || '');
+            document.getElementById('edit_amount').value = formatCurrency(parseFormattedNumber(amount || 0));
             document.getElementById('edit_note').value = note || '';
-
-            // Handle visibility based on selected budget's isMeasure
-            handleEditBudgetChange();
 
             // Trigger validation to set required state
             validateEditAmount();
@@ -786,19 +773,21 @@
                 $('[data-toggle="tooltip"]').tooltip();
             }
 
-            // Check if budget is already selected and handle visibility
-            var budgetSelect = document.getElementById('budgetId');
-            if (budgetSelect && budgetSelect.value) {
-                handleBudgetChange();
+            validateAmount();
+            applyNumberFormatting(document.getElementById('unit'));
+            applyNumberFormatting(document.getElementById('unitCost'));
+            if (document.getElementById('amount').value) {
+                document.getElementById('amount').value = formatCurrency(parseFormattedNumber(document
+                    .getElementById('amount').value));
             } else {
-                // If no budget selected, hide unit and unitCost fields by default
-                var unitContainer = document.getElementById('unitFieldContainer');
-                var unitCostContainer = document.getElementById('unitCostFieldContainer');
-                var amountContainer = document.getElementById('amountFieldContainer');
-                if (unitContainer && unitCostContainer && amountContainer) {
-                    unitContainer.style.display = 'none';
-                    unitCostContainer.style.display = 'none';
-                }
+                calculateAmount();
+            }
+        });
+
+        document.addEventListener('input', function(e) {
+            if (e.target.id === 'unit' || e.target.id === 'unitCost' || e.target.id === 'edit_unit' || e.target
+                .id === 'edit_unitCost') {
+                applyNumberFormatting(e.target);
             }
         });
 
@@ -808,6 +797,10 @@
                 e.preventDefault();
                 return false;
             }
+            ['unit', 'unitCost', 'amount'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.value = normalizeNumericInput(el.value);
+            });
         });
 
         document.getElementById('editForm').addEventListener('submit', function(e) {
@@ -815,6 +808,11 @@
                 e.preventDefault();
                 return false;
             }
+            ['edit_unit', 'edit_unitCost', 'edit_amount'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                el.value = normalizeNumericInput(el.value);
+            });
         });
     </script>
 @endsection
