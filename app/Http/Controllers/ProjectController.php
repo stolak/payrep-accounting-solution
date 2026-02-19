@@ -3387,18 +3387,34 @@ class ProjectController extends Basefunction {
 
     private function sendVendorProjectAcknowledgementEmail($vendorProjectId)
     {
-        $vendorProject = DB::table('vendor_projects')
+        $vendorProjectRows = DB::table('vendor_projects')
             ->leftJoin('budgets', 'vendor_projects.vendorId', '=', 'budgets.id')
             ->leftJoin('projects', 'vendor_projects.projectId', '=', 'projects.id')
+            ->leftJoin('vendor_project_items', 'vendor_projects.id', '=', 'vendor_project_items.vendor_projectId')
             ->where('vendor_projects.id', $vendorProjectId)
             ->select(
                 'vendor_projects.id',
+                'vendor_projects.description',
+                'vendor_projects.vat',
+                'vendor_projects.vatAmount',
                 'vendor_projects.amount',
+                'vendor_projects.createdAt',
+                'vendor_projects.updateAt',
                 'budgets.email as vendorEmail',
                 'budgets.name as vendorName',
-                'projects.name as projectName'
+                'budgets.trade_name as vendorTradeName',
+                'projects.name as projectName',
+                'projects.projectCode',
+                'vendor_project_items.id as itemId',
+                'vendor_project_items.item_description',
+                'vendor_project_items.qty',
+                'vendor_project_items.cost',
+                'vendor_project_items.subtotal'
             )
-            ->first();
+            ->orderBy('vendor_project_items.id', 'asc')
+            ->get();
+
+        $vendorProject = $vendorProjectRows->first();
 
         if (!$vendorProject) {
             return ['sent' => false, 'reason' => 'vendor project was not found.'];
@@ -3422,19 +3438,91 @@ class ProjectController extends Basefunction {
 
             $poNumber = 'VP-' . str_pad((string) $vendorProject->id, 6, '0', STR_PAD_LEFT);
             $subject = 'Purchase Order Acknowledgement Required - ' . $poNumber;
-            $vendorName = $vendorProject->vendorName ?: 'Vendor';
+            $vendorName = $vendorProject->vendorTradeName ?: $vendorProject->vendorName ?: 'Vendor';
             $projectName = $vendorProject->projectName ?: 'Project';
+            $projectCode = $vendorProject->projectCode ?: 'N/A';
             $amount = number_format((float) $vendorProject->amount, 2, '.', ',');
+            $vatPercent = (float) ($vendorProject->vat ?? 0);
+            $vatAmount = number_format((float) ($vendorProject->vatAmount ?? 0), 2, '.', ',');
+            $poDateSource = $vendorProject->updateAt ?: $vendorProject->createdAt ?: now();
+            $poDate = date('d M, Y', strtotime($poDateSource));
+            $completeBy = date('d M, Y', strtotime($poDateSource . ' +7 days'));
 
-            $htmlBody = '<p>Dear ' . e($vendorName) . ',</p>'
-                . '<p>A new purchase order has been allocated to you.</p>'
-                . '<p><strong>PO Number:</strong> ' . e($poNumber) . '<br>'
-                . '<strong>Project:</strong> ' . e($projectName) . '<br>'
-                . '<strong>Amount:</strong> ' . e($amount) . '</p>'
-                . '<p>Please click the link below to acknowledge receipt. Clicking the link will automatically approve the PO:</p>'
-                . '<p><a href="' . e($ackUrl) . '">Acknowledge Purchase Order</a></p>'
-                . '<p>If you cannot click the link, copy and paste this URL into your browser:<br>' . e($ackUrl) . '</p>'
-                . '<p>Regards,<br>' . e(env('Coy_Name', 'Accounting Team')) . '</p>';
+            $itemRows = '';
+            $itemSubTotal = 0.0;
+            $itemCounter = 0;
+            foreach ($vendorProjectRows as $item) {
+                if (empty($item->itemId)) {
+                    continue;
+                }
+                $itemCounter++;
+                $qty = (float) ($item->qty ?? 0);
+                $cost = (float) ($item->cost ?? 0);
+                $subTotal = (float) ($item->subtotal ?? ($qty * $cost));
+                $itemSubTotal += $subTotal;
+
+                $itemRows .= '<tr>'
+                    . '<td style="padding:8px;border:1px solid #e5e7eb;text-align:center;">' . $itemCounter . '</td>'
+                    . '<td style="padding:8px;border:1px solid #e5e7eb;">' . e($item->item_description) . '</td>'
+                    . '<td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">' . number_format($qty, 2, '.', ',') . '</td>'
+                    . '<td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">' . number_format($cost, 2, '.', ',') . '</td>'
+                    . '<td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">' . number_format($subTotal, 2, '.', ',') . '</td>'
+                    . '</tr>';
+            }
+
+            if ($itemRows === '') {
+                $fallbackSubTotal = (float) $vendorProject->amount;
+                $itemSubTotal = $fallbackSubTotal;
+                $itemRows = '<tr>'
+                    . '<td style="padding:8px;border:1px solid #e5e7eb;text-align:center;">1</td>'
+                    . '<td style="padding:8px;border:1px solid #e5e7eb;">' . e($vendorProject->description ?: 'Vendor delivery for project') . '</td>'
+                    . '<td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">1.00</td>'
+                    . '<td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">' . number_format($fallbackSubTotal, 2, '.', ',') . '</td>'
+                    . '<td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">' . number_format($fallbackSubTotal, 2, '.', ',') . '</td>'
+                    . '</tr>';
+            }
+
+            $computedVatAmount = $itemSubTotal * ($vatPercent / 100);
+            $safeVatAmount = (float) ($vendorProject->vatAmount ?? $computedVatAmount);
+            $safeTotal = (float) $vendorProject->amount;
+
+            $htmlBody = '<div style="font-family:Arial,Helvetica,sans-serif;color:#1f2937;line-height:1.45;">'
+                . '<h2 style="margin:0 0 8px 0;color:#111827;">Purchase Order Acknowledgement Required</h2>'
+                . '<p style="margin:0 0 16px 0;">Dear ' . e($vendorName) . ',</p>'
+                . '<p style="margin:0 0 16px 0;">A new purchase order has been allocated to you. Kindly review the details below and acknowledge receipt.</p>'
+                . '<table style="width:100%;border-collapse:collapse;margin:0 0 16px 0;">'
+                . '<tr><td style="padding:6px 0;"><strong>PO Number:</strong></td><td style="padding:6px 0;">' . e($poNumber) . '</td></tr>'
+                . '<tr><td style="padding:6px 0;"><strong>PO Date:</strong></td><td style="padding:6px 0;">' . e($poDate) . '</td></tr>'
+                . '<tr><td style="padding:6px 0;"><strong>Complete By:</strong></td><td style="padding:6px 0;">' . e($completeBy) . '</td></tr>'
+                . '<tr><td style="padding:6px 0;"><strong>Project:</strong></td><td style="padding:6px 0;">' . e($projectCode) . ' - ' . e($projectName) . '</td></tr>'
+                . '<tr><td style="padding:6px 0;"><strong>Description:</strong></td><td style="padding:6px 0;">' . e($vendorProject->description ?: 'N/A') . '</td></tr>'
+                . '</table>'
+                . '<h4 style="margin:12px 0 8px 0;color:#111827;">PO Item Details</h4>'
+                . '<table style="width:100%;border-collapse:collapse;margin:0 0 16px 0;">'
+                . '<thead>'
+                . '<tr style="background:#f3f4f6;">'
+                . '<th style="padding:8px;border:1px solid #e5e7eb;">#</th>'
+                . '<th style="padding:8px;border:1px solid #e5e7eb;text-align:left;">Item Description</th>'
+                . '<th style="padding:8px;border:1px solid #e5e7eb;">Qty</th>'
+                . '<th style="padding:8px;border:1px solid #e5e7eb;">Unit Cost (NGN)</th>'
+                . '<th style="padding:8px;border:1px solid #e5e7eb;">Subtotal (NGN)</th>'
+                . '</tr>'
+                . '</thead>'
+                . '<tbody>' . $itemRows . '</tbody>'
+                . '</table>'
+                . '<table style="width:360px;border-collapse:collapse;margin-left:auto;">'
+                . '<tr><td style="padding:6px 0;"><strong>Subtotal:</strong></td><td style="padding:6px 0;text-align:right;">' . number_format($itemSubTotal, 2, '.', ',') . '</td></tr>'
+                . '<tr><td style="padding:6px 0;"><strong>VAT (' . number_format($vatPercent, 2, '.', ',') . '%):</strong></td><td style="padding:6px 0;text-align:right;">' . number_format($safeVatAmount, 2, '.', ',') . '</td></tr>'
+                . '<tr><td style="padding:8px 0;border-top:1px solid #d1d5db;"><strong>Total Amount:</strong></td><td style="padding:8px 0;border-top:1px solid #d1d5db;text-align:right;"><strong>' . number_format($safeTotal, 2, '.', ',') . '</strong></td></tr>'
+                . '</table>'
+                . '<p style="margin:18px 0 10px 0;">Please click the button below to acknowledge this PO. Clicking the link will automatically approve the PO:</p>'
+                . '<p style="margin:0 0 16px 0;">'
+                . '<a href="' . e($ackUrl) . '" style="background:#2563eb;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:4px;display:inline-block;">Acknowledge Purchase Order</a>'
+                . '</p>'
+                . '<p style="margin:0 0 8px 0;font-size:12px;color:#4b5563;">If the button does not work, copy and paste this URL in your browser:</p>'
+                . '<p style="margin:0 0 16px 0;font-size:12px;color:#4b5563;word-break:break-all;">' . e($ackUrl) . '</p>'
+                . '<p style="margin:0;">Regards,<br>' . e(env('Coy_Name', 'Accounting Team')) . '</p>'
+                . '</div>';
 
             Mail::send([], [], function ($message) use ($vendorProject, $subject, $htmlBody) {
                 $message->to($vendorProject->vendorEmail)

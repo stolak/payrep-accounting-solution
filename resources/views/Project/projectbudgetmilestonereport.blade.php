@@ -70,15 +70,22 @@
                                     <table class="table table-hover table-center mb-0" style="min-width: 100%;">
                                         <thead>
                                             <tr>
-                                                <th rowspan="2" style="vertical-align: middle;">Budget Name</th>
+                                                <th rowspan="2" style="vertical-align: middle;">Contractor/vendor Name
+                                                </th>
                                                 <th rowspan="2" style="vertical-align: middle;">Unit</th>
                                                 <th rowspan="2" style="vertical-align: middle;">Unit Cost</th>
                                                 <th rowspan="2" style="vertical-align: middle;">Amount</th>
                                                 @if ($milestones->count() > 0)
-                                                    <th colspan="{{ $milestones->count() }}" style="text-align: center; border-left: 2px solid #ddd;">Milestone Budget (Calculated)</th>
-                                                    <th colspan="{{ $milestones->count() }}" style="text-align: center; border-left: 2px solid #ddd;">Actual Expense</th>
+                                                    <th colspan="{{ $milestones->count() }}"
+                                                        style="text-align: center; border-left: 2px solid #ddd;">Milestone
+                                                        Budget (Calculated)</th>
+                                                    <th colspan="{{ $milestones->count() }}"
+                                                        style="text-align: center; border-left: 2px solid #ddd;">Actual
+                                                        Expense</th>
                                                 @endif
-                                                <th rowspan="2" style="vertical-align: middle; border-left: 2px solid #ddd;">Total Actual Payment</th>
+                                                <th rowspan="2"
+                                                    style="vertical-align: middle; border-left: 2px solid #ddd;">Total
+                                                    Actual Payment</th>
                                             </tr>
                                             <tr>
                                                 @foreach ($milestones as $milestone)
@@ -130,8 +137,12 @@
                                                     </td>
                                                     @foreach ($milestones as $milestone)
                                                         @php
-                                                            $milestoneTotal = $projectBudgets->sum(function($budget) use ($milestone) {
-                                                                return $budget->milestoneAmounts[$milestone->id]['amount'] ?? 0;
+                                                            $milestoneTotal = $projectBudgets->sum(function (
+                                                                $budget,
+                                                            ) use ($milestone) {
+                                                                return $budget->milestoneAmounts[$milestone->id][
+                                                                    'amount'
+                                                                ] ?? 0;
                                                             });
                                                         @endphp
                                                         <td style="text-align: right; border-left: 1px solid #ddd;">
@@ -140,7 +151,9 @@
                                                     @endforeach
                                                     @foreach ($milestones as $milestone)
                                                         @php
-                                                            $expenseTotal = $projectBudgets->sum(function($budget) use ($milestone) {
+                                                            $expenseTotal = $projectBudgets->sum(function (
+                                                                $budget,
+                                                            ) use ($milestone) {
                                                                 return $budget->milestoneExpenses[$milestone->id] ?? 0;
                                                             });
                                                         @endphp
@@ -154,7 +167,8 @@
                                                 </tr>
                                             @else
                                                 <tr>
-                                                    <td colspan="{{ 4 + ($milestones->count() * 2) + 1 }}" class="text-center">
+                                                    <td colspan="{{ 4 + $milestones->count() * 2 + 1 }}"
+                                                        class="text-center">
                                                         No milestone budgets found for this project.
                                                     </td>
                                                 </tr>
@@ -172,7 +186,8 @@
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-body">
-                                <p class="text-center text-muted">Please select a project to view budget milestone report.</p>
+                                <p class="text-center text-muted">Please select a project to view budget milestone report.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -190,19 +205,24 @@
             color: black;
             text-shadow: 1px 1px 2px #fff;
         }
+
         table {
             border-collapse: collapse;
         }
-        th, td {
+
+        th,
+        td {
             border: 1px solid #ddd;
             padding: 8px;
             white-space: nowrap;
         }
+
         th {
             background-color: #f2f2f2;
             position: sticky;
             top: 0;
         }
+
         .table-responsive {
             max-height: 600px;
             overflow-y: auto;
@@ -223,8 +243,3 @@
     </script>
 @endsection
 <!-- /Page Wrapper -->
-
-
-
-
-
