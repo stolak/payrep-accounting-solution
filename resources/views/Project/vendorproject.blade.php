@@ -126,21 +126,21 @@
                                                                         value="{{ $oldDescription }}" required>
                                                                 </td>
                                                                 <td>
-                                                                    <input type="number"
+                                                                    <input type="text"
                                                                         class="form-control item-qty add-item-input"
                                                                         name="item_qty[]"
                                                                         value="{{ $oldQties[$idx] ?? '' }}" min="0"
                                                                         step="0.01" required>
                                                                 </td>
                                                                 <td>
-                                                                    <input type="number"
+                                                                    <input type="text"
                                                                         class="form-control item-cost add-item-input"
                                                                         name="item_cost[]"
                                                                         value="{{ $oldCosts[$idx] ?? '' }}" min="0"
                                                                         step="0.01" required>
                                                                 </td>
                                                                 <td>
-                                                                    <input type="number" class="form-control item-subtotal"
+                                                                    <input type="text" class="form-control item-subtotal"
                                                                         value="0" step="0.01" readonly>
                                                                 </td>
                                                                 <td class="text-center">
@@ -164,7 +164,7 @@
                                         <div class="col-md-3">
                                             <div class="form-group">
                                                 <label>VAT (%)</label>
-                                                <input type="number" class="form-control"
+                                                <input type="text" class="form-control"
                                                     value="{{ old('vat', $vat ?? 0) }}" name="vat" id="add_vat"
                                                     step="0.01" min="0" max="100">
                                             </div>
@@ -172,21 +172,21 @@
                                         <div class="col-md-3">
                                             <div class="form-group">
                                                 <label>Subtotal</label>
-                                                <input type="number" class="form-control" id="add_subtotal"
+                                                <input type="text" class="form-control" id="add_subtotal"
                                                     step="0.01" readonly style="background-color: #f0f0f0;">
                                             </div>
                                         </div>
                                         <div class="col-md-3">
                                             <div class="form-group">
                                                 <label>VAT Amount</label>
-                                                <input type="number" class="form-control" id="add_vatAmount"
+                                                <input type="text" class="form-control" id="add_vatAmount"
                                                     step="0.01" readonly style="background-color: #f0f0f0;">
                                             </div>
                                         </div>
                                         <div class="col-md-3">
                                             <div class="form-group">
                                                 <label>Total Amount</label>
-                                                <input type="number" class="form-control" id="add_total" step="0.01"
+                                                <input type="text" class="form-control" id="add_total" step="0.01"
                                                     readonly style="background-color: #f0f0f0;">
                                             </div>
                                         </div>
@@ -401,28 +401,28 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label>VAT (%)</label>
-                                        <input type="number" id="edit_vat" name="vat" class="form-control"
+                                        <input type="text" id="edit_vat" name="vat" class="form-control"
                                             min="0" max="100" step="0.01">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label>Subtotal</label>
-                                        <input type="number" id="edit_subtotal" class="form-control" readonly
+                                        <input type="text" id="edit_subtotal" class="form-control" readonly
                                             step="0.01" style="background-color: #f0f0f0;">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label>VAT Amount</label>
-                                        <input type="number" id="edit_vatAmount" class="form-control" readonly
+                                        <input type="text" id="edit_vatAmount" class="form-control" readonly
                                             step="0.01" style="background-color: #f0f0f0;">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label>Total Amount</label>
-                                        <input type="number" id="edit_total" class="form-control" readonly
+                                        <input type="text" id="edit_total" class="form-control" readonly
                                             step="0.01" style="background-color: #f0f0f0;">
                                     </div>
                                 </div>
@@ -548,19 +548,84 @@
 
         function itemRowTemplate(prefix, data = {}) {
             const desc = escapeHtml(data.description || '');
-            const qty = data.qty ?? '';
-            const cost = data.cost ?? '';
+            const qty = data.qty !== undefined && data.qty !== null ? formatNumberForDisplay(data.qty) : '';
+            const cost = data.cost !== undefined && data.cost !== null ? formatNumberForDisplay(data.cost) : '';
             return `
                 <tr class="item-row">
                     <td><input type="text" class="form-control item-description" name="item_description[]" value="${desc}" required></td>
-                    <td><input type="number" class="form-control item-qty ${prefix}-item-input" name="item_qty[]" value="${qty}" min="0" step="0.01" required></td>
-                    <td><input type="number" class="form-control item-cost ${prefix}-item-input" name="item_cost[]" value="${cost}" min="0" step="0.01" required></td>
-                    <td><input type="number" class="form-control item-subtotal" value="0" readonly step="0.01"></td>
+                    <td><input type="text" class="form-control item-qty ${prefix}-item-input" name="item_qty[]" value="${qty}" required></td>
+                    <td><input type="text" class="form-control item-cost ${prefix}-item-input" name="item_cost[]" value="${cost}" required></td>
+                    <td><input type="text" class="form-control item-subtotal" value="0.00" readonly step="0.01"></td>
                     <td class="text-center">
                         <button type="button" class="btn btn-sm btn-danger remove-item-btn"><i class="fe fe-trash"></i></button>
                     </td>
                 </tr>
             `;
+        }
+
+        function splitNumericParts(rawValue) {
+            let cleaned = String(rawValue ?? '').replace(/,/g, '').replace(/[^\d.]/g, '');
+            const firstDotIndex = cleaned.indexOf('.');
+            const hasDot = firstDotIndex !== -1;
+            const hasTrailingDot = hasDot && cleaned.endsWith('.');
+
+            if (hasDot) {
+                cleaned = cleaned.slice(0, firstDotIndex + 1) + cleaned.slice(firstDotIndex + 1).replace(/\./g, '');
+            }
+
+            const parts = cleaned.split('.');
+            const integerPart = parts[0] || '';
+            const decimalPart = parts.length > 1 ? parts[1].slice(0, 2) : '';
+
+            return {
+                integerPart,
+                decimalPart,
+                hasDot,
+                hasTrailingDot,
+            };
+        }
+
+        function normalizeNumericInput(rawValue) {
+            const parts = splitNumericParts(rawValue);
+            const intPart = (parts.integerPart || '0').replace(/^0+(?=\d)/, '') || '0';
+            if (parts.decimalPart !== '') {
+                return `${intPart}.${parts.decimalPart}`;
+            }
+            return intPart;
+        }
+
+        function formatNumberForDisplay(rawValue) {
+            const parts = splitNumericParts(rawValue);
+            if (!parts.integerPart && !parts.hasDot) return '';
+
+            const intPart = (parts.integerPart || '0').replace(/^0+(?=\d)/, '');
+            const withCommas = (intPart || '0').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+            if (parts.hasDot) {
+                return parts.decimalPart !== '' ? `${withCommas}.${parts.decimalPart}` : `${withCommas}.`;
+            }
+            return withCommas;
+        }
+
+        function formatCurrency(amount) {
+            const numeric = Number(amount) || 0;
+            return numeric.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+        }
+
+        function parseFormattedNumber(rawValue) {
+            const normalized = normalizeNumericInput(rawValue);
+            if (normalized === '') return 0;
+            const parsed = parseFloat(normalized);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        function applyNumberFormatting(input) {
+            if (!input) return;
+            const formatted = formatNumberForDisplay(input.value);
+            input.value = formatted;
         }
 
         function escapeHtml(text) {
@@ -583,26 +648,26 @@
         function recalculateTotals(prefix) {
             let subtotal = 0;
             document.querySelectorAll('#' + prefix + '-items-body tr').forEach((row) => {
-                const qty = parseFloat(row.querySelector('.item-qty')?.value) || 0;
-                const cost = parseFloat(row.querySelector('.item-cost')?.value) || 0;
+                const qty = parseFormattedNumber(row.querySelector('.item-qty')?.value);
+                const cost = parseFormattedNumber(row.querySelector('.item-cost')?.value);
                 const lineSubtotal = qty * cost;
                 const subtotalInput = row.querySelector('.item-subtotal');
                 if (subtotalInput) {
-                    subtotalInput.value = lineSubtotal.toFixed(2);
+                    subtotalInput.value = formatCurrency(lineSubtotal);
                 }
                 subtotal += lineSubtotal;
             });
 
-            const vat = parseFloat(document.getElementById(prefix + '_vat')?.value) || 0;
+            const vat = parseFormattedNumber(document.getElementById(prefix + '_vat')?.value);
             const vatAmount = subtotal * (vat / 100);
             const total = subtotal + vatAmount;
 
             const subtotalEl = document.getElementById(prefix + '_subtotal');
             const vatAmountEl = document.getElementById(prefix + '_vatAmount');
             const totalEl = document.getElementById(prefix + '_total');
-            if (subtotalEl) subtotalEl.value = subtotal.toFixed(2);
-            if (vatAmountEl) vatAmountEl.value = vatAmount.toFixed(2);
-            if (totalEl) totalEl.value = total.toFixed(2);
+            if (subtotalEl) subtotalEl.value = formatCurrency(subtotal);
+            if (vatAmountEl) vatAmountEl.value = formatCurrency(vatAmount);
+            if (totalEl) totalEl.value = formatCurrency(total);
         }
 
         function editfunc(id) {
@@ -612,7 +677,7 @@
             document.getElementById('edit_id').value = row.id;
             document.getElementById('edit_vendorId').value = row.vendorId;
             document.getElementById('edit_description').value = row.description || '';
-            document.getElementById('edit_vat').value = row.vat || 0;
+            document.getElementById('edit_vat').value = formatNumberForDisplay(row.vat || 0);
             document.getElementById('edit_status').value = row.status || 'Pending';
 
             const editBody = document.getElementById('edit-items-body');
@@ -639,9 +704,11 @@
 
         document.addEventListener('input', function(e) {
             if (e.target.classList.contains('add-item-input') || e.target.id === 'add_vat') {
+                applyNumberFormatting(e.target);
                 recalculateTotals('add');
             }
             if (e.target.classList.contains('edit-item-input') || e.target.id === 'edit_vat') {
+                applyNumberFormatting(e.target);
                 recalculateTotals('edit');
             }
         });
@@ -668,11 +735,29 @@
         });
 
         document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('input[name="item_qty[]"], input[name="item_cost[]"], #add_vat').forEach((
+                input) => {
+                applyNumberFormatting(input);
+            });
             recalculateTotals('add');
             if (document.querySelectorAll('#add-items-body tr').length === 0) {
                 addItemRow('add');
             }
         });
+
+        function stripCommasBeforeSubmit(formId) {
+            const form = document.getElementById(formId);
+            if (!form) return;
+            form.addEventListener('submit', function() {
+                form.querySelectorAll('input[name="item_qty[]"], input[name="item_cost[]"], input[name="vat"]')
+                    .forEach((input) => {
+                        input.value = normalizeNumericInput(input.value);
+                    });
+            });
+        }
+
+        stripCommasBeforeSubmit('addVendorProjectForm');
+        stripCommasBeforeSubmit('editForm');
     </script>
 @endsection
 <!-- /Page Wrapper -->
