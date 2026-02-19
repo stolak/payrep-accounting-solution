@@ -540,7 +540,8 @@ class ProjectController extends Basefunction {
         }
         
         if (isset($_POST['del'])) {
-            $del = $request->input('deleteid');
+            // Support both legacy modal field names: deleteid and id.
+            $del = $request->input('deleteid') ?? $request->input('id');
             // Check if budget has related records before deletion
             // Add your related table checks here if needed
             if (DB::table('project_budget')->where('budgetId', $del)->first()) {
@@ -557,7 +558,8 @@ class ProjectController extends Basefunction {
         
         // Filter by classificationId if provided
         if (!empty($data['classificationId'])) {
-            $budgetsQuery->where('budgets.classificationId', $data['classificationId']);
+            $budgetsQuery->where('budgets.classificationId', $data['classificationId'])
+            ->where('budgets.isvendor', 0);
         }
         
         $data['budgets'] = $budgetsQuery->orderBy('budgets.name', 'asc')->get();

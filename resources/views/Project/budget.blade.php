@@ -214,7 +214,7 @@
                                 <h4 class="modal-title">Delete</h4>
                                 <p class="mb-4">Are you sure want to delete?</p>
                                 <button type="submit" class="btn btn-primary" name="del">Continue </button>
-                                <input type="hidden" id="deleteid" name="id">
+                                <input type="hidden" id="deleteid" name="deleteid">
                                 <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
                             </div>
                         </div>
