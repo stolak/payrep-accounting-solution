@@ -441,6 +441,40 @@ class ProjectController extends Basefunction {
                 ->get()
                 ->pluck('expenseAccountId', 'classificationId');
         }
+
+        // Attach PO summaries (with line items) so Project setup can show PO(s) per project.
+        $projectIds = $data['projects']->pluck('id')->filter()->values();
+        $projectPoByProjectId = collect();
+        if ($projectIds->isNotEmpty()) {
+            $allProjectPos = DB::table('project_po')
+                ->whereIn('projectId', $projectIds->all())
+                ->select('id', 'projectId', 'poNumber', 'description')
+                ->orderBy('createdAt', 'desc')
+                ->get();
+
+            $poIds = $allProjectPos->pluck('id')->filter()->values();
+            $poItemsByPoId = collect();
+            if ($poIds->isNotEmpty()) {
+                $allPoItems = DB::table('project_po_item')
+                    ->whereIn('poId', $poIds->all())
+                    ->select('poId', 'description', 'qty', 'unitCost')
+                    ->orderBy('id', 'asc')
+                    ->get()
+                    ->groupBy('poId');
+
+                $poItemsByPoId = $allPoItems;
+            }
+
+            $allProjectPos->each(function ($po) use ($poItemsByPoId) {
+                $po->items = $poItemsByPoId->get($po->id, collect());
+            });
+
+            $projectPoByProjectId = $allProjectPos->groupBy('projectId');
+        }
+
+        foreach ($data['projects'] as $project) {
+            $project->projectPos = $projectPoByProjectId->get($project->id, collect());
+        }
         
         // Fetch categories if needed (assuming there's a categories table)
          $data['projectCategories'] = DB::table('project_categories')

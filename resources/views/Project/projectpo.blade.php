@@ -78,17 +78,9 @@
                                                 <th rowspan="1">S/N</th>
                                                 <th rowspan="1">PO Number</th>
                                                 <th rowspan="1">PO Description</th>
-                                                <th rowspan="1">Line Item</th>
-                                                <th rowspan="1">UOM</th>
-                                                <th rowspan="1">Qty</th>
-                                                <th rowspan="1">Unit Cost</th>
-                                                <th rowspan="1">Subtotal</th>
-                                                <th rowspan="1">VAT %</th>
-                                                <th rowspan="1">VAT Amount</th>
-                                                <th rowspan="1">Total PO value</th>
+                                                <th rowspan="1">PO Items</th>
+                                                <th rowspan="1">Amount</th>
                                                 <th rowspan="1">Status</th>
-                                                <th rowspan="1">Created By</th>
-                                                <th rowspan="1">Approved By</th>
                                                 <th rowspan="1">Action</th>
                                             </tr>
                                         </thead>
@@ -103,138 +95,64 @@
                                                     @php
                                                         $totalSubnet += $list->subnet;
                                                         $items = $list->items ?? collect();
-                                                        $itemCount = $items->count();
                                                     @endphp
-                                                    @if ($itemCount > 0)
-                                                        @foreach ($items as $itemIdx => $item)
-                                                            <tr class="{{ $itemIdx == 0 ? 'table-primary' : '' }}">
-                                                                @if ($itemIdx == 0)
-                                                                    <td rowspan="{{ $itemCount }}"
-                                                                        style="vertical-align: middle;">
-                                                                        {{ $i++ }}
-                                                                    </td>
-                                                                    <td rowspan="{{ $itemCount }}"
-                                                                        style="vertical-align: middle;">
-                                                                        <strong>{{ $list->poNumber }}</strong>
-                                                                    </td>
-                                                                    <td rowspan="{{ $itemCount }}"
-                                                                        style="vertical-align: middle;">
-                                                                        <strong>{{ $list->description }}</strong>
-                                                                    </td>
-                                                                @endif
-                                                                <td>{{ $item->description }}</td>
-                                                                <td>{{ $item->uomMeasurement ?? 'N/A' }}</td>
-                                                                <td style="text-align: right;">
-                                                                    {{ number_format($item->qty, 2, '.', ',') }}</td>
-                                                                <td style="text-align: right;">
-                                                                    {{ number_format($item->unitCost, 2, '.', ',') }}</td>
-                                                                <td style="text-align: right;">
-                                                                    {{ number_format($item->subcost, 2, '.', ',') }}</td>
-                                                                @if ($itemIdx == 0)
-                                                                    <td rowspan="{{ $itemCount }}"
-                                                                        style="vertical-align: middle; text-align: right;">
-                                                                        <strong>{{ $list->vat ? number_format($list->vat, 2, '.', ',') . '%' : '0%' }}</strong>
-                                                                    </td>
-                                                                    <td rowspan="{{ $itemCount }}"
-                                                                        style="vertical-align: middle; text-align: right;">
-                                                                        <strong>{{ number_format($list->vatAmount, 2, '.', ',') }}</strong>
-                                                                    </td>
-                                                                    <td rowspan="{{ $itemCount }}"
-                                                                        style="vertical-align: middle; text-align: right;">
-                                                                        <strong>{{ number_format($list->subnet, 2, '.', ',') }}</strong>
-                                                                    </td>
-                                                                    <td rowspan="{{ $itemCount }}"
-                                                                        style="vertical-align: middle;">
-                                                                        @if ($list->status == 'Approved')
-                                                                            <span class="badge bg-success">Approved</span>
-                                                                        @else
-                                                                            <span class="badge bg-warning">Pending</span>
-                                                                        @endif
-                                                                    </td>
-                                                                    <td rowspan="{{ $itemCount }}"
-                                                                        style="vertical-align: middle;">
-                                                                        {{ $list->createdByName ?? 'N/A' }}
-                                                                    </td>
-                                                                    <td rowspan="{{ $itemCount }}"
-                                                                        style="vertical-align: middle;">
-                                                                        {{ $list->approvedByName ?? 'N/A' }}
-                                                                    </td>
-                                                                    <td rowspan="{{ $itemCount }}"
-                                                                        style="vertical-align: middle;">
-                                                                        @if ($list->status != 'Approved')
-                                                                            <a class="btn btn-sm bg-success-light"
-                                                                                href="javascript: editfunc('{{ $list->id }}','{{ $list->poNumber }}','{{ addslashes($list->description) }}','{{ $list->vat ?? 0 }}',{{ json_encode($items->map(function ($item) {return ['id' => $item->id, 'description' => $item->description, 'uomId' => $item->uomId ?? '', 'qty' => $item->qty, 'unitCost' => $item->unitCost];})->toArray()) }})">
-                                                                                <i class="fe fe-pencil"></i>
-                                                                            </a>
-                                                                            <a class="btn btn-sm bg-info-light"
-                                                                                href="javascript: approvefunc('{{ $list->id }}')">
-                                                                                <i class="fe fe-check"></i>
-                                                                            </a>
-                                                                        @endif
-                                                                        <a class="btn btn-sm bg-danger-light"
-                                                                            href="javascript: deletefunc('{{ $list->id }}')">
-                                                                            <i class="fe fe-trash"></i>
-                                                                        </a>
-                                                                    </td>
-                                                                @endif
-                                                            </tr>
-                                                        @endforeach
-                                                    @else
-                                                        <tr>
-                                                            <td>{{ $i++ }}</td>
-                                                            <td><strong>{{ $list->poNumber }}</strong></td>
-                                                            <td><strong>{{ $list->description }}</strong></td>
-                                                            <td colspan="3" class="text-center text-muted">No line
-                                                                items</td>
-                                                            <td style="text-align: right;">
-                                                                <strong>{{ $list->vat ? number_format($list->vat, 2, '.', ',') . '%' : '0%' }}</strong>
-                                                            </td>
-                                                            <td style="text-align: right;">
-                                                                <strong>{{ number_format($list->vatAmount, 2, '.', ',') }}</strong>
-                                                            </td>
-                                                            <td style="text-align: right;">
-                                                                <strong>{{ number_format($list->subnet, 2, '.', ',') }}</strong>
-                                                            </td>
-                                                            <td>
-                                                                @if ($list->status == 'Approved')
-                                                                    <span class="badge bg-success">Approved</span>
-                                                                @else
-                                                                    <span class="badge bg-warning">Pending</span>
-                                                                @endif
-                                                            </td>
-                                                            <td>{{ $list->createdByName ?? 'N/A' }}</td>
-                                                            <td>{{ $list->approvedByName ?? 'N/A' }}</td>
-                                                            <td>
-                                                                @if ($list->status != 'Approved')
-                                                                    <a class="btn btn-sm bg-success-light"
-                                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->poNumber }}','{{ addslashes($list->description) }}','{{ $list->vat ?? 0 }}',[])">
-                                                                        <i class="fe fe-pencil"></i>
-                                                                    </a>
-                                                                    <a class="btn btn-sm bg-info-light"
-                                                                        href="javascript: approvefunc('{{ $list->id }}')">
-                                                                        <i class="fe fe-check"></i>
-                                                                    </a>
-                                                                @endif
-                                                                <a class="btn btn-sm bg-danger-light"
-                                                                    href="javascript: deletefunc('{{ $list->id }}')">
-                                                                    <i class="fe fe-trash"></i>
+                                                    <tr>
+                                                        <td>{{ $i++ }}</td>
+                                                        <td><strong>{{ $list->poNumber }}</strong></td>
+                                                        <td>{{ $list->description }}</td>
+                                                        <td>
+                                                            <strong>{{ $items->count() }} item(s)</strong>
+                                                            @if ($items->count() > 0)
+                                                                <ul class="mb-0 mt-1 pl-3">
+                                                                    @foreach ($items as $item)
+                                                                        <li>
+                                                                            {{ $item->description }}
+                                                                            ({{ number_format($item->qty, 2, '.', ',') }}
+                                                                            x
+                                                                            {{ number_format($item->unitCost, 2, '.', ',') }})
+                                                                        </li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            @endif
+                                                        </td>
+                                                        <td style="text-align: right;">
+                                                            <strong>{{ number_format($list->subnet, 2, '.', ',') }}</strong>
+                                                        </td>
+                                                        <td>
+                                                            @if ($list->status == 'Approved')
+                                                                <span class="badge bg-success">Approved</span>
+                                                            @else
+                                                                <span class="badge bg-warning">Pending</span>
+                                                            @endif
+                                                        </td>
+                                                        <td>
+                                                            @if ($list->status != 'Approved')
+                                                                <a class="btn btn-sm bg-success-light"
+                                                                    href="javascript: editfunc('{{ $list->id }}','{{ $list->poNumber }}','{{ addslashes($list->description) }}','{{ $list->vat ?? 0 }}',{{ json_encode($items->map(function ($item) {return ['id' => $item->id, 'description' => $item->description, 'uomId' => $item->uomId ?? '', 'qty' => $item->qty, 'unitCost' => $item->unitCost];})->toArray()) }})">
+                                                                    <i class="fe fe-pencil"></i>
                                                                 </a>
-                                                            </td>
-                                                        </tr>
-                                                    @endif
+                                                                <a class="btn btn-sm bg-info-light"
+                                                                    href="javascript: approvefunc('{{ $list->id }}')">
+                                                                    <i class="fe fe-check"></i>
+                                                                </a>
+                                                            @endif
+                                                            <a class="btn btn-sm bg-danger-light"
+                                                                href="javascript: deletefunc('{{ $list->id }}')">
+                                                                <i class="fe fe-trash"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
                                                 @endforeach
-                                                <tr
-                                                    style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
-                                                    <td colspan="7" class="text-right"><strong>Grand Total:</strong>
-                                                    </td>
+                                                <tr style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
+                                                    <td colspan="4" class="text-right"><strong>Grand Total:</strong></td>
                                                     <td style="text-align: right;">
                                                         <strong>{{ number_format($totalSubnet, 2, '.', ',') }}</strong>
                                                     </td>
-                                                    <td colspan="7"></td>
+                                                    <td colspan="2"></td>
                                                 </tr>
                                             @else
                                                 <tr>
-                                                    <td colspan="15" class="text-center">No purchase orders for this
+                                                    <td colspan="7" class="text-center">No purchase orders for this
                                                         project yet.</td>
                                                 </tr>
                                             @endif

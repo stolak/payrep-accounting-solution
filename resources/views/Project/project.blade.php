@@ -393,6 +393,7 @@
                                             <th rowspan="1">Description</th>
                                             <th rowspan="1">Location</th>
                                             <th rowspan="1">Status</th>
+                                            <th rowspan="1">PO(s)</th>
                                             <th rowspan="1">Action</th>
                                         </tr>
                                     </thead>
@@ -435,6 +436,38 @@
                                                         <span class="badge bg-success">Active</span>
                                                     @elseif ($list->status == 'Inactive')
                                                         <span class="badge bg-danger">Inactive</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @php
+                                                        $projectPos = $list->projectPos ?? collect();
+                                                    @endphp
+                                                    @if ($projectPos->count() > 0)
+                                                        @foreach ($projectPos as $po)
+                                                            @php
+                                                                $items = $po->items ?? collect();
+                                                            @endphp
+                                                            <div class="mb-2">
+                                                                <div>
+                                                                    <strong>{{ $po->poNumber ?? 'N/A' }}</strong>
+                                                                </div>
+                                                                <strong>{{ $items->count() }} item(s)</strong>
+                                                                @if ($items->count() > 0)
+                                                                    <ul class="mb-0 mt-1 pl-3">
+                                                                        @foreach ($items as $item)
+                                                                            <li>
+                                                                                {{ $item->description }}
+                                                                                ({{ number_format($item->qty, 2, '.', ',') }}
+                                                                                x
+                                                                                {{ number_format($item->unitCost, 2, '.', ',') }})
+                                                                            </li>
+                                                                        @endforeach
+                                                                    </ul>
+                                                                @endif
+                                                            </div>
+                                                        @endforeach
+                                                    @else
+                                                        <span class="text-muted">No PO(s)</span>
                                                     @endif
                                                 </td>
                                                 <td>
