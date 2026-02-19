@@ -448,7 +448,7 @@ class ProjectController extends Basefunction {
         if ($projectIds->isNotEmpty()) {
             $allProjectPos = DB::table('project_po')
                 ->whereIn('projectId', $projectIds->all())
-                ->select('id', 'projectId', 'poNumber', 'description')
+                ->select('id', 'projectId', 'poNumber', 'description', 'subnet', 'status')
                 ->orderBy('createdAt', 'desc')
                 ->get();
 

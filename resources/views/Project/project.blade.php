@@ -444,26 +444,21 @@
                                                     @endphp
                                                     @if ($projectPos->count() > 0)
                                                         @foreach ($projectPos as $po)
-                                                            @php
-                                                                $items = $po->items ?? collect();
-                                                            @endphp
                                                             <div class="mb-2">
                                                                 <div>
                                                                     <strong>{{ $po->poNumber ?? 'N/A' }}</strong>
                                                                 </div>
-                                                                <strong>{{ $items->count() }} item(s)</strong>
-                                                                @if ($items->count() > 0)
-                                                                    <ul class="mb-0 mt-1 pl-3">
-                                                                        @foreach ($items as $item)
-                                                                            <li>
-                                                                                {{ $item->description }}
-                                                                                ({{ number_format($item->qty, 2, '.', ',') }}
-                                                                                x
-                                                                                {{ number_format($item->unitCost, 2, '.', ',') }})
-                                                                            </li>
-                                                                        @endforeach
-                                                                    </ul>
-                                                                @endif
+                                                                <div>{{ $po->description ?? 'N/A' }}</div>
+                                                                <div>Amount:
+                                                                    <strong>{{ number_format($po->subnet ?? 0, 2, '.', ',') }}</strong>
+                                                                </div>
+                                                                <div>
+                                                                    @if (($po->status ?? '') == 'Approved')
+                                                                        <span class="badge bg-success">Approved</span>
+                                                                    @else
+                                                                        <span class="badge bg-warning">Pending</span>
+                                                                    @endif
+                                                                </div>
                                                             </div>
                                                         @endforeach
                                                     @else
