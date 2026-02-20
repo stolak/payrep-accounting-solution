@@ -173,7 +173,8 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Classification <span class="text-danger">*</span></label>
-                                        <select class="form-control" id="classificationId" name="classificationId" required>
+                                        <select class="form-control" id="edit_classificationId" name="classificationId"
+                                            required>
                                             <option value="">--Select Classification--</option>
                                             @foreach ($budgetCategories as $cat)
                                                 <option value="{{ $cat->id }}">{{ $cat->category }}</option>
@@ -256,7 +257,7 @@
             document.getElementById('id').value = id;
             document.getElementById('name').value = name;
             document.getElementById('description').value = description || '';
-            document.getElementById('classificationId').value = classificationId || '';
+            document.getElementById('edit_classificationId').value = classificationId || '';
 
             $("#edit_details").modal('show')
         }
