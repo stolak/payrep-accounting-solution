@@ -457,6 +457,7 @@
                         <h3>ORDER TO</h3>
                         <div class="address-lines">
                             Attention:
+                            {{ $vendorInfo['attention'] }}<br>
                             <strong>{{ strtoupper($vendorInfo['name']) }}</strong><br>
                             {{ $vendorInfo['address1'] }}<br>
 
@@ -478,7 +479,7 @@
                 </div>
 
                 <div class="remarks-row">
-                    <div class="comments-label">Remarks:</div>
+                    <div class="comments-label">Comments or Special Instructions:</div>
                     <div class="line"><span>{{ $comments }}</span></div>
                 </div>
                 <div class="line"></div>

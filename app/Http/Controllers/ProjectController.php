@@ -3350,13 +3350,16 @@ class ProjectController extends Basefunction {
                 'vendor_projects.amount',
                 'vendor_projects.createdAt',
                 'vendor_projects.updateAt',
+                'vendor_projects.expected_completion_date as expectedCompletionDate',
                 'budgets.name as vendorName',
                 'budgets.trade_name as vendorTradeName',
                 'budgets.address as vendorAddress',
                 'budgets.email as vendorEmail',
+                'budgets.contact_person as vendorContactPerson',
                 'budgets.contact_phone_number as vendorPhone',
                 'budgets.tax_number as vendorTaxNumber',
                 'projects.name as projectName',
+                'projects.project_owner as projectContactPerson',
                 'projects.location as projectLocation'
             )
             ->first();
@@ -3407,7 +3410,7 @@ class ProjectController extends Basefunction {
             'status' => $poData->status,
             'poNumber' => 'VP-' . str_pad((string) $poData->id, 6, '0', STR_PAD_LEFT),
             'poDate' => $poDate,
-            'completeBy' => $completeBy,
+            'completeBy' => date('d M, Y', strtotime($poData->expectedCompletionDate )),
             'vendorReference' => $poData->vendorTaxNumber ?: ('VENDOR-' . $poData->vendorId),
             'termsLabel' => 'Attached',
             'subtotal' => $subTotal,
@@ -3416,7 +3419,7 @@ class ProjectController extends Basefunction {
             'total' => $total,
             'lineItems' => $lineItems,
             'vendorInfo' => [
-                'attention' => 'Vendor Main Contact',
+                'attention' => $poData->vendorContactPerson,
                 'name' => $poData->vendorTradeName ?: $poData->vendorName,
                 'address1' => $poData->vendorAddress ?: 'Vendor Address Line 1',
                 'address2' => '',
@@ -3425,7 +3428,7 @@ class ProjectController extends Basefunction {
                 'phone' => $poData->vendorPhone ?: 'Vendor Phone Number',
             ],
             'shipTo' => [
-                'attention' => "Seller's Main Contact",
+                'attention' => $poData->projectContactPerson,
                 'name' => env('Coy_Name', 'McEmtol Consulting Limited'),
                 'address1' => env('Coy_Address', $poData->projectLocation ?: 'Address Line 1'),
                 'address2' => env('Coy_Address_2', ''),
