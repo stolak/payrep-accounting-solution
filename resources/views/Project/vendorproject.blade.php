@@ -69,7 +69,7 @@
                                     {{ csrf_field() }}
                                     <input type="hidden" name="projectId" value="{{ $projectId }}">
                                     <div class="row">
-                                        <div class="col-md-5">
+                                        <div class="col-md-4">
                                             <div class="form-group">
                                                 <label>Vendor <span class="text-danger">*</span></label>
                                                 <?php if ($vendorId == '') {
@@ -86,7 +86,7 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="col-md-7">
+                                        <div class="col-md-5">
                                             <div class="form-group">
                                                 <label>Remarks</label>
                                                 <?php if ($description == '') {
@@ -94,6 +94,17 @@
                                                 } ?>
                                                 <input type="text" class="form-control" value="{{ $description }}"
                                                     name="description" id="description">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>Expected Completion Date</label>
+                                                <?php if ($expected_completion_date == '') {
+                                                    $expected_completion_date = old('expected_completion_date');
+                                                } ?>
+                                                <input type="date" class="form-control"
+                                                    value="{{ $expected_completion_date }}" name="expected_completion_date"
+                                                    id="expected_completion_date">
                                             </div>
                                         </div>
                                     </div>
@@ -220,6 +231,7 @@
                                                 <th rowspan="1">Items</th>
                                                 <th rowspan="1">VAT</th>
                                                 <th rowspan="1">Amount</th>
+                                                <th rowspan="1">Expected Completion</th>
                                                 <th rowspan="1">Status</th>
                                                 <th rowspan="1">Created By</th>
                                                 <th rowspan="1">Approved By</th>
@@ -263,6 +275,9 @@
                                                         </td>
                                                         <td style="text-align: right;">
                                                             <strong>{{ number_format($vendorProject->amount, 2, '.', ',') }}</strong>
+                                                        </td>
+                                                        <td>
+                                                            {{ !empty($vendorProject->expected_completion_date) ? \Carbon\Carbon::parse($vendorProject->expected_completion_date)->format('Y-m-d') : '-' }}
                                                         </td>
                                                         <td>
                                                             @if ($vendorProject->status == 'Approved')
@@ -314,7 +329,7 @@
                                                 @endforeach
                                             @else
                                                 <tr>
-                                                    <td colspan="10" class="text-center">No vendor projects added for
+                                                    <td colspan="11" class="text-center">No vendor projects added for
                                                         this
                                                         project yet.</td>
                                                 </tr>
@@ -356,7 +371,7 @@
                         </div>
                         <div class="modal-body">
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label>Vendor <span class="text-danger">*</span></label>
                                         <select class="select2 form-control" name="vendorId" id="edit_vendorId" required>
@@ -367,11 +382,18 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-5">
                                     <div class="form-group">
                                         <label>Description</label>
                                         <input type="text" id="edit_description" name="description"
                                             class="form-control">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Expected Completion Date</label>
+                                        <input type="date" id="edit_expected_completion_date"
+                                            name="expected_completion_date" class="form-control">
                                     </div>
                                 </div>
                             </div>
@@ -520,6 +542,7 @@
                             'id' => $vendorProject->id,
                             'vendorId' => $vendorProject->vendorId,
                             'description' => $vendorProject->description,
+                            'expected_completion_date' => $vendorProject->expected_completion_date ? \Carbon\Carbon::parse($vendorProject->expected_completion_date)->format('Y-m-d') : null,
                             'vat' => (float) ($vendorProject->vat ?? 0),
                             'status' => $vendorProject->status ?? 'Pending',
                             'items' => collect($vendorProject->items ?? collect())
@@ -677,6 +700,7 @@
             document.getElementById('edit_id').value = row.id;
             document.getElementById('edit_vendorId').value = row.vendorId;
             document.getElementById('edit_description').value = row.description || '';
+            document.getElementById('edit_expected_completion_date').value = row.expected_completion_date || '';
             document.getElementById('edit_vat').value = formatNumberForDisplay(row.vat || 0);
             document.getElementById('edit_status').value = row.status || 'Pending';
 

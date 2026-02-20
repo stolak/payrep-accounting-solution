@@ -2943,6 +2943,7 @@ class ProjectController extends Basefunction {
         $data['projectId'] = $request->input('projectId');
         $data['vendorId'] = $request->input('vendorId');
         $data['description'] = $request->input('description');
+        $data['expected_completion_date'] = $request->input('expected_completion_date');
         $data['vat'] = $request->input('vat');
         $data['amount'] = $request->input('amount');
         $data['status'] = $request->input('status');
@@ -2984,6 +2985,7 @@ class ProjectController extends Basefunction {
                 'projectId' => 'required|integer',
                 'vendorId' => 'required|integer',
                 'description' => 'nullable|string',
+                'expected_completion_date' => 'nullable|date',
                 'vat' => 'nullable|numeric|min:0|max:100',
                 'item_description' => 'required|array|min:1',
                 'item_description.*' => 'required|string',
@@ -3032,6 +3034,7 @@ class ProjectController extends Basefunction {
                     'projectId' => $data['projectId'],
                     'vendorId' => $data['vendorId'],
                     'description' => $data['description'] ?? null,
+                    'expected_completion_date' => $data['expected_completion_date'] ?? null,
                     'vat' => $vat,
                     'vatAmount' => $vatAmount,
                     'amount' => $totalAmount,
@@ -3068,6 +3071,7 @@ class ProjectController extends Basefunction {
                 'projectId' => 'required|integer',
                 'vendorId' => 'required|integer',
                 'description' => 'nullable|string',
+                'expected_completion_date' => 'nullable|date',
                 'vat' => 'nullable|numeric|min:0|max:100',
                 'item_description' => 'required|array|min:1',
                 'item_description.*' => 'required|string',
@@ -3124,6 +3128,7 @@ class ProjectController extends Basefunction {
                 DB::table('vendor_projects')->where('id', $data['id'])->update([
                     'vendorId' => $data['vendorId'],
                     'description' => $data['description'] ?? null,
+                    'expected_completion_date' => $data['expected_completion_date'] ?? null,
                     'vat' => $vat,
                     'vatAmount' => $vatAmount,
                     'amount' => $totalAmount,
@@ -3199,6 +3204,7 @@ class ProjectController extends Basefunction {
                     'vendor_projects.projectId',
                     'vendor_projects.vendorId',
                     'vendor_projects.description',
+                    'vendor_projects.expected_completion_date',
                     'vendor_projects.vat',
                     'vendor_projects.vatAmount',
                     'vendor_projects.amount',
