@@ -18,7 +18,8 @@
                     </div>
                     @if (!empty(request('projectCategoryId')))
                         <div class="col-auto">
-                            <a href="{{ url('/project-category-expense-classification?projectCategoryId=' . request('projectCategoryId')) }}" class="btn btn-primary">
+                            <a href="{{ url('/project-category-expense-classification?projectCategoryId=' . request('projectCategoryId')) }}"
+                                class="btn btn-primary">
                                 <i class="fe fe-arrow-left"></i> Back to Expense Classification
                             </a>
                         </div>
@@ -172,7 +173,7 @@
                                 <h4 class="modal-title">Delete</h4>
                                 <p class="mb-4">Are you sure want to delete?</p>
                                 <button type="submit" class="btn btn-primary" name="del">Continue </button>
-                                <input type="hidden" id="deleteid" name="id">
+                                <input type="hidden" id="deleteid" name="deleteid">
                                 <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
                             </div>
                         </div>
