@@ -634,7 +634,7 @@ class ProjectController extends Basefunction {
             // Check if budget has related records before deletion
             // Add your related table checks here if needed
             if (DB::table('project_budget')->where('budgetId', $del)->first()) {
-                return back()->with('error_message', 'Budget has related project budgets. Hence, record cannot be deleted!');
+                return back()->with('error_message', 'Element has related project budgets. Hence, record cannot be deleted!');
             }
             DB::table('budgets')->where('id', $del)->delete();
             return back()->with('message', 'Record successfully deleted.');
@@ -2317,39 +2317,38 @@ class ProjectController extends Basefunction {
                 ->orderBy('rank', 'asc')
                 ->get();
             
-            // Fetch project budgets where classification isMilestone = 1
-            $budgets = DB::table('project_budget')
-                ->leftJoin('budgets', 'project_budget.budgetId', '=', 'budgets.id')
-                ->leftJoin('budget_classifications', 'budgets.classificationId', '=', 'budget_classifications.id')
-                ->where('project_budget.projectId', $data['projectId'])
-                ->where('budget_classifications.isMilestone', 1)
+            // Fetch approved vendor projects aggregated by vendor for selected project
+            $budgets = DB::table('vendor_projects')
+                ->leftJoin('budgets as vendor', 'vendor_projects.vendorId', '=', 'vendor.id')
+                ->where('vendor_projects.projectId', $data['projectId'])
+                ->where('vendor_projects.status', 'Approved')
                 ->select(
-                    'project_budget.id',
-                    'project_budget.budgetId',
-                    'project_budget.unit',
-                    'project_budget.unitCost',
-                    'project_budget.amount',
-                    'budgets.name as budgetName'
+                    DB::raw('MIN(vendor_projects.id) as id'),
+                    'vendor_projects.vendorId',
+                    DB::raw('SUM(vendor_projects.amount) as amount'),
+                    DB::raw('COALESCE(vendor.name, CONCAT("Vendor #", vendor_projects.vendorId)) as budgetName')
                 )
-                ->orderBy('budgets.name', 'asc')
+                ->groupBy('vendor_projects.vendorId', 'vendor.name')
+                ->orderBy('vendor.name', 'asc')
                 ->get();
             
-            // Fetch all approved expenses for this project, grouped by budget and milestone
+            // Fetch all approved expenses for this project, grouped by vendor and milestone.
+            // project_expense.budgetId is used as vendor account id for vendor-related expenses.
             $expenses = DB::table('project_expense')
                 ->where('project_expense.projectId', $data['projectId'])
                 ->where('project_expense.status', 'Approved')
                 ->select(
-                    'project_expense.budgetId',
+                    'project_expense.budgetId as vendorId',
                     'project_expense.paymentMilestoneId',
                     DB::raw('SUM(project_expense.debit) as totalExpense')
                 )
                 ->groupBy('project_expense.budgetId', 'project_expense.paymentMilestoneId')
                 ->get();
             
-            // Create a keyed collection for quick lookup: budgetId_milestoneId => expense
+            // Create a keyed collection for quick lookup: vendorId_milestoneId => expense
             $expenseMap = [];
             foreach ($expenses as $expense) {
-                $key = $expense->budgetId . '_' . $expense->paymentMilestoneId;
+                $key = $expense->vendorId . '_' . $expense->paymentMilestoneId;
                 $expenseMap[$key] = $expense->totalExpense;
             }
             
@@ -2369,8 +2368,8 @@ class ProjectController extends Basefunction {
                         'milestone' => $milestone->milestone
                     ];
                     
-                    // Get actual expense for this budget and milestone
-                    $expenseKey = $budget->budgetId . '_' . $milestone->id;
+                    // Get actual expense for this vendor and milestone
+                    $expenseKey = $budget->vendorId . '_' . $milestone->id;
                     $actualExpense = isset($expenseMap[$expenseKey]) ? $expenseMap[$expenseKey] : 0;
                     $budget->milestoneExpenses[$milestone->id] = $actualExpense;
                     $budget->totalActualExpense += $actualExpense;

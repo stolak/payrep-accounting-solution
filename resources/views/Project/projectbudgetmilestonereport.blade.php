@@ -72,8 +72,6 @@
                                             <tr>
                                                 <th rowspan="2" style="vertical-align: middle;">Contractor/vendor Name
                                                 </th>
-                                                <th rowspan="2" style="vertical-align: middle;">Unit</th>
-                                                <th rowspan="2" style="vertical-align: middle;">Unit Cost</th>
                                                 <th rowspan="2" style="vertical-align: middle;">Amount</th>
                                                 @if ($milestones->count() > 0)
                                                     <th colspan="{{ $milestones->count() }}"
@@ -107,12 +105,6 @@
                                                     <tr>
                                                         <td><strong>{{ $budget->budgetName }}</strong></td>
                                                         <td style="text-align: right;">
-                                                            {{ $budget->unit ? number_format($budget->unit, 2, '.', ',') : '-' }}
-                                                        </td>
-                                                        <td style="text-align: right;">
-                                                            {{ $budget->unitCost ? number_format($budget->unitCost, 2, '.', ',') : '-' }}
-                                                        </td>
-                                                        <td style="text-align: right;">
                                                             <strong>{{ number_format($budget->amount, 2, '.', ',') }}</strong>
                                                         </td>
                                                         @foreach ($milestones as $milestone)
@@ -131,7 +123,7 @@
                                                     </tr>
                                                 @endforeach
                                                 <tr style="background-color: #d0d0d0; font-weight: bold; font-size: 1.1em;">
-                                                    <td colspan="3" class="text-right"><strong>Grand Total:</strong></td>
+                                                    <td class="text-right"><strong>Grand Total:</strong></td>
                                                     <td style="text-align: right;">
                                                         <strong>{{ number_format($totalBudgeted, 2, '.', ',') }}</strong>
                                                     </td>
@@ -167,9 +159,9 @@
                                                 </tr>
                                             @else
                                                 <tr>
-                                                    <td colspan="{{ 4 + $milestones->count() * 2 + 1 }}"
+                                                    <td colspan="{{ 2 + $milestones->count() * 2 + 1 }}"
                                                         class="text-center">
-                                                        No milestone budgets found for this project.
+                                                        No approved vendor amounts found for this project.
                                                     </td>
                                                 </tr>
                                             @endif
