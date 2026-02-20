@@ -673,9 +673,9 @@
 
                                 <div class="sign-block">
                                     <strong>Accepted for Seller</strong><br>
-                                    Name: ___________________________<br>
-                                    Signature: ________________________<br>
-                                    Date: ____________________________
+                                    Name: {{ $vendorInfo['attention'] }}<br>
+
+                                    Date: {{ $poDate }}
                                 </div>
                             </td>
                         </tr>
@@ -771,9 +771,10 @@
 
                         <div class="sign-block">
                             <strong>Accepted for Seller</strong><br>
-                            Name: ___________________________<br>
-                            Signature: ________________________<br>
-                            Date: ____________________________
+                            Name: {{ $vendorInfo['attention'] }}<br>
+
+
+                            Date: {{ $poDate }}
                         </div>
                     </div>
                 @endif
