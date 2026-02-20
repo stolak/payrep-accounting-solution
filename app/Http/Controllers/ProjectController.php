@@ -20,6 +20,7 @@ class ProjectController extends Basefunction {
         $data['description'] = $request->input('description');
         $data['categoryId'] = $request->input('categoryId');
         $data['location'] = $request->input('location');
+        $data['project_owner'] = $request->input('project_owner');
         $data['status'] = $request->input('status');
         $data['id'] = $request->input('id');
         $data['expenseAccountId'] = $request->input('expenseAccountId');
@@ -36,6 +37,7 @@ class ProjectController extends Basefunction {
                 'description' => 'required|string',
                 'categoryId' => 'nullable|integer',
                 'location' => 'nullable|string',
+                'project_owner' => 'nullable|string',
                 'status' => 'nullable|string',
                 'clientId' => 'nullable|integer',
                 'clientAccountId' => 'nullable|integer|exists:account_charts,id',
@@ -124,6 +126,7 @@ class ProjectController extends Basefunction {
                 'description' => $data['description'] ?? null,
                 'categoryId' => $data['categoryId'] ?? null,
                 'location' => $data['location'] ?? null,
+                'project_owner' => $data['project_owner'] ?? null,
                 'status' => $data['status'] ?? "Active",
                 'expenseAccountId' => $data['expenseAccountId'] ?? null,
                 'revenue_accountId' => $data['revenue_accountId'] ?? null,
@@ -256,6 +259,7 @@ class ProjectController extends Basefunction {
                 'description' => 'nullable|string',
                 'categoryId' => 'nullable|integer',
                 'location' => 'nullable|string',
+                'project_owner' => 'nullable|string',
                 'status' => 'nullable|string',
                 'clientId' => 'nullable|integer',
                 'clientAccountId' => 'nullable|integer|exists:account_charts,id',
@@ -326,6 +330,7 @@ class ProjectController extends Basefunction {
                 'description' => $data['description'] ?? null,
                 'categoryId' => $data['categoryId'] ?? null,
                 'location' => $data['location'] ?? null,
+                'project_owner' => $data['project_owner'] ?? null,
                 'status' => $data['status'] ?? "Active",
                 'expenseAccountId' => $data['expenseAccountId'] ?? null,
                 'revenue_accountId' => $data['revenue_accountId'] ?? null,
@@ -416,6 +421,7 @@ class ProjectController extends Basefunction {
                 'description',
                 'categoryId',
                 'location',
+                'project_owner',
                 'projects.status',
                 'projects.createdAt',
                 'projects.updatedAt',
@@ -2373,6 +2379,7 @@ class ProjectController extends Basefunction {
         $data['address'] = $request->input('address');
         $data['email'] = $request->input('email');
         $data['contactPhoneNumber'] = $request->input('contact_phone_number');
+        $data['contactPerson'] = $request->input('contact_person');
         $data['bankid'] = $request->input('bankid');
         $data['bankAccountName'] = $request->input('bank_account_name');
         $data['bankAccountNumber'] = $request->input('bank_account_number');
@@ -2392,6 +2399,7 @@ class ProjectController extends Basefunction {
                 'address' => 'nullable|string',
                 'email' => 'nullable|email',
                 'contact_phone_number' => 'nullable|string',
+                'contact_person' => 'nullable|string',
                 'bankid' => 'nullable|integer|exists:tblbanklist,bankID',
                 'bank_account_name' => 'nullable|string',
                 'bank_account_number' => 'nullable|string',
@@ -2412,6 +2420,7 @@ class ProjectController extends Basefunction {
                 'address' => $data['address'] ?? null,
                 'email' => $data['email'] ?? null,
                 'contact_phone_number' => $data['contactPhoneNumber'] ?? null,
+                'contact_person' => $data['contactPerson'] ?? null,
                 'bankid' => $data['bankid'] ?? null,
                 'bank_account_name' => $data['bankAccountName'] ?? null,
                 'bank_account_number' => $data['bankAccountNumber'] ?? null,
@@ -2436,6 +2445,7 @@ class ProjectController extends Basefunction {
                 'address' => 'nullable|string',
                 'email' => 'nullable|email',
                 'contact_phone_number' => 'nullable|string',
+                'contact_person' => 'nullable|string',
                 'bankid' => 'nullable|integer|exists:tblbanklist,bankID',
                 'bank_account_name' => 'nullable|string',
                 'bank_account_number' => 'nullable|string',
@@ -2456,6 +2466,7 @@ class ProjectController extends Basefunction {
                 'address' => $data['address'] ?? null,
                 'email' => $data['email'] ?? null,
                 'contact_phone_number' => $data['contactPhoneNumber'] ?? null,
+                'contact_person' => $data['contactPerson'] ?? null,
                 'bankid' => $data['bankid'] ?? null,
                 'bank_account_name' => $data['bankAccountName'] ?? null,
                 'bank_account_number' => $data['bankAccountNumber'] ?? null,
@@ -2498,6 +2509,7 @@ class ProjectController extends Basefunction {
                 'budgets.address',
                 'budgets.email',
                 'budgets.contact_phone_number',
+                'budgets.contact_person',
                 'budgets.bankid',
                 'budgets.bank_account_name',
                 'budgets.bank_account_number',

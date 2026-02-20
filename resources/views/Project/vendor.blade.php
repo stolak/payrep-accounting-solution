@@ -130,6 +130,16 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
+                                            <label>Contact Person</label>
+                                            <?php if ($contactPerson == '') {
+                                                $contactPerson = old('contact_person');
+                                            } ?>
+                                            <input type="text" class="form-control" value="{{ $contactPerson }}"
+                                                name="contact_person">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
                                             <label>Account</label>
                                             <?php if ($accountId == '') {
                                                 $accountId = old('accountId');
@@ -245,6 +255,7 @@
                                             <th>Category</th>
                                             <th>Email</th>
                                             <th>Phone</th>
+                                            <th>Contact Person</th>
                                             <th>Status</th>
                                             <th>Action</th>
                                         </tr>
@@ -260,6 +271,7 @@
                                                 <td>{{ $vendor->vendorCategoryName ?? 'N/A' }}</td>
                                                 <td>{{ $vendor->email ?? 'N/A' }}</td>
                                                 <td>{{ $vendor->contact_phone_number ?? 'N/A' }}</td>
+                                                <td>{{ $vendor->contact_person ?? 'N/A' }}</td>
                                                 <td>
                                                     @if ($vendor->status == 'Active')
                                                         <span class="badge bg-success">Active</span>
@@ -282,6 +294,7 @@
                                                             '{{ addslashes($vendor->address ?? '') }}',
                                                             '{{ addslashes($vendor->email ?? '') }}',
                                                             '{{ addslashes($vendor->contact_phone_number ?? '') }}',
+                                                            '{{ addslashes($vendor->contact_person ?? '') }}',
                                                             '{{ $vendor->bankid ?? '' }}',
                                                             '{{ addslashes($vendor->bank_account_name ?? '') }}',
                                                             '{{ addslashes($vendor->bank_account_number ?? '') }}',
@@ -400,6 +413,13 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
+                                        <label>Contact Person</label>
+                                        <input type="text" id="contact_person" name="contact_person"
+                                            class="form-control">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
                                         <label>Account</label>
                                         <select class="select2 form-control" id="accountId" name="accountId">
                                             <option value="">--Select Account--</option>
@@ -510,7 +530,7 @@
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
     <script>
         function editfunc(id, name, vendorId, tradeName, vendorType, taxNumber, vendorCategory, address, email,
-            contactPhoneNumber, bankid, bankAccountName, bankAccountNumber, currency, description, accountId, status) {
+            contactPhoneNumber, contactPerson, bankid, bankAccountName, bankAccountNumber, currency, description, accountId, status) {
             document.getElementById('id').value = id;
             document.getElementById('name').value = name || '';
             document.getElementById('vendorId').value = vendorId || '';
@@ -519,6 +539,7 @@
             document.getElementById('address').value = address || '';
             document.getElementById('email').value = email || '';
             document.getElementById('contact_phone_number').value = contactPhoneNumber || '';
+            document.getElementById('contact_person').value = contactPerson || '';
             document.getElementById('bank_account_name').value = bankAccountName || '';
             document.getElementById('bank_account_number').value = bankAccountNumber || '';
             document.getElementById('currency').value = currency || '';

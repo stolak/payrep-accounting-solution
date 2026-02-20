@@ -149,6 +149,17 @@
                                         </div>
                                     </div>
 
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Project Owner</label>
+                                            <?php if ($project_owner == '') {
+                                                $project_owner = old('project_owner');
+                                            } ?>
+                                            <input type="text" class="form-control" value="{{ $project_owner }}"
+                                                name="project_owner">
+                                        </div>
+                                    </div>
+
                                 </div>
 
                                 <div class="row">
@@ -392,6 +403,7 @@
                                             <th rowspan="1">Revenue Ledger</th>
                                             <th rowspan="1">Description</th>
                                             <th rowspan="1">Location</th>
+                                            <th rowspan="1">Project Owner</th>
                                             <th rowspan="1">Status</th>
                                             <th rowspan="1">PO(s)</th>
                                             <th rowspan="1">Action</th>
@@ -432,6 +444,9 @@
                                                     {{ $list->location ?? 'N/A' }}
                                                 </td>
                                                 <td>
+                                                    {{ $list->project_owner ?? 'N/A' }}
+                                                </td>
+                                                <td>
                                                     @if ($list->status == 'Active')
                                                         <span class="badge bg-success">Active</span>
                                                     @elseif ($list->status == 'Inactive')
@@ -467,7 +482,7 @@
                                                 </td>
                                                 <td>
                                                     <a class="btn btn-sm bg-success-light"
-                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->projectCode }}','{{ addslashes($list->name) }}','{{ addslashes($list->description ?? '') }}','{{ $list->categoryId }}','{{ addslashes($list->location ?? '') }}','{{ $list->status }}','{{ $list->clientId ?? '' }}','{{ $list->clientAccountId ?? '' }}','{{ $list->revenue_accountId ?? '' }}',{{ json_encode($list->expenseClassificationLedger ?? []) }})">
+                                                        href="javascript: editfunc('{{ $list->id }}','{{ $list->projectCode }}','{{ addslashes($list->name) }}','{{ addslashes($list->description ?? '') }}','{{ $list->categoryId }}','{{ addslashes($list->location ?? '') }}','{{ addslashes($list->project_owner ?? '') }}','{{ $list->status }}','{{ $list->clientId ?? '' }}','{{ $list->clientAccountId ?? '' }}','{{ $list->revenue_accountId ?? '' }}',{{ json_encode($list->expenseClassificationLedger ?? []) }})">
                                                         <i class="fe fe-pencil"></i>
                                                     </a>
                                                     <a class="btn btn-sm bg-info-light"
@@ -599,6 +614,15 @@
                                             style="text-align: left;" autocomplete="off">
                                     </div>
                                 </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Project Owner</label>
+                                        <input type="text" id="project_owner" name="project_owner" class="form-control"
+                                            style="text-align: left;" autocomplete="off">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Status</label>
@@ -750,7 +774,7 @@
             }
         }
 
-        function editfunc(id, projectCode, name, description, categoryId, location, status, clientId, clientAccountId,
+        function editfunc(id, projectCode, name, description, categoryId, location, projectOwner, status, clientId, clientAccountId,
             revenueAccountId, expenseClassificationLedgerMap) {
             document.getElementById('id').value = id;
             document.getElementById('projectCode').value = projectCode || '';
@@ -758,6 +782,7 @@
             document.getElementById('description').value = description || '';
             document.getElementById('categoryId').value = categoryId || '';
             document.getElementById('location').value = location || '';
+            document.getElementById('project_owner').value = projectOwner || '';
             document.getElementById('status').value = status || 1;
             document.getElementById('clientId').value = clientId || '';
             loadClientLedgers(clientId || '', 'clientAccountId', clientAccountId || '');

@@ -88,7 +88,7 @@
                                         </div>
                                         <div class="col-md-7">
                                             <div class="form-group">
-                                                <label>Description</label>
+                                                <label>Remarks</label>
                                                 <?php if ($description == '') {
                                                     $description = old('description');
                                                 } ?>
