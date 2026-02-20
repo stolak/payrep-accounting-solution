@@ -66,8 +66,12 @@
                 <div class="row">
                     <div class="col-md-12">
                         <div class="card">
-                            <div class="card-header">
+                            <div class="card-header d-flex justify-content-between align-items-center">
                                 <h4 class="card-title">Assign Expense Classifications</h4>
+                                <a href="{{ url('/budget-category' . (!empty($projectCategoryId) ? '?projectCategoryId=' . $projectCategoryId : '')) }}"
+                                    class="btn btn-primary">
+                                    <i class="fe fe-plus"></i> Add New
+                                </a>
                             </div>
                             <div class="card-body">
                                 <form method="post" id="assignForm">
@@ -81,23 +85,26 @@
                                                     style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; border-radius: 4px; background-color: #f8f9fa;">
                                                     @if ($expenseClassifications->count() > 0)
                                                         @foreach ($expenseClassifications as $classification)
-                                                            <div class="form-check mb-2">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    name="expense_classifications[]"
-                                                                    value="{{ $classification->id }}"
-                                                                    id="classification_{{ $classification->id }}"
-                                                                    {{ in_array($classification->id, $assignedClassifications ?? []) ? 'checked' : '' }}>
-                                                                <label class="form-check-label"
-                                                                    for="classification_{{ $classification->id }}">
-                                                                    <strong>{{ $classification->category }}</strong>
-
-                                                                </label>
+                                                            <div
+                                                                class="d-flex justify-content-between align-items-center mb-2">
+                                                                <div class="form-check mb-0">
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        name="expense_classifications[]"
+                                                                        value="{{ $classification->id }}"
+                                                                        id="classification_{{ $classification->id }}"
+                                                                        {{ in_array($classification->id, $assignedClassifications ?? []) ? 'checked' : '' }}>
+                                                                    <label class="form-check-label"
+                                                                        for="classification_{{ $classification->id }}">
+                                                                        <strong>{{ $classification->category }}</strong>
+                                                                    </label>
+                                                                </div>
+                                                                <a class="btn btn-sm bg-info-light ml-2"
+                                                                    href="{{ url('/budget-setup?classificationId=' . $classification->id) }}"
+                                                                    title="View Element">
+                                                                    View Element
+                                                                </a>
                                                             </div>
                                                         @endforeach
-                                                        <a href="{{ url('/budget-category' . (!empty($projectCategoryId) ? '?projectCategoryId=' . $projectCategoryId : '')) }}"
-                                                            class="btn btn-primary">
-                                                            <i class="fe fe-plus"></i> Add New
-                                                        </a>
                                                     @else
                                                         <p class="text-muted">No expense classifications available.</p>
                                                     @endif

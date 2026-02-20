@@ -964,12 +964,15 @@ class ProjectController extends Basefunction {
             // Check if classification has related records before deletion
             // Add your related table checks here if needed
             if (DB::table('budgets')->where('classificationId', $del)->first()) {
-                return back()->with('error_message', 'Classification has related budgets. Hence, record cannot be deleted!');
+                return back()->with('error_message', 'Classification already has element(s). Hence, record cannot be deleted!');
             }
             if (DB::table('project_categories_expense_classification')->where('expense_classificationId', $del)->first()) {
                 return back()->with('error_message', 'Classification is already linked to project category expense mappings. Hence, record cannot be deleted!');
             }
-            DB::table('budget_classifications')->where('id', $del)->delete();
+            if (DB::table('budget_classifications')->where('id', $del)->where('isDeletable', 0) ->first()) {
+                return back()->with('error_message', 'This is a system classification and cannot be deleted! You can only edit it.');
+            }
+            DB::table('budget_classifications')->where('id', $del) ->where('isDeletable', 1)->delete();
             return back()->with('message', 'Record successfully deleted.');
         }
         
