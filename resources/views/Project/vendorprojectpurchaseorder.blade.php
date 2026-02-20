@@ -172,13 +172,18 @@
             letter-spacing: 1px;
             color: #101010;
             background: #fff;
+            background-image: none !important;
             padding-right: 8px;
+            border-bottom: none !important;
+            text-decoration: none !important;
+            box-shadow: none !important;
         }
 
         .comments-line .comments-value {
             white-space: normal;
             overflow-wrap: anywhere;
             word-break: break-word;
+
         }
 
         table {
