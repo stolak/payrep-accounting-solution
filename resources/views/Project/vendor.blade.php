@@ -42,12 +42,14 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label>Vendor ID <span class="text-danger">*</span></label>
+                                            <label>Vendor ID</label>
                                             <?php if ($vendorId == '') {
                                                 $vendorId = old('vendorId');
                                             } ?>
-                                            <input type="text" class="form-control" value="{{ $vendorId }}" required
+                                            <input type="text" class="form-control" value="{{ $vendorId }}"
                                                 name="vendorId">
+                                            <small class="form-text text-muted">Optional. Auto-generated when left
+                                                blank.</small>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
@@ -343,9 +345,9 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>Vendor ID <span class="text-danger">*</span></label>
+                                        <label>Vendor ID</label>
                                         <input type="text" id="vendorId" name="vendorId" class="form-control"
-                                            autocomplete="off" required>
+                                            autocomplete="off">
                                     </div>
                                 </div>
                             </div>
@@ -530,7 +532,8 @@
     <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
     <script>
         function editfunc(id, name, vendorId, tradeName, vendorType, taxNumber, vendorCategory, address, email,
-            contactPhoneNumber, contactPerson, bankid, bankAccountName, bankAccountNumber, currency, description, accountId, status) {
+            contactPhoneNumber, contactPerson, bankid, bankAccountName, bankAccountNumber, currency, description, accountId,
+            status) {
             document.getElementById('id').value = id;
             document.getElementById('name').value = name || '';
             document.getElementById('vendorId').value = vendorId || '';

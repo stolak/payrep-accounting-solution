@@ -2420,7 +2420,10 @@ class ProjectController extends Basefunction {
         $data['name'] = $request->input('name');
         $data['description'] = $request->input('description');
         $data['accountId'] = $request->input('accountId');
-        $data['vendorId'] = $request->input('vendorId');
+        $data['vendorId'] = trim((string) $request->input('vendorId'));
+        if ($data['vendorId'] === '') {
+            $data['vendorId'] = null;
+        }
         $data['tradeName'] = $request->input('trade_name');
         $data['vendorType'] = $request->input('vendor_type');
         $data['taxNumber'] = $request->input('tax_number');
@@ -2440,7 +2443,7 @@ class ProjectController extends Basefunction {
             $this->validate($request, [
                 'name' => 'required|string|unique:budgets,name',
                 'description' => 'nullable|string',
-                'vendorId' => 'required|string|unique:budgets,vendorId',
+                'vendorId' => 'nullable|string|unique:budgets,vendorId',
                 'trade_name' => 'nullable|string',
                 'vendor_type' => 'nullable|integer|exists:vendor_type,id',
                 'tax_number' => 'nullable|string',
@@ -2456,29 +2459,51 @@ class ProjectController extends Basefunction {
                 'accountId' => 'nullable|integer',
             ]);
 
-            DB::table('budgets')->insert([
-                'name' => $data['name'],
-                'description' => $data['description'] ?? null,
-                'classificationId' => 1,
-                'isVendor' => 1,
-                'vendorId' => $data['vendorId'],
-                'trade_name' => $data['tradeName'] ?? null,
-                'vendor_type' => $data['vendorType'] ?? null,
-                'tax_number' => $data['taxNumber'] ?? null,
-                'vendor_category' => $data['vendorCategory'] ?? null,
-                'address' => $data['address'] ?? null,
-                'email' => $data['email'] ?? null,
-                'contact_phone_number' => $data['contactPhoneNumber'] ?? null,
-                'contact_person' => $data['contactPerson'] ?? null,
-                'bankid' => $data['bankid'] ?? null,
-                'bank_account_name' => $data['bankAccountName'] ?? null,
-                'bank_account_number' => $data['bankAccountNumber'] ?? null,
-                'currency' => $data['currency'] ?? null,
-                'accountId' => $data['accountId'] ?? null,
-                'status' => 'Active',
-                'createdAt' => now(),
-                'updatedAt' => now(),
-            ]);
+            if (empty($data['vendorId']) && empty($data['vendorType'])) {
+                return back()->withInput()->with('error_message', 'Vendor Type is required to auto-generate Vendor ID.');
+            }
+
+            DB::transaction(function () use ($data) {
+
+                $serial = null;
+            
+            
+                $lastSerial = DB::table('budgets')
+                    ->lockForUpdate()
+                    ->max('serial_no');
+            
+                $serial = $lastSerial ? $lastSerial + 1 : 1;
+
+                $vendorIdToPersist = $data['vendorId'];
+                if (empty($vendorIdToPersist)) {
+                    $vendorIdToPersist = $this->generateVendorIdentifier((int) $data['vendorType'], (int) $serial);
+                }
+
+                DB::table('budgets')->insert([
+                            'name' => $data['name'],
+                            'description' => $data['description'] ?? null,
+                            'classificationId' => 1,
+                            'isVendor' => 1,
+                            'vendorId' => $vendorIdToPersist,
+                            'trade_name' => $data['tradeName'] ?? null,
+                            'vendor_type' => $data['vendorType'] ?? null,
+                            'tax_number' => $data['taxNumber'] ?? null,
+                            'vendor_category' => $data['vendorCategory'] ?? null,
+                            'address' => $data['address'] ?? null,
+                            'email' => $data['email'] ?? null,
+                            'contact_phone_number' => $data['contactPhoneNumber'] ?? null,
+                            'contact_person' => $data['contactPerson'] ?? null,
+                            'bankid' => $data['bankid'] ?? null,
+                            'bank_account_name' => $data['bankAccountName'] ?? null,
+                            'bank_account_number' => $data['bankAccountNumber'] ?? null,
+                            'currency' => $data['currency'] ?? null,
+                            'accountId' => $data['accountId'] ?? null,
+                            'serial_no' => $serial,
+                            'status' => 'Active',
+                            'createdAt' => now(),
+                            'updatedAt' => now(),
+                        ]);
+            });
             return back()->with('message', 'New vendor successfully added.');
         }
         
@@ -2486,7 +2511,7 @@ class ProjectController extends Basefunction {
             $this->validate($request, [
                 'name' => 'required|string|unique:budgets,name,' . $request->input('id'),
                 'description' => 'nullable|string',
-                'vendorId' => 'required|string|unique:budgets,vendorId,' . $request->input('id'),
+                'vendorId' => 'nullable|string|unique:budgets,vendorId,' . $request->input('id'),
                 'trade_name' => 'nullable|string',
                 'vendor_type' => 'nullable|integer|exists:vendor_type,id',
                 'tax_number' => 'nullable|string',
@@ -2504,10 +2529,26 @@ class ProjectController extends Basefunction {
                 'id' => 'required|integer',
             ]);
 
+            $existingVendor = DB::table('budgets')->where('id', $data['id'])->select('serial_no', 'vendor_type')->first();
+            if (!$existingVendor) {
+                return back()->with('error_message', 'Vendor record not found.');
+            }
+
+            $vendorTypeForCode = $data['vendorType'] ?? $existingVendor->vendor_type;
+            if (empty($data['vendorId']) && empty($vendorTypeForCode)) {
+                return back()->withInput()->with('error_message', 'Vendor Type is required to auto-generate Vendor ID.');
+            }
+
+            $vendorIdToPersist = $data['vendorId'];
+            if (empty($vendorIdToPersist)) {
+                $sequenceSerial = (int) ($existingVendor->serial_no ?: $data['id']);
+                $vendorIdToPersist = $this->generateVendorIdentifier((int) $vendorTypeForCode, $sequenceSerial);
+            }
+
             DB::table('budgets')->where('id', $data['id'])->update([
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
-                'vendorId' => $data['vendorId'],
+                'vendorId' => $vendorIdToPersist,
                 'trade_name' => $data['tradeName'] ?? null,
                 'vendor_type' => $data['vendorType'] ?? null,
                 'tax_number' => $data['taxNumber'] ?? null,
@@ -2594,6 +2635,17 @@ class ProjectController extends Basefunction {
             ->get();
         
         return view('Project.vendor', $data);
+    }
+
+    private function generateVendorIdentifier(int $vendorTypeId, int $serial): string
+    {
+        $typeCode = strtoupper(trim((string) DB::table('vendor_type')->where('id', $vendorTypeId)->value('code')));
+        if ($typeCode === '') {
+            $typeCode = 'SUP';
+        }
+
+        $sequence = 1000 + $serial;
+        return 'VND-' . $typeCode . '-' . $sequence;
     }
 
     public function projectCategoryPaymentMilestone(Request $request)
