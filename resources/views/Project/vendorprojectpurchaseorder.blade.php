@@ -128,19 +128,7 @@
         }
 
         .remarks-row {
-            display: flex;
-            align-items: flex-end;
-            gap: 12px;
-        }
-
-        .remarks-row .comments-label {
-            margin-top: 0;
-            white-space: nowrap;
-        }
-
-        .remarks-row .line {
-            flex: 1;
-            margin-bottom: 0;
+            margin-top: 6px;
         }
 
         .line {
@@ -160,6 +148,37 @@
             overflow: hidden;
             text-overflow: ellipsis;
             width: 100%;
+        }
+
+        .comments-line {
+            width: 100%;
+            font-size: 24px;
+            color: #3a3a3a;
+            min-height: 32px;
+            line-height: 32px;
+            padding-bottom: 3px;
+            /* Keep original full-width writing lines */
+            background-image: repeating-linear-gradient(to bottom,
+                    transparent 0,
+                    transparent 28px,
+                    #6f6f6f 28px,
+                    #6f6f6f 32px);
+            background-size: 100% 32px;
+            background-repeat: repeat-y;
+        }
+
+        .comments-line .comments-label-inline {
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #101010;
+            background: #fff;
+            padding-right: 8px;
+        }
+
+        .comments-line .comments-value {
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         table {
@@ -347,6 +366,7 @@
             .address-lines,
             .address-lines strong,
             .comments-label,
+            .comments-line,
             .line,
             .meta-table th,
             .meta-table td,
@@ -399,20 +419,21 @@
                 padding-bottom: 2px;
             }
 
+            .comments-line {
+                min-height: 20px;
+                line-height: 20px;
+                padding-bottom: 2px;
+                background-image: repeating-linear-gradient(to bottom,
+                        transparent 0,
+                        transparent 17px,
+                        #6f6f6f 17px,
+                        #6f6f6f 20px);
+                background-size: 100% 20px;
+                background-repeat: repeat-y;
+            }
+
             .remarks-row {
-                display: table;
                 width: 100%;
-                table-layout: fixed;
-            }
-
-            .remarks-row .comments-label,
-            .remarks-row .line {
-                display: table-cell;
-                vertical-align: bottom;
-            }
-
-            .remarks-row .comments-label {
-                width: 78px;
             }
 
             .meta-table th,
@@ -479,10 +500,11 @@
                 </div>
 
                 <div class="remarks-row">
-                    <div class="comments-label">Comments or Special Instructions:</div>
-                    <div class="line"><span>{{ $comments }}</span></div>
+                    <div class="comments-line">
+                        <span class="comments-label-inline">Comments or Special Instructions:</span>
+                        <span class="comments-value">{{ $comments }}</span>
+                    </div>
                 </div>
-                <div class="line"></div>
 
 
                 <table class="meta-table">
