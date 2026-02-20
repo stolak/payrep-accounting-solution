@@ -183,6 +183,11 @@
             white-space: normal;
             overflow-wrap: anywhere;
             word-break: break-word;
+            /* Fallback underline (works in PDF renderers that ignore background gradients) */
+            text-decoration: underline;
+            text-decoration-color: #6f6f6f;
+            text-underline-offset: 6px;
+            text-decoration-skip-ink: none;
 
         }
 
@@ -441,6 +446,12 @@
                 width: 100%;
             }
 
+            .comments-line .comments-value {
+                text-decoration: underline;
+                text-underline-offset: 3px;
+                text-decoration-skip-ink: none;
+            }
+
             .meta-table th,
             .meta-table td,
             .main-table th,
@@ -562,12 +573,15 @@
                     </tbody>
                 </table>
 
+                @php
+                    $poCurrency = !empty($pdfMode) ? 'NGN' : '₦';
+                @endphp
                 <div class="total-box">
-                    <div>Subtotal: &nbsp; ₦ {{ number_format($subtotal, 2, '.', ',') }}</div>
-                    <div>VAT ({{ number_format($vatPercent, 1) }}%): &nbsp; ₦
+                    <div>Subtotal: &nbsp; {{ $poCurrency }} {{ number_format($subtotal, 2, '.', ',') }}</div>
+                    <div>VAT ({{ number_format($vatPercent, 1) }}%): &nbsp; {{ $poCurrency }}
                         {{ number_format($vatAmount, 2, '.', ',') }}
                     </div>
-                    <div class="bold">TOTAL: ₦ {{ number_format($total, 2, '.', ',') }}</div>
+                    <div class="bold">TOTAL: {{ $poCurrency }} {{ number_format($total, 2, '.', ',') }}</div>
                 </div>
             </div>
         </section>
