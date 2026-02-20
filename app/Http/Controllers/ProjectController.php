@@ -10,6 +10,7 @@ use Session;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Validation\Rule;
 use PDF;
 class ProjectController extends Basefunction {
 
@@ -584,7 +585,13 @@ class ProjectController extends Basefunction {
         
         if (isset($_POST['addnew'])) {
             $this->validate($request, [
-                'name' => 'required|string|unique:budgets,name',
+                'name' => [
+                    'required',
+                    'string',
+                    Rule::unique('budgets', 'name')->where(function ($query) use ($request) {
+                        return $query->where('classificationId', $request->input('classificationId'));
+                    }),
+                ],
                 'description' => 'nullable|string',
                 'classificationId' => 'required|integer',
             ]);
@@ -599,7 +606,15 @@ class ProjectController extends Basefunction {
         
         if (isset($_POST['update'])) {
             $this->validate($request, [
-                'name' => 'required|string|unique:budgets,name,' . $request->input('id'),
+                'name' => [
+                    'required',
+                    'string',
+                    Rule::unique('budgets', 'name')
+                        ->where(function ($query) use ($request) {
+                            return $query->where('classificationId', $request->input('classificationId'));
+                        })
+                        ->ignore($request->input('id')),
+                ],
                 'description' => 'nullable|string',
                 'classificationId' => 'required|integer',
                 'id' => 'required|integer',
