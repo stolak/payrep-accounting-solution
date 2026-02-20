@@ -1036,7 +1036,10 @@ class ProjectController extends Basefunction {
     {
         $data['name'] = $request->input('name');
         $data['clientAccountIds'] = $request->input('clientAccountIds', []);
-        $data['clientCode'] = $request->input('client_code');
+        $data['clientCode'] = trim((string) $request->input('client_code'));
+        if ($data['clientCode'] === '') {
+            $data['clientCode'] = null;
+        }
         $data['clientType'] = $request->input('client_type');
         $data['status'] = $request->input('status');
         $data['contactAddress'] = $request->input('contact_address');
@@ -1050,7 +1053,7 @@ class ProjectController extends Basefunction {
                 'name' => 'required|string|unique:clients,name',
                 'clientAccountIds' => 'required|array|min:1',
                 'clientAccountIds.*' => 'required|integer|exists:account_charts,id|distinct',
-                'client_code' => 'required|string|unique:clients,client_code',
+                'client_code' => 'nullable|string|unique:clients,client_code',
                 'client_type' => 'required|integer|exists:client_type,id',
                 'contact_address' => 'nullable|string',
                 'contact_phone_number' => 'nullable|string',
@@ -1068,7 +1071,7 @@ class ProjectController extends Basefunction {
 
             DB::transaction(function () use ($data) {
                 $clientId = DB::table('clients')->insertGetId([
-                'name' => $data['name'],
+                    'name' => $data['name'],
                     'client_code' => $data['clientCode'],
                     'client_type' => $data['clientType'],
                     'contact_address' => $data['contactAddress'] ?? null,
@@ -1077,6 +1080,14 @@ class ProjectController extends Basefunction {
                     'createdBy' => Auth::user()->id,
                     'createdAt' => now(),
                 ]);
+
+                // Auto-generate client code when not provided from UI.
+                if (empty($data['clientCode'])) {
+                    $generatedClientCode = $this->generateClientCode((int) $data['clientType'], (int) $clientId);
+                    DB::table('clients')->where('id', $clientId)->update([
+                        'client_code' => $generatedClientCode,
+                    ]);
+                }
 
                 foreach ($data['clientAccountIds'] as $accountId) {
                     DB::table('client_ledgers')->insert([
@@ -1104,7 +1115,7 @@ class ProjectController extends Basefunction {
                 'name' => 'required|string|unique:clients,name,' . $request->input('id'),
                 'clientAccountIds' => 'required|array|min:1',
                 'clientAccountIds.*' => 'required|integer|exists:account_charts,id|distinct',
-                'client_code' => 'required|string|unique:clients,client_code,' . $request->input('id'),
+                'client_code' => 'nullable|string|unique:clients,client_code,' . $request->input('id'),
                 'client_type' => 'required|integer|exists:client_type,id',
                 'status' => 'required|in:Active,On Hold,Inactive',
                 'contact_address' => 'nullable|string',
@@ -1124,14 +1135,19 @@ class ProjectController extends Basefunction {
             }
 
             DB::transaction(function () use ($data) {
-            DB::table('clients')->where('id', $data['id'])->update([
-                'name' => $data['name'],
-                    'client_code' => $data['clientCode'],
+                $clientCodeToSave = $data['clientCode'];
+                if (empty($clientCodeToSave)) {
+                    $clientCodeToSave = $this->generateClientCode((int) $data['clientType'], (int) $data['id']);
+                }
+
+                DB::table('clients')->where('id', $data['id'])->update([
+                    'name' => $data['name'],
                     'client_type' => $data['clientType'],
                     'status' => $data['status'],
                     'contact_address' => $data['contactAddress'] ?? null,
                     'contact_phone_number' => $data['contactPhoneNumber'] ?? null,
                     'contact_email_address' => $data['contactEmailAddress'] ?? null,
+                    'client_code' => $clientCodeToSave,
                 ]);
 
                 DB::table('client_ledgers')->where('clientId', $data['id'])->delete();
@@ -1230,6 +1246,19 @@ class ProjectController extends Basefunction {
             ->get();
         
         return view('Project.client', $data);
+    }
+
+    private function generateClientCode(int $clientTypeId, int $clientId): string
+    {
+        $typeCode = strtoupper(trim((string) DB::table('client_type')->where('id', $clientTypeId)->value('code')));
+        if ($typeCode === '') {
+            $typeCode = 'COR';
+        }
+
+        // Sequence is based on serial id in clients table.
+        $sequence = 1000 + $clientId;
+
+        return 'CLT-' . $typeCode . '-' . $sequence;
     }
 
     public function projectPo(Request $request)
@@ -3805,7 +3834,7 @@ class ProjectController extends Basefunction {
                 ]);
             }
         }
-// dd("chrome/node runtime is unavailable", $poData);
+
         $domPdfPoData = $poData;
         $domPdfPoData['pdfRenderer'] = 'dompdf';
 

@@ -48,8 +48,9 @@
                                             <?php if ($clientCode == '') {
                                                 $clientCode = old('client_code');
                                             } ?>
-                                            <input type="text" class="form-control" value="{{ $clientCode }}" required
+                                            <input type="text" class="form-control" value="{{ $clientCode }}"
                                                 name="client_code">
+                                            <small class="form-text text-muted">Optional. Auto-generated when left blank.</small>
                                         </div>
                                     </div>
                                 </div>
