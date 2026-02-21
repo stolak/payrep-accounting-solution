@@ -1261,6 +1261,47 @@ class ProjectController extends Basefunction {
         return 'CLT-' . $typeCode . '-' . $sequence;
     }
 
+    private function generateProjectInvoiceNumber(int $projectId): string
+    {
+        $clientTypeCode = strtoupper(trim((string) DB::table('projects')
+            ->leftJoin('clients', 'projects.clientId', '=', 'clients.id')
+            ->leftJoin('client_type', 'clients.client_type', '=', 'client_type.id')
+            ->where('projects.id', $projectId)
+            ->value('client_type.code')));
+
+        if ($clientTypeCode === '') {
+            $clientTypeCode = 'COR';
+        }
+
+        $monthYear = now()->format('my');
+        $prefix = 'INV-' . $monthYear . '-' . $clientTypeCode;
+
+        $existingInvoiceNumbers = DB::table('project_invoice')
+            ->where('InvoiceNumber', 'like', $prefix . '-%')
+            ->lockForUpdate()
+            ->pluck('InvoiceNumber');
+
+        $maxSequence = 1000;
+        foreach ($existingInvoiceNumbers as $existingInvoiceNumber) {
+            if (!is_string($existingInvoiceNumber)) {
+                continue;
+            }
+            $parts = explode('-', $existingInvoiceNumber);
+            $lastPart = end($parts);
+            $numericPart = (int) preg_replace('/\D/', '', (string) $lastPart);
+            if ($numericPart > $maxSequence) {
+                $maxSequence = $numericPart;
+            }
+        }
+
+        $nextSequence = $maxSequence + 1;
+        if ($nextSequence > 1999) {
+            throw new \RuntimeException('Invoice number sequence limit reached for this client type in the selected month.');
+        }
+
+        return $prefix . '-' . $nextSequence;
+    }
+
     public function projectPo(Request $request)
     {
         $data['projectId'] = $request->input('projectId');
@@ -2894,15 +2935,47 @@ class ProjectController extends Basefunction {
         if (isset($_POST['addnew'])) {
             $this->validate($request, [
                 'projectId' => 'required|integer',
-                'InvoiceNumber' => 'required|string|unique:project_invoice,InvoiceNumber',
-                'amount' => 'required|numeric|min:0',
+                'InvoiceNumber' => 'nullable|string',
                 'vat' => 'nullable|numeric|min:0|max:100',
                 'wht' => 'nullable|numeric|min:0|max:100',
                 'dueDate' => 'required|date',
+                'item_description' => 'required|array|min:1',
+                'item_description.*' => 'required|string',
+                'item_quantity' => 'required|array|min:1',
+                'item_quantity.*' => 'required|numeric|min:0',
+                'item_price' => 'required|array|min:1',
+                'item_price.*' => 'required|numeric|min:0',
             ]);
 
-            // Get form values
-            $amount = $data['amount'];
+            $itemDescriptions = $request->input('item_description', []);
+            $itemQuantities = $request->input('item_quantity', []);
+            $itemPrices = $request->input('item_price', []);
+            $amount = 0;
+            $preparedItems = [];
+
+            foreach ($itemDescriptions as $index => $itemDescription) {
+                $description = trim((string) $itemDescription);
+                if ($description === '') {
+                    continue;
+                }
+
+                $qty = (float) ($itemQuantities[$index] ?? 0);
+                $price = (float) ($itemPrices[$index] ?? 0);
+                $lineSubtotal = $qty * $price;
+
+                $preparedItems[] = [
+                    'description' => $description,
+                    'quantity' => $qty,
+                    'price' => $price,
+                    'subtotal' => $lineSubtotal,
+                ];
+                $amount += $lineSubtotal;
+            }
+
+            if (empty($preparedItems) || $amount <= 0) {
+                return back()->withInput()->with('error_message', 'At least one valid invoice item with amount greater than zero is required.');
+            }
+
             $vat = $data['vat'] ?? 0;
             $wht = $data['wht'] ?? 0;
             $isVatInclusive = $data['vatInclude'] ? 1 : 0;
@@ -2928,39 +3001,89 @@ class ProjectController extends Basefunction {
                 $expectedAmount = $amount - $vatAmount - $whtAmount;
             }
 
-            DB::table('project_invoice')->insert([
-                'projectId' => $data['projectId'],
-                'InvoiceNumber' => $data['InvoiceNumber'],
-                'amount' => $amount,
-                'vat' => $vat,
-                'wht' => $wht,
-                'vatAmount' => round($vatAmount, 2),
-                'whtAmount' => round($whtAmount, 2),
-                'isVatInclusive' => $isVatInclusive,
-                'expectedAmount' => round($expectedAmount, 2),
-                'dueDate' => $data['dueDate'],
-                'status' => 'Pending', // Default status, not editable during creation
-                'createdBy' => Auth::user()->id,
-                'createdAt' => now(),
-                'updateAt' => now(),
-            ]);
+            try {
+                DB::transaction(function () use ($data, $amount, $vat, $wht, $vatAmount, $whtAmount, $isVatInclusive, $expectedAmount, $preparedItems) {
+                    $invoiceNumber = $this->generateProjectInvoiceNumber((int) $data['projectId']);
+
+                    $projectInvoiceId = DB::table('project_invoice')->insertGetId([
+                        'projectId' => $data['projectId'],
+                        'InvoiceNumber' => $invoiceNumber,
+                        'amount' => $amount,
+                        'vat' => $vat,
+                        'wht' => $wht,
+                        'vatAmount' => round($vatAmount, 2),
+                        'whtAmount' => round($whtAmount, 2),
+                        'isVatInclusive' => $isVatInclusive,
+                        'expectedAmount' => round($expectedAmount, 2),
+                        'dueDate' => $data['dueDate'],
+                        'status' => 'Pending', // Default status, not editable during creation
+                        'createdBy' => Auth::user()->id,
+                        'createdAt' => now(),
+                        'updateAt' => now(),
+                    ]);
+
+                    foreach ($preparedItems as $item) {
+                        DB::table('project_invoice_items')->insert([
+                            'project_invoiceId' => $projectInvoiceId,
+                            'description' => $item['description'],
+                            'quantity' => $item['quantity'],
+                            'price' => $item['price'],
+                            'subtotal' => $item['subtotal'],
+                        ]);
+                    }
+                });
+            } catch (\Throwable $e) {
+                return back()->withInput()->with('error_message', $e->getMessage());
+            }
             return back()->with('message', 'New invoice successfully added.');
         }
         
         if (isset($_POST['update'])) {
             $this->validate($request, [
                 'projectId' => 'required|integer',
-                'InvoiceNumber' => 'required|string|unique:project_invoice,InvoiceNumber,' . $request->input('id'),
-                'amount' => 'required|numeric|min:0',
+                'InvoiceNumber' => 'nullable|string',
                 'vat' => 'nullable|numeric|min:0|max:100',
                 'wht' => 'nullable|numeric|min:0|max:100',
                 'dueDate' => 'required|date',
                 'status' => 'nullable|string',
                 'id' => 'required|integer',
+                'item_description' => 'required|array|min:1',
+                'item_description.*' => 'required|string',
+                'item_quantity' => 'required|array|min:1',
+                'item_quantity.*' => 'required|numeric|min:0',
+                'item_price' => 'required|array|min:1',
+                'item_price.*' => 'required|numeric|min:0',
             ]);
 
-            // Get form values
-            $amount = $data['amount'];
+            $itemDescriptions = $request->input('item_description', []);
+            $itemQuantities = $request->input('item_quantity', []);
+            $itemPrices = $request->input('item_price', []);
+            $amount = 0;
+            $preparedItems = [];
+
+            foreach ($itemDescriptions as $index => $itemDescription) {
+                $description = trim((string) $itemDescription);
+                if ($description === '') {
+                    continue;
+                }
+
+                $qty = (float) ($itemQuantities[$index] ?? 0);
+                $price = (float) ($itemPrices[$index] ?? 0);
+                $lineSubtotal = $qty * $price;
+
+                $preparedItems[] = [
+                    'description' => $description,
+                    'quantity' => $qty,
+                    'price' => $price,
+                    'subtotal' => $lineSubtotal,
+                ];
+                $amount += $lineSubtotal;
+            }
+
+            if (empty($preparedItems) || $amount <= 0) {
+                return back()->withInput()->with('error_message', 'At least one valid invoice item with amount greater than zero is required.');
+            }
+
             $vat = $data['vat'] ?? 0;
             $wht = $data['wht'] ?? 0;
             $isVatInclusive = $data['vatInclude'] ? 1 : 0;
@@ -2986,9 +3109,17 @@ class ProjectController extends Basefunction {
                 $expectedAmount = $amount - $vatAmount - $whtAmount;
             }
 
+            $currentInvoice = DB::table('project_invoice')->where('id', $data['id'])->first();
+            if (!$currentInvoice) {
+                return back()->with('error_message', 'Invoice record was not found.');
+            }
+
+            if ($currentInvoice->status === 'Approved') {
+                return back()->with('error_message', 'Cannot update invoice with Approved status.');
+            }
+
             $updateData = [
                 'projectId' => $data['projectId'],
-                'InvoiceNumber' => $data['InvoiceNumber'],
                 'amount' => $amount,
                 'vat' => $vat,
                 'wht' => $wht,
@@ -3002,20 +3133,63 @@ class ProjectController extends Basefunction {
             ];
 
             // If status is being changed to Validated/Approved, set validatedBy and validatedAt
-            $currentInvoice = DB::table('project_invoice')->where('id', $data['id'])->first();
             if ($currentInvoice && ($currentInvoice->status != 'Validated' && $currentInvoice->status != 'Approved') && 
                 ($data['status'] == 'Validated' || $data['status'] == 'Approved')) {
                 $updateData['validatedBy'] = Auth::user()->id;
                 $updateData['validatedAt'] = now();
             }
 
-            DB::table('project_invoice')->where('id', $data['id'])->update($updateData);
+            DB::transaction(function () use ($data, $updateData, $preparedItems) {
+                DB::table('project_invoice')->where('id', $data['id'])->update($updateData);
+                DB::table('project_invoice_items')->where('project_invoiceId', $data['id'])->delete();
+                foreach ($preparedItems as $item) {
+                    DB::table('project_invoice_items')->insert([
+                        'project_invoiceId' => $data['id'],
+                        'description' => $item['description'],
+                        'quantity' => $item['quantity'],
+                        'price' => $item['price'],
+                        'subtotal' => $item['subtotal'],
+                    ]);
+                }
+            });
             return back()->with('message', 'Invoice successfully updated.');
+        }
+
+        if (isset($_POST['approve'])) {
+            $approveId = $request->input('approveid');
+            if (empty($approveId)) {
+                return back()->with('error_message', 'Invoice ID is required for approval.');
+            }
+
+            $invoice = DB::table('project_invoice')->where('id', $approveId)->first();
+            if (!$invoice) {
+                return back()->with('error_message', 'Invoice record was not found.');
+            }
+
+            if ($invoice->status === 'Approved') {
+                return back()->with('message', 'Invoice is already approved.');
+            }
+
+            DB::table('project_invoice')->where('id', $approveId)->update([
+                'status' => 'Approved',
+                'validatedBy' => Auth::user()->id,
+                'validatedAt' => now(),
+                'updateAt' => now(),
+            ]);
+
+            return back()->with('message', 'Invoice successfully approved.');
         }
         
         if (isset($_POST['del'])) {
             $del = $request->input('deleteid');
-            DB::table('project_invoice')->where('id', $del)->delete();
+            $invoice = DB::table('project_invoice')->where('id', $del)->select('id', 'status')->first();
+            if ($invoice && $invoice->status === 'Approved') {
+                return back()->with('error_message', 'Cannot delete invoice with Approved status.');
+            }
+            DB::transaction(function () use ($del) {
+                DB::table('project_invoice_items')->where('project_invoiceId', $del)->delete();
+                DB::table('project_invoice')->where('id', $del)->delete();
+            });
             return back()->with('message', 'Invoice successfully deleted.');
         }
         
@@ -3074,6 +3248,15 @@ class ProjectController extends Basefunction {
                 )
                 ->orderBy('project_invoice.createdAt', 'desc')
                 ->get();
+
+            foreach ($data['invoices'] as $invoice) {
+                $invoice->items = DB::table('project_invoice_items')
+                    ->where('project_invoiceId', $invoice->id)
+                    ->select('id', 'description', 'quantity', 'price', 'subtotal')
+                    ->orderBy('id', 'asc')
+                    ->get();
+                $invoice->itemCount = $invoice->items->count();
+            }
         }
         
         return view('Project.projectinvoice', $data);
