@@ -156,7 +156,7 @@
             color: #3a3a3a;
             min-height: 32px;
             line-height: 32px;
-            padding-bottom: 3px;
+            padding-bottom: 8px;
             /* Keep original full-width writing lines */
             background-image: repeating-linear-gradient(to bottom,
                     transparent 0,
@@ -184,10 +184,10 @@
             overflow-wrap: anywhere;
             word-break: break-word;
             /* Fallback underline (works in PDF renderers that ignore background gradients) */
-            text-decoration: underline;
+            /* text-decoration: underline;
             text-decoration-color: #6f6f6f;
             text-underline-offset: 6px;
-            text-decoration-skip-ink: none;
+            text-decoration-skip-ink: none;*/
 
         }
 
