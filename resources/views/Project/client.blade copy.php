@@ -44,6 +44,19 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
+                                            <label>Client Code</label>
+                                            <?php if ($clientCode == '') {
+                                                $clientCode = old('client_code');
+                                            } ?>
+                                            <input type="text" class="form-control" value="{{ $clientCode }}"
+                                                name="client_code">
+                                            <small class="form-text text-muted">Optional. Auto-generated when left blank.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
                                             <label>Client Type</label>
                                             <?php if ($clientType == '') {
                                                 $clientType = old('client_type');
@@ -59,10 +72,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="row">
-
-                                    <div class="col-md-12">
+                                    <div class="col-md-6">
                                         <div class="form-group">
                                             <label>Client Ledgers</label>
                                             <?php

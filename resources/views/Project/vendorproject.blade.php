@@ -226,6 +226,7 @@
                                         <thead>
                                             <tr>
                                                 <th rowspan="1">S/N</th>
+                                                <th rowspan="1">PO Number</th>
                                                 <th rowspan="1">Vendor</th>
                                                 <th rowspan="1">Description</th>
                                                 <th rowspan="1">Items</th>
@@ -248,6 +249,9 @@
                                                     <tr>
                                                         <td>
                                                             {{ $i++ }}
+                                                        </td>
+                                                        <td>
+                                                            <strong>{{ $vendorProject->poNumber ?? '-' }}</strong>
                                                         </td>
                                                         <td>
                                                             <strong>{{ $vendorProject->vendorName }}</strong>
@@ -329,7 +333,7 @@
                                                 @endforeach
                                             @else
                                                 <tr>
-                                                    <td colspan="11" class="text-center">No vendor projects added for
+                                                    <td colspan="12" class="text-center">No vendor projects added for
                                                         this
                                                         project yet.</td>
                                                 </tr>
@@ -373,6 +377,13 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
+                                        <label>PO Number</label>
+                                        <input type="text" id="edit_poNumber" class="form-control" readonly
+                                            style="background-color: #f0f0f0;">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
                                         <label>Vendor <span class="text-danger">*</span></label>
                                         <select class="select2 form-control" name="vendorId" id="edit_vendorId" required>
                                             <option value="">--Select Vendor--</option>
@@ -382,18 +393,20 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-5">
-                                    <div class="form-group">
-                                        <label>Description</label>
-                                        <input type="text" id="edit_description" name="description"
-                                            class="form-control">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label>Expected Completion Date</label>
                                         <input type="date" id="edit_expected_completion_date"
                                             name="expected_completion_date" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label>Description</label>
+                                        <input type="text" id="edit_description" name="description"
+                                            class="form-control">
                                     </div>
                                 </div>
                             </div>
@@ -540,6 +553,7 @@
                     return [
                         $vendorProject->id => [
                             'id' => $vendorProject->id,
+                            'poNumber' => $vendorProject->poNumber,
                             'vendorId' => $vendorProject->vendorId,
                             'description' => $vendorProject->description,
                             'expected_completion_date' => $vendorProject->expected_completion_date ? \Carbon\Carbon::parse($vendorProject->expected_completion_date)->format('Y-m-d') : null,
@@ -698,6 +712,7 @@
             if (!row) return;
 
             document.getElementById('edit_id').value = row.id;
+            document.getElementById('edit_poNumber').value = row.poNumber || '';
             document.getElementById('edit_vendorId').value = row.vendorId;
             document.getElementById('edit_description').value = row.description || '';
             document.getElementById('edit_expected_completion_date').value = row.expected_completion_date || '';

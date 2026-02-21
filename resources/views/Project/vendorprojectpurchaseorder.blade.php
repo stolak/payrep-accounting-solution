@@ -528,7 +528,7 @@
                         <tr>
                             <th>Date</th>
                             <th>Purchase Order #</th>
-                            <th>Vendor Ref.</th>
+                            <th>Vendor ID.</th>
                             <th>Complete By:</th>
                             <th>Terms</th>
                         </tr>
@@ -537,7 +537,7 @@
                         <tr>
                             <td>{{ $poDate }}</td>
                             <td>{{ $poNumber }}</td>
-                            <td>{{ $vendorReference }}</td>
+                            <td>{{ $vendorRef }}</td>
                             <td>{{ $completeBy }}</td>
                             <td>{{ $termsLabel }}</td>
                         </tr>

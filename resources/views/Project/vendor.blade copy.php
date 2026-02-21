@@ -40,7 +40,18 @@
                                                 name="name">
                                         </div>
                                     </div>
-
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label>Vendor ID</label>
+                                            <?php if ($vendorId == '') {
+                                                $vendorId = old('vendorId');
+                                            } ?>
+                                            <input type="text" class="form-control" value="{{ $vendorId }}"
+                                                name="vendorId">
+                                            <small class="form-text text-muted">Optional. Auto-generated when left
+                                                blank.</small>
+                                        </div>
+                                    </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label>Trade Name</label>
@@ -51,6 +62,8 @@
                                                 name="trade_name">
                                         </div>
                                     </div>
+                                </div>
+                                <div class="row">
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label>Vendor Type</label>
@@ -68,9 +81,6 @@
                                             </select>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="row">
-
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label>Vendor Category</label>
@@ -90,23 +100,6 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label>Ledger Account</label>
-                                            <?php if ($accountId == '') {
-                                                $accountId = old('accountId');
-                                            } ?>
-                                            <select class="select2 form-control" name="accountId">
-                                                <option value="">--Select Account--</option>
-                                                @foreach ($accountLookUp as $account)
-                                                    <option value="{{ $account->id }}"
-                                                        {{ $accountId == $account->id ? 'selected' : '' }}>
-                                                        {{ $account->accountdescription }} ({{ $account->accountno }})
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group">
                                             <label>Tax Number</label>
                                             <?php if ($taxNumber == '') {
                                                 $taxNumber = old('tax_number');
@@ -115,7 +108,6 @@
                                                 name="tax_number">
                                         </div>
                                     </div>
-
                                 </div>
                                 <div class="row">
                                     <div class="col-md-4">
@@ -148,7 +140,23 @@
                                                 name="contact_person">
                                         </div>
                                     </div>
-
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label>Account</label>
+                                            <?php if ($accountId == '') {
+                                                $accountId = old('accountId');
+                                            } ?>
+                                            <select class="select2 form-control" name="accountId">
+                                                <option value="">--Select Account--</option>
+                                                @foreach ($accountLookUp as $account)
+                                                    <option value="{{ $account->id }}"
+                                                        {{ $accountId == $account->id ? 'selected' : '' }}>
+                                                        {{ $account->accountdescription }} ({{ $account->accountno }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-4">

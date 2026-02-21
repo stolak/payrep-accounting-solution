@@ -2648,6 +2648,46 @@ class ProjectController extends Basefunction {
         return 'VND-' . $typeCode . '-' . $sequence;
     }
 
+    private function generateVendorProjectPoNumber(int $vendorBudgetId): string
+    {
+        $vendorTypeCode = strtoupper(trim((string) DB::table('budgets')
+            ->leftJoin('vendor_type', 'budgets.vendor_type', '=', 'vendor_type.id')
+            ->where('budgets.id', $vendorBudgetId)
+            ->value('vendor_type.code')));
+
+        if ($vendorTypeCode === '') {
+            $vendorTypeCode = 'SUP';
+        }
+
+        $monthYear = now()->format('my');
+        $prefix = 'PO-' . $monthYear . '-' . $vendorTypeCode;
+
+        $existingPoNumbers = DB::table('vendor_projects')
+            ->where('poNumber', 'like', $prefix . '-%')
+            ->lockForUpdate()
+            ->pluck('poNumber');
+
+        $maxSequence = 1000;
+        foreach ($existingPoNumbers as $existingPoNumber) {
+            if (!is_string($existingPoNumber)) {
+                continue;
+            }
+            $parts = explode('-', $existingPoNumber);
+            $lastPart = end($parts);
+            $numericPart = (int) preg_replace('/\D/', '', (string) $lastPart);
+            if ($numericPart > $maxSequence) {
+                $maxSequence = $numericPart;
+            }
+        }
+
+        $nextSequence = $maxSequence + 1;
+        if ($nextSequence > 1999) {
+            throw new \RuntimeException('PO number sequence limit reached for this vendor type in the selected month.');
+        }
+
+        return $prefix . '-' . $nextSequence;
+    }
+
     public function projectCategoryPaymentMilestone(Request $request)
     {
         $data['projectCategoryId'] = $request->input('projectCategoryId');
@@ -3130,33 +3170,40 @@ class ProjectController extends Basefunction {
             $vatAmount = $subtotal * ($vat / 100);
             $totalAmount = $subtotal + $vatAmount;
 
-            $vendorProjectId = DB::transaction(function () use ($data, $vat, $vatAmount, $totalAmount, $preparedItems) {
-                $vendorProjectId = DB::table('vendor_projects')->insertGetId([
-                    'projectId' => $data['projectId'],
-                    'vendorId' => $data['vendorId'],
-                    'description' => $data['description'] ?? null,
-                    'expected_completion_date' => $data['expected_completion_date'] ?? null,
-                    'vat' => $vat,
-                    'vatAmount' => $vatAmount,
-                    'amount' => $totalAmount,
-                    'status' => 'Pending', // Always set to Pending on creation
-                    'createdBy' => Auth::user()->id,
-                    'createdAt' => now(),
-                    'updateAt' => now(),
-                ]);
+            try {
+                $vendorProjectId = DB::transaction(function () use ($data, $vat, $vatAmount, $totalAmount, $preparedItems) {
+                    $generatedPoNumber = $this->generateVendorProjectPoNumber((int) $data['vendorId']);
 
-                foreach ($preparedItems as $item) {
-                    DB::table('vendor_project_items')->insert([
-                        'vendor_projectId' => $vendorProjectId,
-                        'item_description' => $item['item_description'],
-                        'qty' => $item['qty'],
-                        'cost' => $item['cost'],
-                        'subtotal' => $item['subtotal'],
+                    $vendorProjectId = DB::table('vendor_projects')->insertGetId([
+                        'poNumber' => $generatedPoNumber,
+                        'projectId' => $data['projectId'],
+                        'vendorId' => $data['vendorId'],
+                        'description' => $data['description'] ?? null,
+                        'expected_completion_date' => $data['expected_completion_date'] ?? null,
+                        'vat' => $vat,
+                        'vatAmount' => $vatAmount,
+                        'amount' => $totalAmount,
+                        'status' => 'Pending', // Always set to Pending on creation
+                        'createdBy' => Auth::user()->id,
+                        'createdAt' => now(),
+                        'updateAt' => now(),
                     ]);
-                }
 
-                return $vendorProjectId;
-            });
+                    foreach ($preparedItems as $item) {
+                        DB::table('vendor_project_items')->insert([
+                            'vendor_projectId' => $vendorProjectId,
+                            'item_description' => $item['item_description'],
+                            'qty' => $item['qty'],
+                            'cost' => $item['cost'],
+                            'subtotal' => $item['subtotal'],
+                        ]);
+                    }
+
+                    return $vendorProjectId;
+                });
+            } catch (\Throwable $e) {
+                return back()->withInput()->with('error_message', $e->getMessage());
+            }
 
             $emailResult = $this->sendVendorProjectAcknowledgementEmail($vendorProjectId);
             if ($emailResult['sent']) {
@@ -3302,6 +3349,7 @@ class ProjectController extends Basefunction {
                 ->where('vendor_projects.projectId', $data['projectId'])
                 ->select(
                     'vendor_projects.id',
+                    'vendor_projects.poNumber',
                     'vendor_projects.projectId',
                     'vendor_projects.vendorId',
                     'vendor_projects.description',
@@ -3416,7 +3464,10 @@ class ProjectController extends Basefunction {
         }
 
         $approval = $this->approveVendorProjectEntry($vendorProjectId, null, 'Vendor acknowledged purchase order');
-        $poNumber = 'VP-' . str_pad((string) $vendorProjectId, 6, '0', STR_PAD_LEFT);
+        $poNumber = (string) DB::table('vendor_projects')->where('id', $vendorProjectId)->value('poNumber');
+        if ($poNumber === '') {
+            $poNumber = 'N/A';
+        }
 
         if (!$approval['success']) {
             return response()->view('Project.vendorprojectacknowledge', [
@@ -3443,6 +3494,7 @@ class ProjectController extends Basefunction {
             ->where('vendor_projects.id', $vendorProjectId)
             ->select(
                 'vendor_projects.id',
+                'vendor_projects.poNumber',
                 'vendor_projects.status',
                 'vendor_projects.vendorId',
                 'vendor_projects.description',
@@ -3458,6 +3510,7 @@ class ProjectController extends Basefunction {
                 'budgets.email as vendorEmail',
                 'budgets.contact_person as vendorContactPerson',
                 'budgets.contact_phone_number as vendorPhone',
+                'budgets.vendorId as vendorIdRef',
                 'budgets.tax_number as vendorTaxNumber',
                 'projects.name as projectName',
                 'projects.project_owner as projectContactPerson',
@@ -3509,10 +3562,10 @@ class ProjectController extends Basefunction {
 
         return [
             'status' => $poData->status,
-            'poNumber' => 'VP-' . str_pad((string) $poData->id, 6, '0', STR_PAD_LEFT),
+            'poNumber' => $poData->poNumber ?: ('VPO-' . str_pad((string) $poData->id, 6, '0', STR_PAD_LEFT)),
             'poDate' => $poDate,
             'completeBy' => date('d M, Y', strtotime($poData->expectedCompletionDate )),
-            'vendorReference' => $poData->vendorTaxNumber ?: ('VENDOR-' . $poData->vendorId),
+            'vendorRef' => $poData->vendorIdRef,
             'termsLabel' => 'Attached',
             'subtotal' => $subTotal,
             'vatPercent' => $vatPercent,
@@ -3527,6 +3580,7 @@ class ProjectController extends Basefunction {
                 'address3' => '',
                 'email' => $poData->vendorEmail ?: 'Vendor Email address',
                 'phone' => $poData->vendorPhone ?: 'Vendor Phone Number',
+                'vendorId' => $poData->vendorId ?: 'Vendor ID',
             ],
             'shipTo' => [
                 'attention' => $poData->projectContactPerson,
@@ -3550,6 +3604,7 @@ class ProjectController extends Basefunction {
             ->where('vendor_projects.id', $vendorProjectId)
             ->select(
                 'vendor_projects.id',
+                'vendor_projects.poNumber',
                 'vendor_projects.description',
                 'vendor_projects.vat',
                 'vendor_projects.vatAmount',
@@ -3592,7 +3647,7 @@ class ProjectController extends Basefunction {
                 ['vendorProjectId' => $vendorProject->id]
             );
 
-            $poNumber = 'VP-' . str_pad((string) $vendorProject->id, 6, '0', STR_PAD_LEFT);
+            $poNumber = $vendorProject->poNumber ?: ('VPO-' . str_pad((string) $vendorProject->id, 6, '0', STR_PAD_LEFT));
             $subject = 'Purchase Order Acknowledgement Required - ' . $poNumber;
             $vendorName = $vendorProject->vendorTradeName ?: $vendorProject->vendorName ?: 'Vendor';
             $projectName = $vendorProject->projectName ?: 'Project';
@@ -3807,7 +3862,7 @@ class ProjectController extends Basefunction {
             $poData['logoPath'] = public_path('assets/img/logo.jpeg');
             $poData['logoDataUri'] = $this->buildPoLogoDataUri();
             $pdfBinary = $this->generateVendorPoPdfBinary($poData);
-            $poNumber = $poData['poNumber'] ?? ('VP-' . str_pad((string) $vendorProjectId, 6, '0', STR_PAD_LEFT));
+            $poNumber = $poData['poNumber'] ?? ('VPO-' . str_pad((string) $vendorProjectId, 6, '0', STR_PAD_LEFT));
             $fileName = str_replace([' ', '/'], ['_', '-'], $poNumber) . '.pdf';
             $recipient = $vendorName ?: 'Vendor';
             $subject = 'Approved Purchase Order - ' . $poNumber;
