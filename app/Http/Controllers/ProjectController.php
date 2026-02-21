@@ -3560,6 +3560,11 @@ class ProjectController extends Basefunction {
         $vatAmount = (float) ($poData->vatAmount ?? ($subTotal * ($vatPercent / 100)));
         $total = (float) ($poData->amount ?? ($subTotal + $vatAmount));
 
+        $poTerms = DB::table('po_terms_and_conditions')
+            ->select('id', 'title', 'body', 'ordering_rank')
+            ->orderByRaw('ordering_rank IS NULL, ordering_rank ASC, id ASC')
+            ->get();
+
         return [
             'status' => $poData->status,
             'poNumber' => $poData->poNumber ?: ('VPO-' . str_pad((string) $poData->id, 6, '0', STR_PAD_LEFT)),
@@ -3572,6 +3577,7 @@ class ProjectController extends Basefunction {
             'vatAmount' => $vatAmount,
             'total' => $total,
             'lineItems' => $lineItems,
+            'poTerms' => $poTerms,
             'vendorInfo' => [
                 'attention' => $poData->vendorContactPerson,
                 'name' => $poData->vendorTradeName ?: $poData->vendorName,
@@ -4072,6 +4078,64 @@ class ProjectController extends Basefunction {
         $data['totalAmount'] = $data['vendorProjects']->sum('amount');
         
         return view('Project.vendorprojectreport', $data);
+    }
+
+    public function poTermsAndConditions(Request $request)
+    {
+        $data['title'] = $request->input('title');
+        $data['body'] = $request->input('body');
+        $data['ordering_rank'] = $request->input('ordering_rank');
+        $data['id'] = $request->input('id');
+
+        if (isset($_POST['addnew'])) {
+            $this->validate($request, [
+                'title' => 'required|string|max:255',
+                'body' => 'nullable|string',
+                'ordering_rank' => 'nullable|integer|min:1',
+            ]);
+
+            DB::table('po_terms_and_conditions')->insert([
+                'title' => $data['title'],
+                'body' => $data['body'] ?? null,
+                'ordering_rank' => $data['ordering_rank'] !== null && $data['ordering_rank'] !== '' ? (int) $data['ordering_rank'] : null,
+            ]);
+
+            return back()->with('message', 'PO term successfully added.');
+        }
+
+        if (isset($_POST['update'])) {
+            $this->validate($request, [
+                'title' => 'required|string|max:255',
+                'body' => 'nullable|string',
+                'ordering_rank' => 'nullable|integer|min:1',
+                'id' => 'required|integer',
+            ]);
+
+            DB::table('po_terms_and_conditions')->where('id', $data['id'])->update([
+                'title' => $data['title'],
+                'body' => $data['body'] ?? null,
+                'ordering_rank' => $data['ordering_rank'] !== null && $data['ordering_rank'] !== '' ? (int) $data['ordering_rank'] : null,
+            ]);
+
+            return back()->with('message', 'PO term successfully updated.');
+        }
+
+        if (isset($_POST['del'])) {
+            $del = $request->input('deleteid') ?? $request->input('id');
+            if (empty($del)) {
+                return back()->with('error_message', 'Record ID is required.');
+            }
+
+            DB::table('po_terms_and_conditions')->where('id', $del)->delete();
+            return back()->with('message', 'PO term successfully deleted.');
+        }
+
+        $data['terms'] = DB::table('po_terms_and_conditions')
+            ->select('id', 'title', 'body', 'ordering_rank')
+            ->orderByRaw('ordering_rank IS NULL, ordering_rank ASC, id ASC')
+            ->get();
+
+        return view('Project.po_terms_and_conditions', $data);
     }
    
 

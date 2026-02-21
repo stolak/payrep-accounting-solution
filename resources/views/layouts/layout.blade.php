@@ -28,6 +28,7 @@
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
 
     @yield('styles')
+    @stack('head')
 </head>
 
 <body>
