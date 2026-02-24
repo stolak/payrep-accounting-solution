@@ -151,6 +151,7 @@ Route::any('/get-function-control-variables', [Payroll::class, 'GetFunctionContr
  Route::any('/salary-particular',       [Payroll::class, 'PayrollParticularReport']);
 Route::any('/salary-payslip',       [Payroll::class, 'Payslip']);
 Route::any('/payroll-lock',         [Payroll::class, 'PayrollLock']);
+Route::any('/variable-contribution-setup', [Payroll::class, 'VariableContributionSetup']);
     Route::any('/user-role',            [AuthUserRoleController::class, 'index']);
     });
 

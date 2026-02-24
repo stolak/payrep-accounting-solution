@@ -112,9 +112,7 @@
                                     }
                                     $totalEarnings = 0;
                                     $totalDeductions = 0;
-                                    // Employer contributions are mapped from tblpayroll_payment using variable_contribution_setup_map.tb_code
-                                    $employerContributions = $employerContributions ?? [];
-                                    $totalEmployerContributions = $totalEmployerContributions ?? 0;
+                                    $totalEmployerContributions = 0;
 
                                     // Filter earnings with non-zero values
                                     $filteredEarnings = [];
@@ -158,6 +156,71 @@
                                         }
                                     }
 
+                                    // Calculate Employer Contributions
+                                    $employerContributions = [];
+                                    $pensionableAmount = 0;
+                                    
+                                    // Get pensionable earnings (usually basic salary and statutory earnings)
+                                    foreach ($filteredEarnings as $earning) {
+                                        // Check if this earning is pensionable (you may need to adjust this logic)
+                                        $pensionableAmount += $earning->amount;
+                                    }
+                                    
+                                    // Employer Pension (10% of pensionable amount)
+                                    $employeePension = 0;
+                                    foreach ($filteredDeductions as $deduction) {
+                                        if (stripos($deduction->variable, 'pension') !== false || stripos($deduction->variable, 'Pension') !== false) {
+                                            $employeePension = $deduction->amount;
+                                            break;
+                                        }
+                                    }
+                                    // If employee pension is 8%, employer is 10% (ratio 8:10)
+                                    $employerPension = $employeePension > 0 ? ($employeePension * 10 / 8) : ($pensionableAmount * 0.10);
+                                    if ($employerPension > 0) {
+                                        $employerContributions[] = (object) [
+                                            'variable' => 'Employer Pension (10%)',
+                                            'amount' => $employerPension,
+                                        ];
+                                        $totalEmployerContributions += $employerPension;
+                                    }
+
+                                    // Employer NHIS (typically 10% of basic salary or fixed amount)
+                                    $employeeNHIS = 0;
+                                    foreach ($filteredDeductions as $deduction) {
+                                        if (stripos($deduction->variable, 'NHIS') !== false || stripos($deduction->variable, 'nhis') !== false) {
+                                            $employeeNHIS = $deduction->amount;
+                                            break;
+                                        }
+                                    }
+                                    // Employer NHIS is typically 10% of basic or employee contribution * 10/5
+                                    $employerNHIS = $employeeNHIS > 0 ? ($employeeNHIS * 10 / 5) : ($pensionableAmount * 0.10);
+                                    if ($employerNHIS > 0) {
+                                        $employerContributions[] = (object) [
+                                            'variable' => 'Employer NHIS',
+                                            'amount' => $employerNHIS,
+                                        ];
+                                        $totalEmployerContributions += $employerNHIS;
+                                    }
+
+                                    // NSITF (typically 1% of basic salary)
+                                    $nsitf = $pensionableAmount * 0.01;
+                                    if ($nsitf > 0) {
+                                        $employerContributions[] = (object) [
+                                            'variable' => 'NSITF',
+                                            'amount' => $nsitf,
+                                        ];
+                                        $totalEmployerContributions += $nsitf;
+                                    }
+
+                                    // ITF (Training Fund - typically 1% of basic salary)
+                                    $itf = $pensionableAmount * 0.01;
+                                    if ($itf > 0) {
+                                        $employerContributions[] = (object) [
+                                            'variable' => 'ITF (Training Fund)',
+                                            'amount' => $itf,
+                                        ];
+                                        $totalEmployerContributions += $itf;
+                                    }
                                 @endphp
                                 <style>
                                     .payslip-container {
@@ -347,12 +410,10 @@
                                 <div id="payslip-content" class="payslip-container">
                                     <div class="payslip-header">
                                         <div>
-                                            <img src="{{ asset('assets/img/logo.jpeg') }}" alt="Logo"
-                                                class="payslip-logo" />
+                                            <img src="{{ asset('assets/img/logo.jpeg') }}" alt="Logo" class="payslip-logo" />
                                         </div>
                                         <div class="payslip-company-info">
-                                            <h2 class="payslip-company-name">{{ env('Coy_Name', 'McEmtol CONSULTING') }}
-                                            </h2>
+                                            <h2 class="payslip-company-name">{{ env('Coy_Name', 'McEmtol CONSULTING') }}</h2>
                                             <p class="payslip-tagline">PROFESSIONALISM | SERVICE | RESULTS</p>
                                         </div>
                                     </div>
@@ -366,8 +427,7 @@
                                         </div>
                                         <div class="payslip-info-item">
                                             <span class="payslip-info-label">Designation</span>
-                                            <span
-                                                class="payslip-info-value">{{ $Payroll->designation ?? ($Payroll->grades ?? 'N/A') }}</span>
+                                            <span class="payslip-info-value">{{ $Payroll->designation ?? $Payroll->grades ?? 'N/A' }}</span>
                                         </div>
                                         <div class="payslip-info-item">
                                             <span class="payslip-info-label">Employee ID</span>
@@ -375,8 +435,7 @@
                                         </div>
                                         <div class="payslip-info-item">
                                             <span class="payslip-info-label">Pay Period</span>
-                                            <span class="payslip-info-value">{{ $monthName }},
-                                                {{ $Payroll->year ?? '' }}</span>
+                                            <span class="payslip-info-value">{{ $monthName }}, {{ $Payroll->year ?? '' }}</span>
                                         </div>
                                     </div>
 
@@ -388,10 +447,8 @@
                                                 @if (count($filteredEarnings) > 0)
                                                     @foreach ($filteredEarnings as $earning)
                                                         <div class="payslip-item">
-                                                            <span
-                                                                class="payslip-item-label">{{ $earning->variable }}</span>
-                                                            <span class="payslip-item-amount">₦
-                                                                {{ number_format($earning->amount, 2, '.', ',') }}</span>
+                                                            <span class="payslip-item-label">{{ $earning->variable }}</span>
+                                                            <span class="payslip-item-amount">₦ {{ number_format($earning->amount, 2, '.', ',') }}</span>
                                                         </div>
                                                     @endforeach
                                                 @else
@@ -413,10 +470,8 @@
                                                 @if (count($filteredDeductions) > 0)
                                                     @foreach ($filteredDeductions as $deduction)
                                                         <div class="payslip-item">
-                                                            <span
-                                                                class="payslip-item-label">{{ $deduction->variable }}</span>
-                                                            <span class="payslip-item-amount">₦
-                                                                {{ number_format($deduction->amount, 2, '.', ',') }}</span>
+                                                            <span class="payslip-item-label">{{ $deduction->variable }}</span>
+                                                            <span class="payslip-item-amount">₦ {{ number_format($deduction->amount, 2, '.', ',') }}</span>
                                                         </div>
                                                     @endforeach
                                                 @else
@@ -435,28 +490,23 @@
                                     <!-- Employer Contributions Section -->
                                     <div class="payslip-employer-section">
                                         <div class="payslip-section">
-                                            <div class="payslip-section-header">Employer Contributions (INFORMATIONAL - Not
-                                                deducted from Employee)</div>
+                                            <div class="payslip-section-header">Employer Contributions (INFORMATIONAL - Not deducted from Employee)</div>
                                             <div class="payslip-section-body">
                                                 @if (count($employerContributions) > 0)
                                                     @foreach ($employerContributions as $contribution)
                                                         <div class="payslip-item">
-                                                            <span
-                                                                class="payslip-item-label">{{ $contribution->variable }}</span>
-                                                            <span class="payslip-item-amount">₦
-                                                                {{ number_format($contribution->amount, 2, '.', ',') }}</span>
+                                                            <span class="payslip-item-label">{{ $contribution->variable }}</span>
+                                                            <span class="payslip-item-amount">₦ {{ number_format($contribution->amount, 2, '.', ',') }}</span>
                                                         </div>
                                                     @endforeach
                                                 @else
                                                     <div class="payslip-item">
-                                                        <span class="payslip-item-label payslip-empty">No
-                                                            contributions</span>
+                                                        <span class="payslip-item-label payslip-empty">No contributions</span>
                                                     </div>
                                                 @endif
                                                 <div class="payslip-total">
                                                     <span>Total Employer Contributions (INFO ONLY)</span>
-                                                    <span>₦
-                                                        {{ number_format($totalEmployerContributions, 2, '.', ',') }}</span>
+                                                    <span>₦ {{ number_format($totalEmployerContributions, 2, '.', ',') }}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -464,14 +514,11 @@
 
                                     <div class="payslip-net-pay">
                                         <div class="payslip-net-pay-label">NET PAY</div>
-                                        <div class="payslip-net-pay-amount">₦
-                                            {{ number_format($totalEarnings - $totalDeductions, 2, '.', ',') }}</div>
+                                        <div class="payslip-net-pay-amount">₦ {{ number_format($totalEarnings - $totalDeductions, 2, '.', ',') }}</div>
                                     </div>
 
                                     <div class="payslip-footer">
-                                        <p><strong>Employer contributions shown above are for information only and do not
-                                                reduce the employee's net pay. This payslip is computer-generated.</strong>
-                                        </p>
+                                        <p><strong>Employer contributions shown above are for information only and do not reduce the employee's net pay. This payslip is computer-generated.</strong></p>
                                     </div>
                                 </div>
                             @else
@@ -491,8 +538,7 @@
 @endsection
 @section('styles')
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" type="text/css"
-        href="https://cdn.datatables.net/buttons/1.5.2/css/buttons.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/1.5.2/css/buttons.dataTables.min.css">
     <style>
         label {
             color: black text-shadow: 1px 1px 2px #fff;

@@ -12,6 +12,67 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 class Payroll extends Basefunction 
 {
+  public function VariableContributionSetup(Request $request)
+  {
+    $data['title'] = $request->input('title');
+    $data['staff_percentage'] = $request->input('staff_percentage');
+    $data['company_percentage'] = $request->input('company_percentage');
+    $data['variableId'] = $request->input('variableId');
+    $data['id'] = $request->input('id');
+
+    if (isset($_POST['update'])) {
+    //   $this->validate($request, [
+    //     'id' => 'required|integer|exists:variable_contribution_setup_map,id',
+    //     'title' => 'required|string',
+    //     'variableId' => 'required|integer|exists:tblpayroll_variable,id|unique:variable_contribution_setup_map,variableId,' . $data['id'],
+    //     'staff_percentage' => 'required|numeric|min:0|max:100',
+    //     'company_percentage' => 'required|numeric|min:0|max:100',
+    //   ]);
+	  $this->validate($request, [
+        'id' => 'required|integer|exists:variable_contribution_setup_map,id',
+        'title' => 'required|string',
+        'variableId' => 'required|integer',
+        'staff_percentage' => 'required|numeric|min:0|max:100',
+        'company_percentage' => 'required|numeric|min:0|max:100',
+      ]);
+
+      DB::table('variable_contribution_setup_map')
+        ->where('id', $data['id'])
+        ->update([
+          'title' => $data['title'],
+          'staff_percentage' => $data['staff_percentage'],
+          'company_percentage' => $data['company_percentage'],
+          'variableId' => $data['variableId'],
+        ]);
+
+      return back()->with('message', 'Record successfully updated.');
+    }
+
+    
+    $data['PayrollVariables'] = DB::table('tblpayroll_variable')
+      ->select('id', 'variable', 'ref_code', 'variable_type', 'status')
+	  ->orderBy('variable_type', 'asc')
+	  ->orderBy('rank', 'asc')
+      ->orderBy('variable', 'asc')
+      ->get();
+
+    $data['ContributionMaps'] = DB::table('variable_contribution_setup_map as m')
+      ->leftJoin('tblpayroll_variable as v', 'm.variableId', '=', 'v.id')
+      ->select(
+        'm.id',
+        'm.title',
+        'm.staff_percentage',
+        'm.company_percentage',
+        'm.variableId',
+        'v.variable as variableName',
+        'v.ref_code as variableCode'
+      )
+      ->orderBy('m.id', 'desc')
+      ->get();
+
+    return view('Payroll.variable_contribution_setup', $data);
+  }
+
   public function ActivePeriod(Request $request)
    {
     $active_period=$this->Payroll_Active_period();
@@ -490,6 +551,44 @@ class Payroll extends Basefunction
     $data['Months'] = $this->Months();
     $data['Payroll']=$this->Payroll($data['year'],$data['month'],$data['staffid']);
     $data['MonthlyActiveVariable']=$this->MonthlyActiveVariable($data['year'],$data['month']);
+	$data['ContributionMaps'] = DB::table('variable_contribution_setup_map as m')
+      ->leftJoin('tblpayroll_variable as v', 'm.variableId', '=', 'v.id')
+	  ->where('m.status','Active')
+	  ->whereNotNull('m.tb_code')
+	  ->where('m.tb_code', '!=', '')
+      ->select(
+        'm.id',
+        'm.title',
+        'm.staff_percentage',
+        'm.company_percentage',
+        'm.variableId',
+        'v.variable as variableName',
+        'v.ref_code as variableCode',
+		'm.tb_code'
+      )
+      ->orderBy('m.id', 'desc')
+      ->get();
+
+    // Map already-calculated employer contribution columns (e.g. c_pension, c_nhis, etc.) using tb_code
+    $data['employerContributions'] = [];
+    $data['totalEmployerContributions'] = 0;
+    if ($data['Payroll']) {
+      foreach ($data['ContributionMaps'] as $map) {
+        $code = $map->tb_code;
+        $amount = 0;
+        if (is_string($code) && $code !== '' && isset($data['Payroll']->{$code})) {
+          $amount = (float) ($data['Payroll']->{$code} ?? 0);
+        }
+
+        $label = $map->title ?: ($map->variableName ?: $code);
+        $data['employerContributions'][] = (object) [
+          'variable' => $label,
+          'tb_code' => $code,
+          'amount' => $amount,
+        ];
+        $data['totalEmployerContributions'] += $amount;
+      }
+    }
 	return view('Payroll.payslip2', $data);
    }
 
