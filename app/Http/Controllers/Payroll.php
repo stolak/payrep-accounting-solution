@@ -217,21 +217,27 @@ class Payroll extends Basefunction
             }
 			$staff_payment= DB::table('tblpayroll_payment')
 			->where('id',$id)->first();
+            $contributionUpdates = [];
             foreach ($data['ContributionMaps'] as $mapp){
-				
 				$tbCode = $mapp->tb_code ?? null;
+				if (!is_string($tbCode) || $tbCode === '') {
+					continue;
+				}
+
 				$variableCode = $mapp->variableCode ?? null;
-				
 				$currentAmount = 0;
 				if (is_string($variableCode) && $variableCode !== '' && isset($staff_payment->{$variableCode})) {
 					$currentAmount = (float) ($staff_payment->{$variableCode} ?? 0);
 				}
-				$contributedAmount= $this->employerContribution($currentAmount, $mapp);
-				
-				DB::table('tblpayroll_payment')
-             ->where('id',$id)
-			->update( [ $tbCode => $contributedAmount]);
+
+				$contributionUpdates[$tbCode] = $this->employerContribution($currentAmount, $mapp);
 			}
+
+            if (!empty($contributionUpdates)) {
+                DB::table('tblpayroll_payment')
+                    ->where('id', $id)
+                    ->update($contributionUpdates);
+            }
            }
     	   return back()->with('message','Successfully computed.'  );
          }
