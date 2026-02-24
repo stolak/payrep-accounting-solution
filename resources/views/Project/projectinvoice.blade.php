@@ -364,6 +364,12 @@
                                                             @endif
                                                         </td>
                                                         <td>
+                                                            <a class="btn btn-sm bg-primary-light"
+                                                                href="{{ url('/project-invoice-view') }}?invoiceId={{ $invoice->id }}"
+                                                                target="_blank" rel="noopener noreferrer"
+                                                                title="View Invoice">
+                                                                <i class="fa fa-file"></i>
+                                                            </a>
                                                             @if ($invoice->status != 'Approved')
                                                                 <a class="btn btn-sm bg-success-light"
                                                                     href="javascript: editfunc('{{ $invoice->id }}')"

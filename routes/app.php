@@ -120,6 +120,7 @@ Route::middleware(['auth', 'route.access'])->group(function () {
         Route::any('/project-category-payment-milestone',  [ProjectController::class, 'projectCategoryPaymentMilestone']);
         Route::any('/project-category-expense-classification',  [ProjectController::class, 'projectCategoryExpenseClassification']);
         Route::any('/project-invoice',  [ProjectController::class, 'projectInvoice']);
+        Route::get('/project-invoice-view',  [ProjectController::class, 'projectInvoiceView']);
         Route::any('/fund-disbursement',  [ProjectController::class, 'fundDisbursement']);
         Route::any('/field-expense',  [ProjectController::class, 'fieldExpense']);
         Route::any('/budget-utilization-report',  [ProjectController::class, 'budgetUtilizationReport']);

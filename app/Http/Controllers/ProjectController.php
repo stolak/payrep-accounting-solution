@@ -3262,6 +3262,117 @@ class ProjectController extends Basefunction {
         return view('Project.projectinvoice', $data);
     }
 
+    public function projectInvoiceView(Request $request)
+    {
+        $invoiceId = $request->input('invoiceId');
+        if (empty($invoiceId)) {
+            return redirect('/project-invoice')->with('error_message', 'Invoice ID is required.');
+        }
+
+        $invoice = DB::table('project_invoice')
+            ->leftJoin('projects', 'project_invoice.projectId', '=', 'projects.id')
+            ->leftJoin('clients', 'projects.clientId', '=', 'clients.id')
+            ->leftJoin('client_type', 'clients.client_type', '=', 'client_type.id')
+            ->where('project_invoice.id', $invoiceId)
+            ->select(
+                'project_invoice.id',
+                'project_invoice.projectId',
+                'project_invoice.InvoiceNumber',
+                'project_invoice.amount',
+                'project_invoice.vat',
+                'project_invoice.wht',
+                'project_invoice.vatAmount',
+                'project_invoice.whtAmount',
+                'project_invoice.expectedAmount',
+                'project_invoice.isVatInclusive',
+                'project_invoice.dueDate',
+                'project_invoice.status',
+                'project_invoice.createdAt',
+                'projects.name as projectName',
+                'projects.projectCode',
+                'clients.name as clientName',
+                'clients.client_code as clientCode',
+                'clients.contact_address as clientAddress',
+                'clients.contact_phone_number as clientPhone',
+                'clients.contact_email_address as clientEmail',
+                'client_type.code as clientTypeCode'
+            )
+            ->first();
+
+        if (!$invoice) {
+            return redirect('/project-invoice')->with('error_message', 'Invoice record was not found.');
+        }
+
+        $items = DB::table('project_invoice_items')
+            ->where('project_invoiceId', $invoice->id)
+            ->select('id', 'description', 'quantity', 'price', 'subtotal')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $subTotal = 0.0;
+        foreach ($items as $item) {
+            $subTotal += (float) ($item->subtotal ?? ((float) $item->quantity * (float) $item->price));
+        }
+        if ($subTotal <= 0) {
+            $subTotal = (float) $invoice->amount;
+        }
+
+        $vatPercent = (float) ($invoice->vat ?? 0);
+        $vatAmount = (float) ($invoice->vatAmount ?? ($subTotal * ($vatPercent / 100)));
+        $whtPercent = (float) ($invoice->wht ?? 0);
+        $whtAmount = (float) ($invoice->whtAmount ?? ($subTotal * ($whtPercent / 100)));
+        $totalDue = (float) ($invoice->expectedAmount ?? ($subTotal + $vatAmount - $whtAmount));
+
+        // Optional: reuse existing terms table if populated
+        $terms = DB::table('po_terms_and_conditions')
+            ->select('id', 'title', 'body', 'ordering_rank')
+            ->orderByRaw('ordering_rank IS NULL, ordering_rank ASC, id ASC')
+            ->get();
+
+        $data = [
+            'invoiceNo' => $invoice->InvoiceNumber ?: ('INV-' . str_pad((string) $invoice->id, 6, '0', STR_PAD_LEFT)),
+            'invoiceId' => $invoice->id,
+            'invoiceDate' => $invoice->createdAt ? date('F d, Y', strtotime($invoice->createdAt)) : date('F d, Y'),
+            'dueDate' => $invoice->dueDate ? date('F d, Y', strtotime($invoice->dueDate)) : null,
+            'purchaseOrderNo' => $invoice->projectCode ?: ('PRJ-' . $invoice->projectId),
+            'partnerCode' => $invoice->clientCode ?: 'N/A',
+            'taxId' => env('Coy_Tax_ID', 'N/A'),
+            'status' => $invoice->status,
+            'projectName' => $invoice->projectName ?: 'Project',
+            'projectCode' => $invoice->projectCode ?: 'N/A',
+            'billTo' => [
+                'name' => $invoice->clientName ?: 'Client',
+                'address' => $invoice->clientAddress ?: '',
+                'email' => $invoice->clientEmail ?: '',
+                'phone' => $invoice->clientPhone ?: '',
+            ],
+            'items' => $items,
+            'subTotal' => $subTotal,
+            'vatPercent' => $vatPercent,
+            'vatAmount' => $vatAmount,
+            'whtPercent' => $whtPercent,
+            'whtAmount' => $whtAmount,
+            'totalDue' => $totalDue,
+            'payment' => [
+                'bank' => env('Coy_Bank', 'Polaris Bank'),
+                'accountName' => env('Coy_Account_Name', env('Coy_Name', 'McEmtol Consulting Limited')),
+                'accountNumber' => env('Coy_Account_Number', '4091264399'),
+                'sortCode' => env('Coy_Sort_Code', '076083213'),
+            ],
+            'terms' => $terms,
+            'company' => [
+                'name' => env('Coy_Name', 'McEmtol Consulting Limited'),
+                'address' => env('Coy_Address', 'Plot 1a Remi Olowude Str, Lekki Phase 1, Lagos, Nigeria'),
+                'email' => env('Coy_Email', 'info@mcemtolconsulting.com'),
+                'phone' => env('Coy_Phone', '+234 (0) 810 071 1620'),
+                'website' => env('Coy_Website', 'www.mcemtolconsulting.com'),
+                'logo' => asset('assets/img/logo.jpeg'),
+            ],
+        ];
+
+        return view('Project.projectinvoiceview', $data);
+    }
+
     public function vendorProject(Request $request)
     {
         $data['projectId'] = $request->input('projectId');
