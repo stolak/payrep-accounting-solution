@@ -1242,4 +1242,16 @@ class Basefunction extends Controller
 		}
 	}
 
+	function employerContribution($amount, $mapped_data){
+		$employeePercentage=$mapped_data->staff_percentage;
+		$employerPercentage=$mapped_data->company_percentage;
+		//dd($amount, $employeePercentage, $employerPercentage);
+		if($employeePercentage==0){
+			$employerContribution = $amount*$employerPercentage*0.01;
+		} else{
+			$employerContribution =$amount*$employerPercentage/$employeePercentage;
+		}
+		return abs($employerContribution);
+	}
+
 }

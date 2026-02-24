@@ -170,6 +170,25 @@ class Payroll extends Basefunction
     			'ref_code'      => $curv->ref_code,
 		    ));
             }
+			$data['ContributionMaps'] = DB::table('variable_contribution_setup_map as m')
+			->leftJoin('tblpayroll_variable as v', 'm.variableId', '=', 'v.id')
+			->where('m.status','Active')
+			->whereNotNull('m.tb_code')
+			->where('m.tb_code', '!=', '')
+			->select(
+				'm.id',
+				'm.title',
+				'm.staff_percentage',
+				'm.company_percentage',
+				'm.variableId',
+				'v.variable as variableName',
+				'v.ref_code as variableCode',
+				'm.tb_code'
+			)
+			->orderBy('m.id', 'desc')
+			->get();
+
+	  
            foreach($data['Staffs'] as $v){
               $id=DB::table('tblpayroll_payment')->insertGetId([
                 'staffid' => $v->id ,
@@ -196,7 +215,23 @@ class Payroll extends Basefunction
             //  ->update( [ $v2->ref_code => -$this->VariableValue($year, $month,$v2->ref_code,$v->id,$v->grade,1)]);
 			->update( [ $v2->ref_code => -$this->VariableValue2($year, $month,$v2,$v,1)]);
             }
-            
+			$staff_payment= DB::table('tblpayroll_payment')
+			->where('id',$id)->first();
+            foreach ($data['ContributionMaps'] as $mapp){
+				
+				$tbCode = $mapp->tb_code ?? null;
+				$variableCode = $mapp->variableCode ?? null;
+				
+				$currentAmount = 0;
+				if (is_string($variableCode) && $variableCode !== '' && isset($staff_payment->{$variableCode})) {
+					$currentAmount = (float) ($staff_payment->{$variableCode} ?? 0);
+				}
+				$contributedAmount= $this->employerContribution($currentAmount, $mapp);
+				
+				DB::table('tblpayroll_payment')
+             ->where('id',$id)
+			->update( [ $tbCode => $contributedAmount]);
+			}
            }
     	   return back()->with('message','Successfully computed.'  );
          }
@@ -568,6 +603,8 @@ class Payroll extends Basefunction
       )
       ->orderBy('m.id', 'desc')
       ->get();
+
+	  
 
     // Map already-calculated employer contribution columns (e.g. c_pension, c_nhis, etc.) using tb_code
     $data['employerContributions'] = [];
