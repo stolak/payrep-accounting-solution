@@ -41,6 +41,7 @@
                                             <th>Variable</th>
                                             <th>Staff (%)</th>
                                             <th>Company (%)</th>
+                                            <th>Status</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
@@ -56,13 +57,24 @@
                                                 <td>{{ number_format((float) $list->company_percentage, 2, '.', ',') }}
                                                 </td>
                                                 <td>
+                                                    @php
+                                                        $st = $list->status ?? 'Active';
+                                                    @endphp
+                                                    @if ($st === 'Inactive')
+                                                        <span class="badge badge-secondary">Inactive</span>
+                                                    @else
+                                                        <span class="badge badge-success">Active</span>
+                                                    @endif
+                                                </td>
+                                                <td>
                                                     <a class="btn btn-sm bg-success-light"
                                                         href="javascript: editfunc(
                                                             '{{ $list->id }}',
                                                             '{{ addslashes($list->title) }}',
                                                             '{{ $list->variableId }}',
                                                             '{{ $list->staff_percentage }}',
-                                                            '{{ $list->company_percentage }}'
+                                                            '{{ $list->company_percentage }}',
+                                                            '{{ $list->status ?? 'Active' }}'
                                                         )"
                                                         title="Edit">
                                                         <i class="fe fe-pencil"></i>
@@ -73,7 +85,7 @@
                                         @endforeach
                                         @if (count($ContributionMaps) == 0)
                                             <tr>
-                                                <td colspan="6" class="text-center text-muted">No records found.</td>
+                                                <td colspan="7" class="text-center text-muted">No records found.</td>
                                             </tr>
                                         @endif
                                     </tbody>
@@ -139,6 +151,16 @@
                                             required>
                                     </div>
                                 </div>
+
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label>Status</label>
+                                        <select class="form-control" id="edit_status" name="status" required>
+                                            <option value="Active">Active</option>
+                                            <option value="Inactive">Inactive</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
 
                             <input type="hidden" id="edit_id" name="id">
@@ -179,12 +201,13 @@
 
 @section('scripts')
     <script>
-        function editfunc(id, title, variableId, staffPercentage, companyPercentage) {
+        function editfunc(id, title, variableId, staffPercentage, companyPercentage, status) {
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_title').value = title || '';
             document.getElementById('edit_variableId').value = variableId || '';
             document.getElementById('edit_staff_percentage').value = staffPercentage || '';
             document.getElementById('edit_company_percentage').value = companyPercentage || '';
+            document.getElementById('edit_status').value = status || 'Active';
             $("#edit_details").modal('show');
         }
 

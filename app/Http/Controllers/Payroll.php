@@ -18,6 +18,7 @@ class Payroll extends Basefunction
     $data['staff_percentage'] = $request->input('staff_percentage');
     $data['company_percentage'] = $request->input('company_percentage');
     $data['variableId'] = $request->input('variableId');
+    $data['status'] = $request->input('status');
     $data['id'] = $request->input('id');
 
     if (isset($_POST['update'])) {
@@ -34,6 +35,7 @@ class Payroll extends Basefunction
         'variableId' => 'required|integer',
         'staff_percentage' => 'required|numeric|min:0|max:100',
         'company_percentage' => 'required|numeric|min:0|max:100',
+        'status' => 'required|string|in:Active,Inactive',
       ]);
 
       DB::table('variable_contribution_setup_map')
@@ -43,6 +45,7 @@ class Payroll extends Basefunction
           'staff_percentage' => $data['staff_percentage'],
           'company_percentage' => $data['company_percentage'],
           'variableId' => $data['variableId'],
+          'status' => $data['status'],
         ]);
 
       return back()->with('message', 'Record successfully updated.');
@@ -64,6 +67,7 @@ class Payroll extends Basefunction
         'm.staff_percentage',
         'm.company_percentage',
         'm.variableId',
+        'm.status',
         'v.variable as variableName',
         'v.ref_code as variableCode'
       )
