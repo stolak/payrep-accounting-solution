@@ -171,7 +171,7 @@
                                                             {{ old('vatInclude', true) ? 'checked' : '' }}>
                                                         VAT Inclusive
                                                     </span>
-                                                </label>
+                                                    </label>
                                                 <input type="text" class="form-control" value="0.00" name="amount"
                                                     id="amount" step="0.01" readonly
                                                     style="background-color: #f0f0f0;">
@@ -380,12 +380,12 @@
                                                                     href="javascript: approvefunc('{{ $invoice->id }}')"
                                                                     title="Approve">
                                                                     <i class="fe fe-check"></i>
-                                                                </a>
-                                                                <a class="btn btn-sm bg-danger-light"
+                                                            </a>
+                                                            <a class="btn btn-sm bg-danger-light"
                                                                     href="javascript: deletefunc('{{ $invoice->id }}')"
                                                                     title="Delete">
-                                                                    <i class="fe fe-trash"></i>
-                                                                </a>
+                                                                <i class="fe fe-trash"></i>
+                                                            </a>
                                                             @else
                                                                 <span class="text-muted">Locked</span>
                                                             @endif
@@ -886,7 +886,7 @@
             if (parentId === 'add-items-body') {
                 if (document.querySelectorAll('#add-items-body tr').length === 0) {
                     addItemRow('add');
-                }
+            }
                 recalculateInvoiceTotals('add');
             }
             if (parentId === 'edit-items-body') {
@@ -906,7 +906,7 @@
                     .forEach((input) => {
                         input.value = normalizeNumericInput(input.value);
                     });
-            });
+        });
         }
 
         stripCommasBeforeSubmit('addInvoiceForm');

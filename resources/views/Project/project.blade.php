@@ -201,23 +201,23 @@
                                                     <div class="card-header bg-light">
                                                         <h6 class="mb-0">PO #{{ $i + 1 }}</h6>
                                                     </div>
-                                                    <div class="card-body">
+                                                <div class="card-body">
                                                         <!-- PO Header -->
                                                         <div class="row mb-3">
                                                             <div class="col-md-4">
-                                                                <div class="form-group">
+                                                            <div class="form-group">
                                                                     <label>PO Number <span
                                                                             class="text-danger">*</span></label>
-                                                                    <input type="text" class="form-control"
+                                                                <input type="text" class="form-control"
                                                                         name="po_poNumber[]"
                                                                         value="{{ $oldPoNumbers[$i] ?? '' }}" required>
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-5">
-                                                                <div class="form-group">
+                                                            <div class="form-group">
                                                                     <label>PO Description <span
-                                                                            class="text-danger">*</span></label>
-                                                                    <input type="text" class="form-control"
+                                                                        class="text-danger">*</span></label>
+                                                                <input type="text" class="form-control"
                                                                         name="po_description[]"
                                                                         value="{{ $oldPoDescriptions[$i] ?? '' }}"
                                                                         required>
@@ -254,25 +254,25 @@
                                                                                         name="po_item_description[{{ $i }}][]"
                                                                                         value="{{ $oldPoItemDescriptions[$i][$j] ?? '' }}"
                                                                                         required>
-                                                                                </div>
-                                                                            </div>
+                                                        </div>
+                                                    </div>
                                                                             <div class="col-md-2">
-                                                                                <div class="form-group">
+                                                            <div class="form-group">
                                                                                     <label>UOM</label>
                                                                                     <select class="select2 form-control"
                                                                                         name="po_item_uomId[{{ $i }}][]">
                                                                                         <option value="">--Select--
                                                                                         </option>
-                                                                                        @foreach ($uoms as $uom)
+                                                                    @foreach ($uoms as $uom)
                                                                                             <option
                                                                                                 value="{{ $uom->id }}"
                                                                                                 {{ ($oldPoItemUomIds[$i][$j] ?? '') == $uom->id ? 'selected' : '' }}>
                                                                                                 {{ $uom->measurement }}
                                                                                             </option>
-                                                                                        @endforeach
-                                                                                    </select>
-                                                                                </div>
-                                                                            </div>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                        </div>
                                                                             <div class="col-md-2">
                                                                                 <div class="form-group">
                                                                                     <label>Qty <span
@@ -287,7 +287,7 @@
                                                                                 </div>
                                                                             </div>
                                                                             <div class="col-md-2">
-                                                                                <div class="form-group">
+                                                            <div class="form-group">
                                                                                     <label>Unit Cost <span
                                                                                             class="text-danger">*</span></label>
                                                                                     <input type="text"
@@ -297,10 +297,10 @@
                                                                                         value="{{ $oldPoItemUnitCosts[$i][$j] ?? '' }}"
                                                                                         required
                                                                                         oninput="calculatePoItemAmount({{ $i }}, {{ $j }})">
-                                                                                </div>
-                                                                            </div>
+                                                            </div>
+                                                        </div>
                                                                             <div class="col-md-2">
-                                                                                <div class="form-group">
+                                                            <div class="form-group">
                                                                                     <label>Subtotal</label>
                                                                                     <input type="text"
                                                                                         class="form-control po-item-subcost"
@@ -318,7 +318,7 @@
                                                                             </button>
                                                                         </div>
                                                                     </div>
-                                                                </div>
+                                                            </div>
                                                             @endfor
                                                         </div>
                                                         <div class="mb-2">
@@ -330,24 +330,24 @@
 
                                                         <!-- PO Totals -->
                                                         <div class="row mt-3 pt-3 border-top">
-                                                            <div class="col-md-4">
-                                                                <div class="form-group">
+                                                        <div class="col-md-4">
+                                                            <div class="form-group">
                                                                     <label><strong>Total Purchase Value</strong></label>
                                                                     <input type="text"
                                                                         class="form-control po-total-subcost" readonly
                                                                         style="background-color: #e9ecef; font-weight: bold;">
-                                                                </div>
                                                             </div>
-                                                            <div class="col-md-4">
-                                                                <div class="form-group">
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="form-group">
                                                                     <label><strong>VAT Amount</strong></label>
                                                                     <input type="text"
                                                                         class="form-control po-total-vatAmount" readonly
                                                                         style="background-color: #e9ecef; font-weight: bold;">
-                                                                </div>
                                                             </div>
-                                                            <div class="col-md-4">
-                                                                <div class="form-group">
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="form-group">
                                                                     <label><strong>Total PO Value</strong></label>
                                                                     <input type="text"
                                                                         class="form-control po-total-subnet" readonly
@@ -357,11 +357,11 @@
                                                         </div>
 
                                                         <div class="text-right mt-2">
-                                                            <button type="button" class="btn btn-sm btn-danger remove-po"
+                                                        <button type="button" class="btn btn-sm btn-danger remove-po"
                                                                 onclick="removePoItem(this)"
                                                                 style="display: {{ $poCount > 1 ? 'inline-block' : 'none' }};">
                                                                 <i class="fe fe-trash"></i> Remove PO
-                                                            </button>
+                                                        </button>
                                                         </div>
                                                     </div>
                                                 </div>

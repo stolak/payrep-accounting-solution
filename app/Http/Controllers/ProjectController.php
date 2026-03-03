@@ -1071,7 +1071,7 @@ class ProjectController extends Basefunction {
 
             DB::transaction(function () use ($data) {
                 $clientId = DB::table('clients')->insertGetId([
-                    'name' => $data['name'],
+                'name' => $data['name'],
                     'client_code' => $data['clientCode'],
                     'client_type' => $data['clientType'],
                     'contact_address' => $data['contactAddress'] ?? null,
@@ -1140,8 +1140,8 @@ class ProjectController extends Basefunction {
                     $clientCodeToSave = $this->generateClientCode((int) $data['clientType'], (int) $data['id']);
                 }
 
-                DB::table('clients')->where('id', $data['id'])->update([
-                    'name' => $data['name'],
+            DB::table('clients')->where('id', $data['id'])->update([
+                'name' => $data['name'],
                     'client_type' => $data['clientType'],
                     'status' => $data['status'],
                     'contact_address' => $data['contactAddress'] ?? null,
@@ -2520,11 +2520,11 @@ class ProjectController extends Basefunction {
                     $vendorIdToPersist = $this->generateVendorIdentifier((int) $data['vendorType'], (int) $serial);
                 }
 
-                DB::table('budgets')->insert([
-                            'name' => $data['name'],
-                            'description' => $data['description'] ?? null,
-                            'classificationId' => 1,
-                            'isVendor' => 1,
+            DB::table('budgets')->insert([
+                'name' => $data['name'],
+                'description' => $data['description'] ?? null,
+                'classificationId' => 1,
+                'isVendor' => 1,
                             'vendorId' => $vendorIdToPersist,
                             'trade_name' => $data['tradeName'] ?? null,
                             'vendor_type' => $data['vendorType'] ?? null,
@@ -2538,12 +2538,12 @@ class ProjectController extends Basefunction {
                             'bank_account_name' => $data['bankAccountName'] ?? null,
                             'bank_account_number' => $data['bankAccountNumber'] ?? null,
                             'currency' => $data['currency'] ?? null,
-                            'accountId' => $data['accountId'] ?? null,
+                'accountId' => $data['accountId'] ?? null,
                             'serial_no' => $serial,
                             'status' => 'Active',
-                            'createdAt' => now(),
-                            'updatedAt' => now(),
-                        ]);
+                'createdAt' => now(),
+                'updatedAt' => now(),
+            ]);
             });
             return back()->with('message', 'New vendor successfully added.');
         }
@@ -3006,21 +3006,21 @@ class ProjectController extends Basefunction {
                     $invoiceNumber = $this->generateProjectInvoiceNumber((int) $data['projectId']);
 
                     $projectInvoiceId = DB::table('project_invoice')->insertGetId([
-                        'projectId' => $data['projectId'],
+                'projectId' => $data['projectId'],
                         'InvoiceNumber' => $invoiceNumber,
-                        'amount' => $amount,
-                        'vat' => $vat,
-                        'wht' => $wht,
-                        'vatAmount' => round($vatAmount, 2),
-                        'whtAmount' => round($whtAmount, 2),
-                        'isVatInclusive' => $isVatInclusive,
-                        'expectedAmount' => round($expectedAmount, 2),
-                        'dueDate' => $data['dueDate'],
-                        'status' => 'Pending', // Default status, not editable during creation
-                        'createdBy' => Auth::user()->id,
-                        'createdAt' => now(),
-                        'updateAt' => now(),
-                    ]);
+                'amount' => $amount,
+                'vat' => $vat,
+                'wht' => $wht,
+                'vatAmount' => round($vatAmount, 2),
+                'whtAmount' => round($whtAmount, 2),
+                'isVatInclusive' => $isVatInclusive,
+                'expectedAmount' => round($expectedAmount, 2),
+                'dueDate' => $data['dueDate'],
+                'status' => 'Pending', // Default status, not editable during creation
+                'createdBy' => Auth::user()->id,
+                'createdAt' => now(),
+                'updateAt' => now(),
+            ]);
 
                     foreach ($preparedItems as $item) {
                         DB::table('project_invoice_items')->insert([
@@ -3140,7 +3140,7 @@ class ProjectController extends Basefunction {
             }
 
             DB::transaction(function () use ($data, $updateData, $preparedItems) {
-                DB::table('project_invoice')->where('id', $data['id'])->update($updateData);
+            DB::table('project_invoice')->where('id', $data['id'])->update($updateData);
                 DB::table('project_invoice_items')->where('project_invoiceId', $data['id'])->delete();
                 foreach ($preparedItems as $item) {
                     DB::table('project_invoice_items')->insert([
@@ -3188,7 +3188,7 @@ class ProjectController extends Basefunction {
             }
             DB::transaction(function () use ($del) {
                 DB::table('project_invoice_items')->where('project_invoiceId', $del)->delete();
-                DB::table('project_invoice')->where('id', $del)->delete();
+            DB::table('project_invoice')->where('id', $del)->delete();
             });
             return back()->with('message', 'Invoice successfully deleted.');
         }
@@ -3470,18 +3470,18 @@ class ProjectController extends Basefunction {
 
                     $vendorProjectId = DB::table('vendor_projects')->insertGetId([
                         'poNumber' => $generatedPoNumber,
-                        'projectId' => $data['projectId'],
-                        'vendorId' => $data['vendorId'],
+                'projectId' => $data['projectId'],
+                'vendorId' => $data['vendorId'],
                         'description' => $data['description'] ?? null,
                         'expected_completion_date' => $data['expected_completion_date'] ?? null,
                         'vat' => $vat,
                         'vatAmount' => $vatAmount,
                         'amount' => $totalAmount,
-                        'status' => 'Pending', // Always set to Pending on creation
-                        'createdBy' => Auth::user()->id,
-                        'createdAt' => now(),
-                        'updateAt' => now(),
-                    ]);
+                'status' => 'Pending', // Always set to Pending on creation
+                'createdBy' => Auth::user()->id,
+                'createdAt' => now(),
+                'updateAt' => now(),
+            ]);
 
                     foreach ($preparedItems as $item) {
                         DB::table('vendor_project_items')->insert([
@@ -3567,16 +3567,16 @@ class ProjectController extends Basefunction {
             $totalAmount = $subtotal + $vatAmount;
 
             DB::transaction(function () use ($data, $vat, $vatAmount, $totalAmount, $preparedItems) {
-                DB::table('vendor_projects')->where('id', $data['id'])->update([
-                    'vendorId' => $data['vendorId'],
+            DB::table('vendor_projects')->where('id', $data['id'])->update([
+                'vendorId' => $data['vendorId'],
                     'description' => $data['description'] ?? null,
                     'expected_completion_date' => $data['expected_completion_date'] ?? null,
                     'vat' => $vat,
                     'vatAmount' => $vatAmount,
                     'amount' => $totalAmount,
-                    'status' => $data['status'] ?? 'Pending',
-                    'updateAt' => now(),
-                ]);
+                'status' => $data['status'] ?? 'Pending',
+                'updateAt' => now(),
+            ]);
 
                 DB::table('vendor_project_items')->where('vendor_projectId', $data['id'])->delete();
                 foreach ($preparedItems as $item) {
@@ -3614,7 +3614,7 @@ class ProjectController extends Basefunction {
             
             DB::transaction(function () use ($del) {
                 DB::table('vendor_project_items')->where('vendor_projectId', $del)->delete();
-                DB::table('vendor_projects')->where('id', $del)->delete();
+            DB::table('vendor_projects')->where('id', $del)->delete();
             });
             return back()->with('message', 'Vendor project successfully deleted.');
         }
@@ -4373,7 +4373,7 @@ class ProjectController extends Basefunction {
         
         return view('Project.vendorprojectreport', $data);
     }
-
+   
     public function poTermsAndConditions(Request $request)
     {
         $data['title'] = $request->input('title');

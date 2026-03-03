@@ -9,61 +9,39 @@
         body {
             margin: 0;
             font-family: Arial, Helvetica, sans-serif;
-            background: #f3f3f3;
+            background: #fff;
             color: #1d1d1d;
         }
 
         .document-wrap {
-            width: 1020px;
-            margin: 20px auto 40px;
+            max-width: 1020px;
+            width: 100%;
+            margin: 0 auto 30px;
             background: #fff;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            box-shadow: none;
         }
 
         .page {
             padding: 0;
         }
 
-        .top-blue-strip {
-            height: 26px;
-            background: #0a6ea1;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding: 18px 30px 12px;
-            border-bottom: 6px solid #73b401;
-        }
-
-        .header-left {
-            width: 55%;
-        }
-
-        .logo {
-            width: 340px;
+        img {
             max-width: 100%;
-            margin-bottom: 10px;
+            height: auto;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
 
-        .company-meta {
-            color: #0a6ea1;
-            font-size: 16px;
-            line-height: 1.35;
-            letter-spacing: 0.4px;
+        .header-image,
+        .footer-image {
+            width: 100%;
+            display: block;
         }
 
-        .header-right {
-            width: 40%;
-            text-align: right;
-        }
-
-        .header-right .title {
-            font-size: 46px;
-            letter-spacing: 7px;
-            font-weight: 700;
-            margin-top: 12px;
+        .header-image img,
+        .footer-image img {
+            width: 100%;
+            display: block;
         }
 
         .content {
@@ -146,7 +124,7 @@
 
         .items-table thead th {
             background: #73b401;
-            color: #fff;
+            color: #111;
             letter-spacing: 2px;
             text-align: left;
         }
@@ -251,30 +229,7 @@
 
         .footer {
             text-align: center;
-            padding: 26px 36px 34px;
-        }
-
-        .footer .thanks {
-            font-size: 18px;
-            font-weight: 700;
-            letter-spacing: 4px;
-            margin-bottom: 8px;
-        }
-
-        .footer .contact {
-            font-size: 13px;
-            color: #444;
-            margin-bottom: 14px;
-        }
-
-        .footer-bar {
-            background: #0a6ea1;
-            color: #fff;
-            padding: 14px 18px;
-            border-radius: 28px;
-            display: inline-block;
-            font-size: 14px;
-            letter-spacing: 0.8px;
+            padding: 0;
         }
 
         @media print {
@@ -287,6 +242,11 @@
                 margin: 0;
                 box-shadow: none;
             }
+
+            .content {
+                padding-left: 36px;
+                padding-right: 36px;
+            }
         }
     </style>
 </head>
@@ -294,19 +254,8 @@
 <body>
     <div class="document-wrap">
         <section class="page">
-            <div class="top-blue-strip"></div>
-            <div class="header">
-                <div class="header-left">
-                    <img src="{{ $company['logo'] }}" alt="Company Logo" class="logo">
-                    <div class="company-meta">
-                        {{ $company['address'] }}<br>
-                        {{ $company['phone'] }} | {{ $company['email'] }}<br>
-                        {{ $company['website'] }}
-                    </div>
-                </div>
-                <div class="header-right">
-                    <div class="title">INVOICE</div>
-                </div>
+            <div class="header-image">
+                <img src="{{ asset('img/invoice_header.png') }}" alt="Invoice Header">
             </div>
 
             <div class="content">
@@ -318,11 +267,6 @@
                                 <td class="key">INVOICE DATE</td>
                                 <td class="sep">:</td>
                                 <td>{{ $invoiceDate }}</td>
-                            </tr>
-                            <tr>
-                                <td class="key">DUE DATE</td>
-                                <td class="sep">:</td>
-                                <td>{{ $dueDate ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td class="key">PURCHASE ORDER #</td>
@@ -456,13 +400,8 @@
             </div>
 
             <div class="footer">
-                <div class="thanks">THANK YOU FOR YOUR BUSINESS</div>
-                <div class="contact">
-                    Please contact {{ $company['email'] }} for any concerns regarding this invoice.
-                </div>
-                <div class="footer-bar">
-                    {{ $company['address'] }} | {{ $company['email'] }} | {{ $company['phone'] }} |
-                    {{ $company['website'] }}
+                <div class="footer-image">
+                    <img src="{{ asset('img/invoice_footer.jpg') }}" alt="Invoice Footer">
                 </div>
             </div>
         </section>
