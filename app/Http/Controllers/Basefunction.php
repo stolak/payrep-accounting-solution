@@ -952,7 +952,9 @@ class Basefunction extends Controller
 				if($variable->variable_type==2){
 					$amount = $this->deductionsFunction($year, $month, $staff->id, $variable->id, $variable->percent);
 				} else {
+					// dd($staff->offer_amount, $variable->percent);
 					$amount = $this->earningsFunction($staff->offer_amount, $variable->percent);
+					// dd($amount);
 				}
 			}else{
 					$dat=DB::Select("SELECT `$variable->ref_code` as amount FROM `tblpayroll_salary_new_chart` WHERE `grade`='$staff->grade' and `step`='$step' ");
@@ -1181,9 +1183,15 @@ class Basefunction extends Controller
 		return round($this->calculateAnnualProgressiveTax($income) / 12, 2);
 	}
 
-	function earningsFunction( $annual_gross_pay,$percentage)	
+	function earningsFunction2( $annual_gross_pay,$percentage)	
 	{
 		$amount = $annual_gross_pay * $percentage / (100*12);
+		return round($amount, 2);
+	}
+
+	function earningsFunction( $annual_gross_pay,$percentage)	
+	{
+		$amount = $annual_gross_pay * $percentage / (100);
 		return round($amount, 2);
 	}
 	function deductionsFunction($year, $month, $staffId, $variable,$percentage)	
